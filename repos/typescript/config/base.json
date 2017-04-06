@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "pretty": true,
+    "sourceMap": true,
+    "newLine": "LF",
+    "allowJs": true,
+    "moduleResolution": "node",
+    "alwaysStrict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": false,
+    "strictNullChecks": true
+  }
+}
