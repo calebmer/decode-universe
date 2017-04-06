@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const { CheckerPlugin, TsConfigPathsPlugin } = require('awesome-typescript-loader');
 const WatchMissingNodeModulesPlugin = require('react-dev-utils/WatchMissingNodeModulesPlugin');
 
 const { DefinePlugin, HotModuleReplacementPlugin } = webpack;
@@ -8,14 +9,8 @@ const { UglifyJsPlugin } = webpack.optimize;
 
 const DEV = process.env.NODE_ENV === 'development';
 
-const paths = {
-  source: path.join(__dirname, './src/renderer'),
-  build: path.join(__dirname, './build/renderer'),
-  mainTS: path.join(__dirname, './src/renderer/index.ts'),
-  mainHTML: path.join(__dirname, './src/renderer/index.html'),
-};
-
 module.exports = {
+  target: 'electron-renderer',
   // We want to bail on error if this is a production build.
   bail: !DEV,
   // Perhaps consider use `cheap-module-source-map` in development if
@@ -41,16 +36,16 @@ module.exports = {
   entry: [
     // Include some extra scripts in development for a better DX.
     DEV && 'react-dev-utils/webpackHotDevClient',
-    DEV && 'react-dev-utils/crashOverlay',
+    // TODO: DEV && 'react-dev-utils/crashOverlay',
     // Include the main script for our app.
-    paths.mainTS,
+    path.join(__dirname, './src/renderer/index.tsx'),
   ].filter(Boolean),
   output: {
-    path: paths.build,
+    path: path.join(__dirname, './build/renderer'),
     pathinfo: true,
     // There will be one main bundle with other smaller bundles when code
     // splitting.
-    filename: 'static/js/[name].[chunkhash:8].js',
+    filename: 'static/js/[name].[hash:8].js',
     chunkFilename: 'static/js/[name].[chunkhash:8].chunk.js',
   },
   resolve: {
@@ -66,23 +61,37 @@ module.exports = {
       // Compile all of our JavaScript and TypeScript files with TypeScript.
       {
         test: /\.(js|jsx|ts|tsx)$/,
-        exclude: /node_modules/,
+        include: [
+          path.join(__dirname, './src/renderer'),
+          path.join(__dirname, '../studio-ui/src'),
+        ],
         loader: 'awesome-typescript-loader',
+        options: {
+          // Use the tsconfig for the renderer and not our general tsconfig.
+          configFileName: 'tsconfig.renderer.json',
+        },
       },
       // Tells Webpack about the TypeScript source maps so it can use them when
       // Webpack is generating its own source maps.
       {
         enforce: 'pre',
         test: /\.js$/,
+        include: [
+          path.join(__dirname, './src/renderer'),
+          path.join(__dirname, '../studio-ui/src'),
+        ],
         loader: 'source-map-loader',
       },
     ],
   },
   plugins: [
+    // Add the appropriate TypeScript plugins.
+    new CheckerPlugin(),
+    new TsConfigPathsPlugin(),
     // Generates an `index.html` file with the <script> injected.
     new HtmlWebpackPlugin({
       inject: true,
-      template: paths.mainHTML,
+      template: path.join(__dirname, './src/renderer/index.html'),
       // Minify the HTML in production, but not in development.
       minify: DEV ? undefined : {
         removeComments: true,
@@ -99,7 +108,10 @@ module.exports = {
     }),
     // Define our environment so that React will be built appropriately.
     new DefinePlugin({
-      NODE_ENV: JSON.stringify(DEV ? 'development' : 'production'),
+      DEV: JSON.stringify(DEV),
+      // Many libraries, including React, use `NODE_ENV` so we need to
+      // define it.
+      'process.env.NODE_ENV': JSON.stringify(DEV ? 'development' : 'production'),
     }),
     // Used for any hot replacement functionalities we may use in the future.
     // Currently hot reloading for JavaScripts is not set up.

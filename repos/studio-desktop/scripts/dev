@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export NODE_ENV=development
+
 $(npm bin)/concurrently \
   '$(npm bin)/webpack-dev-server --config ./webpack.config.renderer.js --port 1998' \
-  '$(npm bin)/tsc --project ./src/main/tsconfig.json && $(npm bin)/electron .'
+  '$(npm bin)/tsc --project ./tsconfig.main.json && $(npm bin)/electron .'

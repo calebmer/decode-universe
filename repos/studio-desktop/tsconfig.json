@@ -1,0 +1,15 @@
+{
+  "extends": "../typescript/config/base",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": "./src",
+    "jsx": "react",
+    "paths": {
+      "@decode/studio-ui/*": ["../../studio-ui/src/*"]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "build"
+  ]
+}

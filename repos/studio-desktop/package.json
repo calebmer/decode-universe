@@ -1,6 +1,7 @@
 {
   "main": "./build/main/index.js",
   "dependencies": {
+    "react": "^15.4.2",
     "react-dom": "^15.4.2"
   },
   "devDependencies": {
@@ -10,6 +11,7 @@
     "awesome-typescript-loader": "^3.1.2",
     "concurrently": "^3.4.0",
     "electron": "^1.6.2",
+    "electron-devtools-installer": "^2.1.0",
     "html-webpack-plugin": "^2.28.0",
     "react-dev-utils": "^0.5.2",
     "source-map-loader": "^0.2.1",

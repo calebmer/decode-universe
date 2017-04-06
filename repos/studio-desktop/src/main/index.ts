@@ -1,11 +1,19 @@
 import { app, BrowserWindow } from 'electron';
 
+// Set our global `DEV` environment variable.
+(global as any).DEV = process.env.NODE_ENV === 'development';
+
 // Keep a reference to the window so that it is not garbage collected.
 let window: Electron.BrowserWindow | null = null;
 
 // This function will be called when Electron has finished initialization and is
 // ready to create browser windows.
 app.on('ready', () => {
+  // If we are in development then we want to install our devtools.
+  if (DEV) {
+    require('./devtools');
+  }
+
   // Create the window.
   window = new BrowserWindow({
     width: 800,
