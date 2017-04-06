@@ -9,10 +9,10 @@ const { UglifyJsPlugin } = webpack.optimize;
 const DEV = process.env.NODE_ENV === 'development';
 
 const paths = {
-  source: path.join(__dirname, './src'),
-  build: path.join(__dirname, './build'),
-  mainTS: path.join(__dirname, './src/main.ts'),
-  mainHTML: path.join(__dirname, './public/index.html'),
+  source: path.join(__dirname, './src/renderer'),
+  build: path.join(__dirname, './build/renderer'),
+  mainTS: path.join(__dirname, './src/renderer/index.ts'),
+  mainHTML: path.join(__dirname, './src/renderer/index.html'),
 };
 
 module.exports = {
@@ -21,6 +21,23 @@ module.exports = {
   // Perhaps consider use `cheap-module-source-map` in development if
   // `source-map` is too slow.
   devtool: 'source-map',
+  // If we are in development then we will be using a dev server which we want
+  // to configure.
+  devServer: !DEV ? undefined : {
+    // Enable gzip compression.
+    compress: true,
+    // Silence the dev server logs. It will still show warnings and errors with
+    // this setting, however.
+    clientLogLevel: 'none',
+    // By default changes in our public folder will not trigger a page reload.
+    watchContentBase: true,
+    // Enable a hot reloading server. It will provide a websocket endpoint for
+    // the dev server client. Instead of using the standard webpack dev server
+    // client we use a client from `react-dev-utils` which has a nicer
+    // development experience.
+    hot: true,
+  },
+  // Define the files that start our bundle.
   entry: [
     // Include some extra scripts in development for a better DX.
     DEV && 'react-dev-utils/webpackHotDevClient',
@@ -39,6 +56,10 @@ module.exports = {
   resolve: {
     // Make sure to add `.ts` to module resolution.
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+    alias: {
+      // Allow our code to import from other Decode repos.
+      '@decode/studio-ui': path.join(__dirname, '../studio-ui/src'),
+    },
   },
   module: {
     rules: [
@@ -80,6 +101,9 @@ module.exports = {
     new DefinePlugin({
       NODE_ENV: JSON.stringify(DEV ? 'development' : 'production'),
     }),
+    // Used for any hot replacement functionalities we may use in the future.
+    // Currently hot reloading for JavaScripts is not set up.
+    DEV && new HotModuleReplacementPlugin(),
     // If you require a missing module and then `npm install` it, you still have
     // to restart the development server for Webpack to discover it. This plugin
     // makes the discovery automatic so you don't have to restart.

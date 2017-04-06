@@ -1,0 +1,7 @@
+{
+  "extends": "../../../typescript/config/base",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "."
+  }
+}

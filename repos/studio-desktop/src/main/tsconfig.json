@@ -1,0 +1,7 @@
+{
+  "extends": "../../../typescript/config/base",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../../build/main"
+  }
+}

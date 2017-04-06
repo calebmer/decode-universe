@@ -12,8 +12,8 @@ app.on('ready', () => {
     height: 600,
   });
 
-  // TODO: Load the `index.html` of the page.
-  // window.loadURL('file://');
+  // Load the `index.html` of the page.
+  window.loadURL('http://localhost:1998/index.html');
 
   // Open the DevTools.
   window.webContents.openDevTools();

@@ -1,9 +1,6 @@
 {
   "extends": "../typescript/config/base",
   "compilerOptions": {
-    "noEmit": true,
-    "rootDir": "./src",
-    "target": "es3",
-    "importHelpers": true
+    "noEmit": true
   }
 }
