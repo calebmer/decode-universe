@@ -1,11 +1,27 @@
 import * as React from 'react';
 
-type Data =
-  { loading: true, rejected: false } |
-  { loading: false, rejected: true, error: any } |
-  { loading: false, rejected: false, stream: MediaStream, source: MediaStreamAudioSourceNode };
+type Data = {
+  readonly loading: true,
+  readonly rejected: false,
+  readonly error: null,
+  readonly stream: null,
+  readonly source: null,
+} | {
+  readonly loading: false,
+  readonly rejected: true,
+  readonly error: any,
+  readonly stream: null,
+  readonly source: null,
+} | {
+  readonly loading: false,
+  readonly rejected: false,
+  readonly error: null,
+  readonly stream: MediaStream,
+  readonly source: MediaStreamAudioSourceNode,
+};
 
 type Props = {
+  inputDevice: MediaDeviceInfo,
   render: (data: Data) => JSX.Element | null,
 };
 
@@ -21,6 +37,9 @@ type State = {
 const loadingData: Data = {
   loading: true,
   rejected: false,
+  error: null,
+  stream: null,
+  source: null,
 };
 
 /**
@@ -41,6 +60,8 @@ export class UserAudio extends React.PureComponent<Props, State> {
    * stream.
    */
   tryToGetUserAudioNode () {
+    const { inputDevice } = this.props;
+
     // Set state to loading...
     this.setState({ data: loadingData });
 
@@ -48,7 +69,10 @@ export class UserAudio extends React.PureComponent<Props, State> {
     navigator.mediaDevices.getUserMedia({
       video: false,
       audio: {
+        // Always try to cancel any echos on the line.
         echoCancelation: true,
+        // Use the id from the device.
+        deviceId: inputDevice.deviceId,
       },
     }).then(
       // Update our state with the new stream. We also create a new
@@ -60,6 +84,7 @@ export class UserAudio extends React.PureComponent<Props, State> {
           data: {
             loading: false,
             rejected: false,
+            error: null,
             stream,
             source,
           },
@@ -74,6 +99,8 @@ export class UserAudio extends React.PureComponent<Props, State> {
             loading: false,
             rejected: true,
             error,
+            stream: null,
+            source: null,
           },
         });
       },
