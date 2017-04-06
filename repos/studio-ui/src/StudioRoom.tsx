@@ -3,14 +3,16 @@ import { UserAudio } from './audio/UserAudio';
 import { AudioVisualization } from './audio/AudioVisualization';
 
 type State = {
-  devices: Array<MediaDeviceInfo>,
-  selectedInputDevice: MediaDeviceInfo | null,
+  inputDevices: Array<MediaDeviceInfo>,
+  outputDevices: Array<MediaDeviceInfo>,
+  selectedInputDeviceID: string | null,
 };
 
 export class StudioRoom extends React.Component<{}, State> {
   state: State = {
-    devices: [],
-    selectedInputDevice: null,
+    inputDevices: [],
+    outputDevices: [],
+    selectedInputDeviceID: null,
   };
 
   componentDidMount() {
@@ -21,15 +23,21 @@ export class StudioRoom extends React.Component<{}, State> {
     navigator.mediaDevices.enumerateDevices().then(
       (devices: Array<MediaDeviceInfo>) => {
         this.setState(previousState => {
-          const nextState: Partial<State> = { devices };
+          // Construct the input and output devices.
+          const inputDevices =
+            devices.filter(device => device.kind === 'audioinput');
+          const outputDevices =
+            devices.filter(device => device.kind === 'audiooutput');
+          // Create the initial next state.
+          const nextState: Partial<State> = {
+            inputDevices,
+            outputDevices,
+          };
           // If there was no previously selected device then we want to select
           // one from our `devices` array.
-          if (previousState.selectedInputDevice === null) {
-            // Get all our input devices.
-            const inputDevices =
-              devices.filter(device => device.kind === 'audioinput');
+          if (previousState.selectedInputDeviceID === null) {
             // Select one of this input devices.
-            nextState.selectedInputDevice =
+            const selectedInputDevice =
               // First see if we can find the default device.
               inputDevices.find(device => device.deviceId === 'default') ||
               // If we can’t let’s just use the first input device.
@@ -37,6 +45,9 @@ export class StudioRoom extends React.Component<{}, State> {
               // If there is no first input device then we just want to set it
               // to null again.
               null;
+            // Set that device’s id to state.
+            nextState.selectedInputDeviceID =
+              selectedInputDevice && selectedInputDevice.deviceId;
           }
           return nextState;
         });
@@ -44,53 +55,50 @@ export class StudioRoom extends React.Component<{}, State> {
       (error: any) => {
         console.error(error);
         this.setState({
-          devices: [],
-          selectedInputDevice: null,
+          inputDevices: [],
+          outputDevices: [],
+          selectedInputDeviceID: null,
         });
       },
     );
   }
 
   render() {
-    const { devices, selectedInputDevice } = this.state;
+    const { inputDevices, outputDevices, selectedInputDeviceID } = this.state;
     return (
       <div>
         <ul>
           <li>
-            Audio Input
-            <ul>
-              {devices.map(device => (
-                device.kind === 'audioinput' && (
-                  <li key={device.deviceId}>
-                    <label>
-                      <input
-                        type="radio"
-                        checked={selectedInputDevice === device}
-                        onChange={() => this.setState({ selectedInputDevice: device })}
-                      />
-                      {' '}{device.label}
-                    </label>
-                  </li>
-                )
-              ))}
-            </ul>
+            Audio Input{' '}
+            {selectedInputDeviceID !== null && (
+              <select
+                value={selectedInputDeviceID}
+                onChange={event => {
+                  this.setState({ selectedInputDeviceID: event.target.value })
+                }}
+              >
+                {inputDevices.map(device => (
+                  <option key={device.deviceId} value={device.deviceId}>
+                    {device.label}
+                  </option>
+                ))}
+              </select>
+            )}
           </li>
           <li>
             Audio Output
             <ul>
-              {devices.map(device => (
-                device.kind === 'audiooutput' && (
-                  <li key={device.deviceId}>
-                    {device.label}
-                  </li>
-                )
+              {outputDevices.map(device => (
+                <li key={device.deviceId}>
+                  {device.label}
+                </li>
               ))}
             </ul>
           </li>
         </ul>
-        {selectedInputDevice !== null && (
+        {selectedInputDeviceID !== null && (
           <UserAudio
-            inputDevice={selectedInputDevice}
+            inputDeviceID={selectedInputDeviceID}
             render={userAudio => (
               userAudio.rejected ? (
                 <div>Error!</div>

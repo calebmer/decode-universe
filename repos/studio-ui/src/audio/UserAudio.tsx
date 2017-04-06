@@ -24,7 +24,7 @@ type Data = {
 };
 
 type Props = {
-  inputDevice: MediaDeviceInfo,
+  inputDeviceID: string,
   render: (data: Data) => JSX.Element | null,
 };
 
@@ -63,7 +63,7 @@ export class UserAudio extends React.PureComponent<Props, State> {
     const nextProps = this.props;
     const nextState = this.state;
     // Try to get the user media again if some of our props changed.
-    if (previousProps.inputDevice !== nextProps.inputDevice) {
+    if (previousProps.inputDeviceID !== nextProps.inputDeviceID) {
       this.tryToGetUserAudioNode();
     }
     // If our `AudioContext` instance changed then we need to close the old
@@ -84,7 +84,7 @@ export class UserAudio extends React.PureComponent<Props, State> {
    * stream.
    */
   tryToGetUserAudioNode() {
-    const { inputDevice } = this.props;
+    const { inputDeviceID } = this.props;
 
     // Set state to loading...
     this.setState({ data: loadingData });
@@ -96,7 +96,7 @@ export class UserAudio extends React.PureComponent<Props, State> {
         // Always try to cancel any echos on the line.
         echoCancelation: true,
         // Use the id from the device.
-        deviceId: inputDevice.deviceId,
+        deviceId: inputDeviceID,
       },
     }).then(
       // Update our state with the new stream. We also create a new
