@@ -2,6 +2,7 @@
   "extends": "../typescript/config/base",
   "compilerOptions": {
     "noEmit": true,
+    "lib": ["dom", "es2015"],
     "jsx": "react"
   }
 }
