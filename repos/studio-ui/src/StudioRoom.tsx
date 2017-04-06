@@ -64,38 +64,26 @@ export class StudioRoom extends React.Component<{}, State> {
   }
 
   render() {
-    const { inputDevices, outputDevices, selectedInputDeviceID } = this.state;
+    const { inputDevices, selectedInputDeviceID } = this.state;
     return (
       <div>
-        <ul>
-          <li>
-            Audio Input{' '}
-            {selectedInputDeviceID !== null && (
-              <select
-                value={selectedInputDeviceID}
-                onChange={event => {
-                  this.setState({ selectedInputDeviceID: event.target.value })
-                }}
-              >
-                {inputDevices.map(device => (
-                  <option key={device.deviceId} value={device.deviceId}>
-                    {device.label}
-                  </option>
-                ))}
-              </select>
-            )}
-          </li>
-          <li>
-            Audio Output
-            <ul>
-              {outputDevices.map(device => (
-                <li key={device.deviceId}>
+        <div>
+          Audio Input{' '}
+          {selectedInputDeviceID !== null && (
+            <select
+              value={selectedInputDeviceID}
+              onChange={event => {
+                this.setState({ selectedInputDeviceID: event.target.value })
+              }}
+            >
+              {inputDevices.map(device => (
+                <option key={device.deviceId} value={device.deviceId}>
                   {device.label}
-                </li>
+                </option>
               ))}
-            </ul>
-          </li>
-        </ul>
+            </select>
+          )}
+        </div>
         {selectedInputDeviceID !== null && (
           <UserAudio
             inputDeviceID={selectedInputDeviceID}
