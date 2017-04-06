@@ -62,7 +62,14 @@ export class StudioRoom extends React.Component<{}, State> {
               {devices.map(device => (
                 device.kind === 'audioinput' && (
                   <li key={device.deviceId}>
-                    {device.label}
+                    <label>
+                      <input
+                        type="radio"
+                        checked={selectedInputDevice === device}
+                        onChange={() => this.setState({ selectedInputDevice: device })}
+                      />
+                      {' '}{device.label}
+                    </label>
                   </li>
                 )
               ))}

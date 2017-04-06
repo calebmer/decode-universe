@@ -35,23 +35,23 @@ export class AudioVisualization extends React.Component<Props, {}> {
    */
   bars: Array<SVGRectElement> = [];
 
-  constructor (props: Props) {
+  constructor(props: Props) {
     super(props);
     this.updateInstance();
   }
 
-  componentDidMount () {
+  componentDidMount() {
     animatingComponents.push(this);
     tryStartAnimationLoop();
   }
 
-  componentWillUpdate (nextProps: Props) {
+  componentWillUpdate(nextProps: Props) {
     if (this.props.node !== nextProps.node) {
       this.updateInstance();
     }
   }
 
-  componentWillUnmount () {
+  componentWillUnmount() {
     animatingComponents.splice(animatingComponents.indexOf(this), 1);
     tryStopAnimationLoop();
   }
@@ -64,7 +64,7 @@ export class AudioVisualization extends React.Component<Props, {}> {
    *
    * Initializes values for `analyser`, `analyserData`, and `barsCount`.
    */
-  updateInstance (node: AudioNode = this.props.node) {
+  updateInstance(node: AudioNode = this.props.node) {
     const analyser = node.context.createAnalyser();
     analyser.minDecibels = -90;
     analyser.maxDecibels = -10;
@@ -80,7 +80,7 @@ export class AudioVisualization extends React.Component<Props, {}> {
     this.barsCount = Math.round(analyserData.length - (analyserData.length * 0.8));
   }
 
-  render () {
+  render() {
     const { barsCount } = this;
     const barMargin = 0.75;
     const barJsxNodes: Array<JSX.Element> = [];
@@ -117,7 +117,7 @@ let nextAnimationFrameID: number | null = null;
  * If there is no scheduled next animation frame, and there are components in
  * `animatingComponents`, schedule an animation frame.
  */
-function tryStartAnimationLoop () {
+function tryStartAnimationLoop() {
   if (animatingComponents.length > 0 && nextAnimationFrameID == null) {
     nextAnimationFrameID = requestAnimationFrame(updateComponentVisualizations);
   }
@@ -127,7 +127,7 @@ function tryStartAnimationLoop () {
  * If there are no more components in the `animatingComponents` array, we can
  * cancel the next animation frame.
  */
-function tryStopAnimationLoop () {
+function tryStopAnimationLoop() {
   if (animatingComponents.length === 0 && nextAnimationFrameID != null) {
     cancelAnimationFrame(nextAnimationFrameID);
     nextAnimationFrameID = null;
@@ -140,7 +140,7 @@ const maxFrequency = 210;
  * Update the animating component visualizations and schedule another animation
  * frame.
  */
-function updateComponentVisualizations () {
+function updateComponentVisualizations() {
   nextAnimationFrameID = requestAnimationFrame(updateComponentVisualizations);
 
   for (const component of animatingComponents) {

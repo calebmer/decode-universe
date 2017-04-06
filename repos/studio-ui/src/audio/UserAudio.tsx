@@ -4,18 +4,21 @@ type Data = {
   readonly loading: true,
   readonly rejected: false,
   readonly error: null,
+  readonly context: null,
   readonly stream: null,
   readonly source: null,
 } | {
   readonly loading: false,
   readonly rejected: true,
   readonly error: any,
+  readonly context: null,
   readonly stream: null,
   readonly source: null,
 } | {
   readonly loading: false,
   readonly rejected: false,
   readonly error: null,
+  readonly context: AudioContext,
   readonly stream: MediaStream,
   readonly source: MediaStreamAudioSourceNode,
 };
@@ -38,6 +41,7 @@ const loadingData: Data = {
   loading: true,
   rejected: false,
   error: null,
+  context: null,
   stream: null,
   source: null,
 };
@@ -51,15 +55,35 @@ export class UserAudio extends React.PureComponent<Props, State> {
     data: loadingData,
   };
 
-  componentDidMount () {
+  componentDidMount() {
     this.tryToGetUserAudioNode();
+  }
+
+  componentDidUpdate(previousProps: Props, previousState: State) {
+    const nextProps = this.props;
+    const nextState = this.state;
+    // Try to get the user media again if some of our props changed.
+    if (previousProps.inputDevice !== nextProps.inputDevice) {
+      this.tryToGetUserAudioNode();
+    }
+    // If our `AudioContext` instance changed then we need to close the old
+    // `AudioContext` instance! This is because there is a hard limit on the
+    // number of `AudioContext`s we can create for resource constraint reasons.
+    // If we close the context then we are being a good citizen when it comes to
+    // system resources.
+    if (
+      previousState.data.context !== null &&
+      previousState.data.context !== nextState.data.context
+    ) {
+      previousState.data.context.close();
+    }
   }
 
   /**
    * Runs the browser `getUserMedia` function to try and get a user’s audio
    * stream.
    */
-  tryToGetUserAudioNode () {
+  tryToGetUserAudioNode() {
     const { inputDevice } = this.props;
 
     // Set state to loading...
@@ -85,6 +109,7 @@ export class UserAudio extends React.PureComponent<Props, State> {
             loading: false,
             rejected: false,
             error: null,
+            context,
             stream,
             source,
           },
@@ -99,6 +124,7 @@ export class UserAudio extends React.PureComponent<Props, State> {
             loading: false,
             rejected: true,
             error,
+            context: null,
             stream: null,
             source: null,
           },
