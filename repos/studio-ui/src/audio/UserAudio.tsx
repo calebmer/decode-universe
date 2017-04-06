@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-type Data = {
+type AudioState = {
   readonly loading: true,
   readonly rejected: false,
   readonly error: null,
@@ -24,12 +24,12 @@ type Data = {
 };
 
 type Props = {
-  inputDeviceID: string,
-  render: (data: Data) => JSX.Element | null,
+  inputDeviceID?: string | null,
+  render: (audio: AudioState) => JSX.Element | null,
 };
 
 type State = {
-  data: Data,
+  audio: AudioState,
 };
 
 /**
@@ -37,7 +37,7 @@ type State = {
  * the state to loading again then the component won’t update because the
  * loading states will be referentially equal.
  */
-const loadingData: Data = {
+const loadingAudio: AudioState = {
   loading: true,
   rejected: false,
   error: null,
@@ -52,7 +52,7 @@ const loadingData: Data = {
  */
 export class UserAudio extends React.PureComponent<Props, State> {
   state: State = {
-    data: loadingData,
+    audio: loadingAudio,
   };
 
   componentDidMount() {
@@ -72,10 +72,10 @@ export class UserAudio extends React.PureComponent<Props, State> {
     // If we close the context then we are being a good citizen when it comes to
     // system resources.
     if (
-      previousState.data.context !== null &&
-      previousState.data.context !== nextState.data.context
+      previousState.audio.context !== null &&
+      previousState.audio.context !== nextState.audio.context
     ) {
-      previousState.data.context.close();
+      previousState.audio.context.close();
     }
   }
 
@@ -87,7 +87,7 @@ export class UserAudio extends React.PureComponent<Props, State> {
     const { inputDeviceID } = this.props;
 
     // Set state to loading...
-    this.setState({ data: loadingData });
+    this.setState({ audio: loadingAudio });
 
     // Get user media. We only want audio so `video` is set to false.
     navigator.mediaDevices.getUserMedia({
@@ -95,8 +95,9 @@ export class UserAudio extends React.PureComponent<Props, State> {
       audio: {
         // Always try to cancel any echos on the line.
         echoCancelation: true,
-        // Use the id from the device.
-        deviceId: inputDeviceID,
+        // Use the id from the device. If it is null then we want to set
+        // the value to undefined instead.
+        deviceId: inputDeviceID !== null ? inputDeviceID : undefined,
       },
     }).then(
       // Update our state with the new stream. We also create a new
@@ -105,7 +106,7 @@ export class UserAudio extends React.PureComponent<Props, State> {
         const context = new AudioContext();
         const source = context.createMediaStreamSource(stream);
         this.setState({
-          data: {
+          audio: {
             loading: false,
             rejected: false,
             error: null,
@@ -120,7 +121,7 @@ export class UserAudio extends React.PureComponent<Props, State> {
       error => {
         console.error(error);
         this.setState({
-          data: {
+          audio: {
             loading: false,
             rejected: true,
             error,
@@ -134,8 +135,6 @@ export class UserAudio extends React.PureComponent<Props, State> {
   }
 
   render () {
-    const { render } = this.props;
-    const { data } = this.state;
-    return render(data);
+    return this.props.render(this.state.audio);
   }
 }
