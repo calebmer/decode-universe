@@ -53,6 +53,8 @@ export class SignalClient {
    * Connects the client to the room that we specified in the constructor for
    * `SignalClient`. This method returns all the other socket ids so that we can
    * start establishing peers if wanted.
+   *
+   * If a socket is already connected then an error will be thrown.
    */
   public async connect(): Promise<Array<string>> {
     if (this.socket !== null) {
@@ -76,6 +78,8 @@ export class SignalClient {
 
   /**
    * Sends a signal to the designated recipient.
+   *
+   * If a socket has not been connected then an error will be thrown.
    */
   public send(to: string, signal: Signal): void {
     if (this.socket === null) {
