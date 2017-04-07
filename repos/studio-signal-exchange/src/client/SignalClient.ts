@@ -41,6 +41,14 @@ export class SignalClient {
   }
 
   /**
+   * Disconnect the underlying socket. We will receive no more signals after
+   * this method has been called.
+   */
+  public close(): void {
+    this.socket.close();
+  }
+
+  /**
    * Connects the client to the room that we specified in the constructor for
    * `SignalClient`. This method returns all the other socket ids so that we can
    * start establishing peers if wanted.

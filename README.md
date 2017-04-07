@@ -4,6 +4,9 @@
 
 - Think about all of the WebRTC and signaling edge cases.
 - STUN and TURN? There are free Mozilla and Google STUN servers. Use those?
+- Auto-update desktop app.
+- Search for `error` and find ways to report errors.
+- Search for `TODO` and try to resolve those notes.
 
 ## Port Map
 
