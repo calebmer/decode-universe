@@ -1,0 +1,12 @@
+{
+  "devDependencies": {
+    "@types/node": "^7.0.12",
+    "@types/socket.io": "^1.4.29",
+    "@types/socket.io-client": "^1.4.29",
+    "ts-node": "^3.0.2"
+  },
+  "dependencies": {
+    "socket.io": "^1.7.3",
+    "socket.io-client": "^1.7.3"
+  }
+}
