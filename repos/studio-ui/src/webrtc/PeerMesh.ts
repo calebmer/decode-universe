@@ -177,12 +177,13 @@ export class PeerMesh extends React.Component<Props, State> {
    * This method has a lot of side-effects!
    */
   private async connectSignalClient(): Promise<void> {
-    const { stream } = this.props;
     const { signalClient } = this.state;
     // Connect the new signal client.
     const addresses = await signalClient.connect()
     // Connect all of the addresses as peers in parallel.
     await Promise.all(addresses.map(async address => {
+      // Use the latest stream.
+      const { stream } = this.props;
       // Create the peer.
       const peer = this.createPeer(address);
       // Start peer negotiations, but only if there is a stream!
