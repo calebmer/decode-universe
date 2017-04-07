@@ -220,7 +220,7 @@ export class PeerMesh extends React.Component<Props, State> {
       // Followup issue: https://github.com/mikeal/waudio/issues/2
       {
         const node = new Audio();
-        node.src = URL.createObjectURL(stream);
+        node.srcObject = stream;
       }
       // Update the state by immutably adding our new stream to the end of the
       // peer’s stream array.
@@ -252,7 +252,7 @@ export class PeerMesh extends React.Component<Props, State> {
             // Remove the stream using `filter` and a referential equality
             // check.
             streams: previousState.peers[address]!.streams.filter(
-              previousStream => previousStream === stream,
+              previousStream => previousStream !== stream,
             ),
           },
         },
