@@ -2,7 +2,7 @@
   "extends": "../typescript/config/base",
   "compilerOptions": {
     "noEmit": true,
-    "lib": ["dom", "es2015"]
+    "lib": ["dom", "es2015", "es2016", "es2017"]
   },
   "exclude": [
     "node_modules",

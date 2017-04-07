@@ -226,7 +226,7 @@ export class PeerMesh extends React.Component<Props, State> {
       });
     });
     // Watch the ICE connection state for any changes.
-    let reconnectTimer: number | null = null;
+    let reconnectTimer: any = null;
     connection.addEventListener('iceconnectionstatechange', event => {
       // Clear our reconnect timer if it exists.
       if (reconnectTimer !== null) {

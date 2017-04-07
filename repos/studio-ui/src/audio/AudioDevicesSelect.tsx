@@ -28,9 +28,9 @@ export class AudioDevicesSelect extends React.PureComponent<Props, {}> {
           }
           onChange={this.handleChange}
         >
-          {devices.map(device => (
+          {devices.map((device, i) => (
             <option key={device.deviceId} value={device.deviceId}>
-              {device.label}
+              {device.label || `Device ${i + 1}`}
             </option>
           ))}
         </select>
