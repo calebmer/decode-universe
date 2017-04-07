@@ -236,7 +236,6 @@ export class PeerMesh extends React.Component<Props, State> {
     address: string,
     peer: RTCPeerConnection,
   ): Promise<void> {
-    console.log('initiating negotiations')
     const { signalClient } = this.state;
     // Create the offer that we will send to the peer.
     const offer = await peer.createOffer();

@@ -9,6 +9,8 @@ type State = {
   selectedInputDeviceID: string | null,
 };
 
+const audioContext = new AudioContext();
+
 const lastSelectedInputDeviceIDKey =
   '@decode/studio-ui/lastSelectedInputDeviceIDKey';
 
@@ -54,7 +56,9 @@ export class StudioRoom extends React.Component<{}, State> {
                   backgroundColor: 'tomato',
                 }}>
                   {!audio.loading && (
-                    <AudioVisualization node={audio.source}/>
+                    <AudioVisualization
+                      node={audioContext.createMediaStreamSource(audio.stream)}
+                    />
                   )}
                 </div>
                 <PeerMesh
@@ -65,6 +69,17 @@ export class StudioRoom extends React.Component<{}, State> {
                       {peers.map(peer => (
                         <li key={peer.id}>
                           <p>{peer.id}</p>
+                          <div style={{
+                            width: '500px',
+                            height: '100px',
+                            backgroundColor: 'tomato',
+                          }}>
+                            {peer.stream !== null && (
+                              <AudioVisualization
+                                node={audioContext.createMediaStreamSource(peer.stream)}
+                              />
+                            )}
+                          </div>
                         </li>
                       ))}
                     </ul>
