@@ -1,4 +1,9 @@
-import { JoinRequestMessage, JoinResponseMessage } from '../shared/MessageTypes';
+import {
+  JoinRequestMessage,
+  JoinResponseMessage,
+  SignalOutgoingMessage,
+  SignalIncomingMessage,
+} from '../shared/MessageTypes';
 
 /**
  * Sets up a socket with everything it needs to connect and communicate with
@@ -25,8 +30,29 @@ function onConnection(socket: SocketIO.Socket): void {
     const otherSocketIDs = rooms[roomName] ? Object.keys(rooms[roomName].sockets) : [];
     // Join this socket to the room.
     socket.join(roomName);
+    // Log who joined the room.
+    console.log(`Socket "${socket.id}" joined room "${roomName}".`);
     // Send the other socket ids back to our socket.
     fn({ otherSocketIDs });
+  });
+
+  /**
+   * Handles a signal by matching outgoing messages sent by one socket to its
+   * recipient and then broadcasting that message as an incoming message.
+   */
+  socket.on('signal', (outMessage: SignalOutgoingMessage) => {
+    // Create the message we want to send to the recipient socket.
+    const inMessage: SignalIncomingMessage = {
+      from: socket.id,
+      signal: outMessage.signal,
+    };
+    // Log that a signal was sent.
+    console.log(
+      `Sending ${outMessage.signal.type} signal to socket "${outMessage.to}" ` +
+        `from socket "${inMessage.from}".`
+    );
+    // Actually send the message.
+    socket.broadcast.to(outMessage.to).emit('signal', inMessage);
   });
 }
 

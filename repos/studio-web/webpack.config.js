@@ -57,6 +57,7 @@ module.exports = {
     alias: {
       // Allow our code to import from other Decode repos.
       '@decode/studio-ui': path.join(__dirname, '../studio-ui/src'),
+      '@decode/studio-signal-exchange': path.join(__dirname, '../studio-signal-exchange/src'),
     },
   },
   module: {
