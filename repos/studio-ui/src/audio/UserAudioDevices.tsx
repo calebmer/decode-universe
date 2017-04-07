@@ -11,7 +11,10 @@ type DevicesState = {
 };
 
 type Props = {
-  render: (devices: DevicesState) => JSX.Element | null,
+  render: (
+    devices: DevicesState,
+    actions: { reload: () => void },
+  ) => JSX.Element | null,
 };
 
 type State = {
@@ -74,7 +77,16 @@ export class UserAudioDevices extends React.PureComponent<Props, State> {
     );
   }
 
+  /**
+   * The actions object that we pass into our child render function.
+   */
+  actions = {
+    reload: () => {
+      this.tryToUpdateDevices();
+    },
+  };
+
   render() {
-    return this.props.render(this.state.devices);
+    return this.props.render(this.state.devices, this.actions);
   }
 }
