@@ -37,6 +37,9 @@ module.exports = {
     // Include some extra scripts in development for a better DX.
     DEV && 'react-dev-utils/webpackHotDevClient',
     // TODO: DEV && 'react-dev-utils/crashOverlay',
+    // Include the WebRTC adapter because WebRTC implementations vary so wildly
+    // that we really need this compatibility layer for consistency.
+    'webrtc-adapter',
     // Include the main script for our app.
     path.join(__dirname, './src/index.tsx'),
   ].filter(Boolean),
