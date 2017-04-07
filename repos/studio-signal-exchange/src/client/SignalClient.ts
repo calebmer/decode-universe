@@ -14,14 +14,15 @@ export class SignalClient {
   private readonly roomName: string;
 
   /**
-   * The socket.io socket for this signalign client.
+   * The callback function that our client needs to call whenever we have
+   * a signal.
    */
-  private readonly socket: SocketIOClient.Socket;
+  private readonly onSignal: (from: string, signal: Signal) => void;
 
   /**
-   * Whether or not we have joined the room that we specified yet.
+   * The socket.io socket for this signalign client.
    */
-  private hasConnected: boolean;
+  private socket: SocketIOClient.Socket | null;
 
   constructor({
     roomName,
@@ -31,21 +32,21 @@ export class SignalClient {
     onSignal: (from: string, signal: Signal) => void,
   }) {
     this.roomName = roomName;
-    this.socket = socketIO('http://localhost:2000');
-    this.hasConnected = false;
-
-    // When we get a signal from the socket we want to let our listener know.
-    this.socket.on('signal', ({ from, signal }: SignalIncomingMessage) => {
-      onSignal(from, signal);
-    });
+    this.onSignal = onSignal;
+    this.socket = null;
   }
 
   /**
    * Disconnect the underlying socket. We will receive no more signals after
    * this method has been called.
+   *
+   * If the socket has already closed then this is a noop.
    */
   public close(): void {
-    this.socket.close();
+    if (this.socket !== null) {
+      this.socket.close();
+      this.socket = null;
+    }
   }
 
   /**
@@ -54,18 +55,21 @@ export class SignalClient {
    * start establishing peers if wanted.
    */
   public async connect(): Promise<Array<string>> {
-    // We don’t want to re-join so throw an error if we have already joined.
-    if (this.hasConnected) {
-      throw new Error('Already joined.');
+    if (this.socket !== null) {
+      throw new Error('Socket is already connected.');
     }
+    // Create the socket.
+    const socket = this.socket = socketIO('http://localhost:2000');
+    // When we get a signal from the socket we want to let our listener know.
+    socket.on('signal', ({ from, signal }: SignalIncomingMessage) => {
+      this.onSignal(from, signal);
+    });
     // The message we will send to join the room.
     const request: JoinRequestMessage = { roomName: this.roomName };
     // Get the response by sending our join message to the server.
     const response = await new Promise<JoinResponseMessage>(resolve => {
-      this.socket.emit('join', request, (response: any) => resolve(response));
+      socket.emit('join', request, (response: any) => resolve(response));
     });
-    // We succesfully connected!
-    this.hasConnected = true;
     // Return the other socket ids in the room we just joined.
     return response.otherSocketIDs;
   }
@@ -74,6 +78,9 @@ export class SignalClient {
    * Sends a signal to the designated recipient.
    */
   public send(to: string, signal: Signal): void {
+    if (this.socket === null) {
+      throw new Error('Socket has not been connected.');
+    }
     const message: SignalOutgoingMessage = { to, signal };
     this.socket.emit('signal', message);
   }
