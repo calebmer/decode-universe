@@ -14,7 +14,7 @@ type Peer = {
 
 type State = {
   signalClient: SignalClient,
-  peers: { [address: string]: PeerState },
+  peers: { [address: string]: PeerState | undefined },
 };
 
 type PeerState = {
@@ -23,6 +23,24 @@ type PeerState = {
   // the first one to our children.
   streams: Array<MediaStream>,
 };
+
+/**
+ * The configuration we use when creating `RTCPeerConnection` instances.
+ *
+ * There are some free STUN servers available to us. Let’s use them!
+ */
+const rtcConfig = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
+  ],
+};
+
+/**
+ * Allow 2 seconds for a reconnection before destroying a connection when it
+ * disconnects.
+ */
+const reconnectTimeout = 2000;
 
 export class PeerMesh extends React.Component<Props, State> {
   public state: State = {
@@ -62,7 +80,7 @@ export class PeerMesh extends React.Component<Props, State> {
     if (previousState.signalClient !== nextState.signalClient) {
       // Close the previous signal client and all of the previous peers.
       previousState.signalClient.close();
-      closePeers(previousState.peers);
+      closePeers(previousState);
       // Connect the new signal client.
       this.connectSignalClient().catch(error => console.error(error));
     }
@@ -70,15 +88,17 @@ export class PeerMesh extends React.Component<Props, State> {
     // our peers and add this new stream.
     if (previousProps.stream !== nextProps.stream) {
       for (const [address, peer] of Object.entries(nextState.peers)) {
-        if (previousProps.stream !== null) {
-          peer.connection.removeStream(previousProps.stream);
+        if (peer !== undefined) {
+          if (previousProps.stream !== null) {
+            peer.connection.removeStream(previousProps.stream);
+          }
+          if (nextProps.stream !== null) {
+            peer.connection.addStream(nextProps.stream);
+          }
+          // Because we changed the stream we will need to re-negotiate.
+          this.startPeerNegotiations(address, peer.connection)
+            .catch(error => console.error(error));
         }
-        if (nextProps.stream !== null) {
-          peer.connection.addStream(nextProps.stream);
-        }
-        // Because we changed the stream we will need to re-negotiate.
-        this.startPeerNegotiations(address, peer.connection)
-          .catch(error => console.error(error));
       }
     }
   }
@@ -86,7 +106,7 @@ export class PeerMesh extends React.Component<Props, State> {
   protected componentWillUnmount() {
     // Close our signal client and peers.
     this.state.signalClient.close();
-    closePeers(this.state.peers);
+    closePeers(this.state);
   }
 
   /**
@@ -141,7 +161,7 @@ export class PeerMesh extends React.Component<Props, State> {
   private createPeer(address: string): RTCPeerConnection {
     const { signalClient } = this.state;
     // Create the peer.
-    const connection = new RTCPeerConnection({});
+    const connection = new RTCPeerConnection(rtcConfig);
     // Everytime we get an ICE candidate, we want to send a signal to our peer
     // with the candidate information.
     connection.addEventListener('icecandidate', event => {
@@ -161,6 +181,28 @@ export class PeerMesh extends React.Component<Props, State> {
         sdpMLineIndex,
         candidate,
       });
+    });
+    // Watch the ICE connection state for any changes.
+    let reconnectTimer: number | null = null;
+    connection.addEventListener('iceconnectionstatechange', event => {
+      // Clear our reconnect timer if it exists.
+      if (reconnectTimer !== null) {
+        clearTimeout(reconnectTimer);
+      }
+      const { iceConnectionState } = connection;
+      // If the connection state is failed or closed then we want to destroy the
+      // peer no questions asked.
+      if (iceConnectionState === 'failed' || iceConnectionState === 'closed') {
+        this.destroyPeer(address);
+      }
+      // If we disconnected then we want to wait a bit before destroying the
+      // connection. This is because the connection may recover from a
+      // disconnect on spotty internet.
+      if (iceConnectionState === 'disconnected') {
+        reconnectTimer = setTimeout(() => {
+          this.destroyPeer(address);
+        }, reconnectTimeout);
+      }
     });
     // Every time our peer has a new stream available for us we need to take
     // that stream and use it to update our state.
@@ -187,7 +229,7 @@ export class PeerMesh extends React.Component<Props, State> {
           ...previousState.peers,
           [address]: {
             ...previousState.peers[address],
-            streams: [...previousState.peers[address].streams, stream],
+            streams: [...previousState.peers[address]!.streams, stream],
           },
         },
       }));
@@ -209,7 +251,7 @@ export class PeerMesh extends React.Component<Props, State> {
             ...previousState.peers[address],
             // Remove the stream using `filter` and a referential equality
             // check.
-            streams: previousState.peers[address].streams.filter(
+            streams: previousState.peers[address]!.streams.filter(
               previousStream => previousStream === stream,
             ),
           },
@@ -234,6 +276,7 @@ export class PeerMesh extends React.Component<Props, State> {
         },
       },
     }));
+    // Return the connection.
     return connection;
   }
 
@@ -261,6 +304,24 @@ export class PeerMesh extends React.Component<Props, State> {
   }
 
   /**
+   * Destroys a peer by closing its RTC connection and removing it from state.
+   */
+  private destroyPeer(address: string): void {
+    // Get the peer’s connection and close it.
+    const peer = this.state.peers[address];
+    if (peer !== undefined) {
+      peer.connection.close();
+    }
+    // Remove the peer from state.
+    this.setState((previousState: State): Partial<State> => ({
+      peers: {
+        ...previousState.peers,
+        [address]: undefined,
+      },
+    }));
+  }
+
+  /**
    * Handles a signal from our signaling client.
    */
   private async handleSignal(from: string, signal: Signal): Promise<void> {
@@ -270,7 +331,7 @@ export class PeerMesh extends React.Component<Props, State> {
     // Get the peer from our peers map, or create a new peer if no peer exists
     // in the map.
     let peer = peers[from] !== undefined
-      ? peers[from].connection
+      ? peers[from]!.connection
       : this.createPeer(from);
 
     switch (signal.type) {
@@ -322,9 +383,10 @@ export class PeerMesh extends React.Component<Props, State> {
     // Create our peers array from our peers object.
     const peers =
       Array.from(Object.entries(this.state.peers))
+        .filter(([, peer]) => peer !== undefined)
         .map(([address, peer]): Peer => ({
           id: address,
-          stream: peer.streams[0] || null,
+          stream: peer!.streams[0] || null,
         }));
     // Call our children render function with our peers.
     return this.props.render(peers);
@@ -334,8 +396,10 @@ export class PeerMesh extends React.Component<Props, State> {
 /**
  * Closes the peers object we have in state.
  */
-function closePeers(peers: { [address: string]: PeerState }): void {
-  for (const [, peer] of Object.entries(peers)) {
-    peer.connection.close();
+function closePeers(state: State): void {
+  for (const [, peer] of Object.entries(state.peers)) {
+    if (peer !== undefined) {
+      peer.connection.close();
+    }
   }
 }
