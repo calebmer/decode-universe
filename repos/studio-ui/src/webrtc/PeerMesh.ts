@@ -171,6 +171,15 @@ export class PeerMesh extends React.Component<Props, State> {
       if (stream === null) {
         return;
       }
+      // Hack, but Chrome won't work without this. We never do anything with
+      // this node, it's just a workaround.
+      //
+      // We took this from: https://github.com/mikeal/waudio/blob/2933809e05f840a4f34121e07f7e61633205906f/index.js#L9-L12
+      // Followup issue: https://github.com/mikeal/waudio/issues/2
+      {
+        const node = new Audio();
+        node.src = URL.createObjectURL(stream);
+      }
       // Update the state by immutably adding our new stream to the end of the
       // peer’s stream array.
       this.setState((previousState: State): Partial<State> => ({
