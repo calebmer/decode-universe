@@ -3,6 +3,7 @@ import { SignalClient, Signal } from '@decode/studio-signal-exchange/client';
 
 type Props = {
   roomName: string,
+  stream: MediaStream | null,
   render: (addresses: Array<string>) => JSX.Element,
 };
 
@@ -42,6 +43,7 @@ export class PeerMesh extends React.Component<Props, State> {
   }
 
   protected componentDidUpdate(previousProps: Props, previousState: State) {
+    const nextProps = this.props;
     const nextState = this.state;
     // If the previous state had a different `SignalClient` instance then need
     // to close the old instance and connect the new instance.
@@ -51,6 +53,23 @@ export class PeerMesh extends React.Component<Props, State> {
       closePeers(previousState.peers);
       // Connect the new signal client.
       this.connectSignalClient().catch(error => console.error(error));
+    }
+    // If the stream updated then we need to remove all of the old streams on
+    // our peers and add this new stream.
+    if (previousProps.stream !== nextProps.stream) {
+      for (const [address, peer] of Object.entries(nextState.peers)) {
+        if (peer !== undefined) {
+          if (previousProps.stream !== null) {
+            peer.removeStream(previousProps.stream);
+          }
+          if (nextProps.stream !== null) {
+            peer.addStream(nextProps.stream);
+          }
+          // Because we changed the stream we will need to re-negotiate.
+          this.startPeerNegotiations(address, peer)
+            .catch(error => console.error(error));
+        }
+      }
     }
   }
 
@@ -85,6 +104,7 @@ export class PeerMesh extends React.Component<Props, State> {
    * This method has a lot of side-effects!
    */
   private async connectSignalClient(): Promise<void> {
+    const { stream } = this.props;
     const { signalClient } = this.state;
     // Connect the new signal client.
     const addresses = await signalClient.connect()
@@ -92,28 +112,58 @@ export class PeerMesh extends React.Component<Props, State> {
     await Promise.all(addresses.map(async address => {
       // Create the peer.
       const peer = this.createPeer(address);
-      // Create the offer that we will send to the peer.
-      const offer = await peer.createOffer();
-      await peer.setLocalDescription(offer);
-      // Type-check for TypeScript.
-      if (offer.sdp === null) {
-        throw new Error('Expected an `sdp` in the created offer.');
+      // Start peer negotiations, but only if there is a stream!
+      if (stream !== null) {
+        await this.startPeerNegotiations(address, peer);
       }
-      // Send the offer to the provided address using our new signal client.
-      signalClient.send(address, {
-        type: 'offer',
-        sdp: offer.sdp,
-      });
     }));
   }
 
   /**
    * Creates a new peer connection and enqueues a state update with `setState`
    * adding that peer to the `peers` state map.
+   *
+   * Only one side of the peer-to-peer connection is allowed to make offers.
+   * That would be the peer who connects to the room last. For those peers we
+   * will create their connection object with the second `canMakeOffers` set to
+   * true.
    */
   private createPeer(address: string): RTCPeerConnection {
+    const { stream } = this.props;
+    const { signalClient } = this.state;
     // Create the peer.
     const peer = new RTCPeerConnection({});
+    // Everytime we get an ICE candidate, we want to send a signal to our peer
+    // with the candidate information.
+    peer.addEventListener('icecandidate', event => {
+      // Skip if the event candidate is null.
+      if (event.candidate === null) {
+        return;
+      }
+      const { sdpMLineIndex, candidate } = event.candidate;
+      // Make sure that the values we need are not null. If they are then we can
+      // just skip this event.
+      if (candidate === null || sdpMLineIndex === null) {
+        return;
+      }
+      // Send a candidate signal to our peer.
+      signalClient.send(address, {
+        type: 'candidate',
+        sdpMLineIndex,
+        candidate,
+      });
+    });
+    peer.addEventListener('addstream', event => {
+      console.log(event)
+    });
+    peer.addEventListener('removestream', event => {
+      console.log(event);
+    });
+    // Add the stream we were given in props to the peer connection we are
+    // creating. This will trigger an `icecandidate` event.
+    if (stream !== null) {
+      peer.addStream(stream);
+    }
     // Add the peer to our map of addresses to peers.
     this.setState(previousState => ({
       peers: {
@@ -122,6 +172,30 @@ export class PeerMesh extends React.Component<Props, State> {
       },
     }));
     return peer;
+  }
+
+  /**
+   * Starts negotiations with the provided peer by creating and sending an
+   * offer.
+   */
+  private async startPeerNegotiations(
+    address: string,
+    peer: RTCPeerConnection,
+  ): Promise<void> {
+    console.log('initiating negotiations')
+    const { signalClient } = this.state;
+    // Create the offer that we will send to the peer.
+    const offer = await peer.createOffer();
+    await peer.setLocalDescription(offer);
+    // Type-check for TypeScript.
+    if (offer.sdp === null) {
+      throw new Error('Expected an `sdp` in the created offer.');
+    }
+    // Send the offer to the provided address using our new signal client.
+    signalClient.send(address, {
+      type: 'offer',
+      sdp: offer.sdp,
+    });
   }
 
   /**
@@ -167,6 +241,17 @@ export class PeerMesh extends React.Component<Props, State> {
       case 'answer': {
         await peer.setRemoteDescription(new RTCSessionDescription(signal));
         break;
+      }
+
+      // Whenever we get a candidate signal, we need to add the candidate to our
+      // peer.
+      case 'candidate': {
+        const { sdpMLineIndex, candidate } = signal;
+        peer.addIceCandidate(new RTCIceCandidate({
+          sdpMLineIndex,
+          candidate,
+        }));
+        break
       }
     }
   }

@@ -3,6 +3,7 @@ import { UserAudioDevices } from './audio/UserAudioDevices';
 import { UserAudio } from './audio/UserAudio';
 import { AudioVisualization } from './audio/AudioVisualization';
 import { AudioDevicesSelect } from './audio/AudioDevicesSelect';
+import { PeerMesh } from './webrtc/PeerMesh';
 
 type State = {
   selectedInputDeviceID: string | null,
@@ -46,14 +47,27 @@ export class StudioRoom extends React.Component<{}, State> {
             audio.rejected ? (
               <div>Error!</div>
             ) : (
-              <div style={{
-                width: '500px',
-                height: '100px',
-                backgroundColor: 'tomato',
-              }}>
-                {!audio.loading && (
-                  <AudioVisualization node={audio.source}/>
-                )}
+              <div>
+                <div style={{
+                  width: '500px',
+                  height: '100px',
+                  backgroundColor: 'tomato',
+                }}>
+                  {!audio.loading && (
+                    <AudioVisualization node={audio.source}/>
+                  )}
+                </div>
+                <PeerMesh
+                  roomName="hello world"
+                  stream={audio.stream}
+                  render={addresses => (
+                    <ul>
+                      {addresses.map(address => (
+                        <li key={address}>{address}</li>
+                      ))}
+                    </ul>
+                  )}
+                />
               </div>
             )
           )}

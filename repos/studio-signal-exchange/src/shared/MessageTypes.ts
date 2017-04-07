@@ -47,10 +47,12 @@ export type SignalIncomingMessage = {
  *    for an waits for an `AnswerSignal`.
  * 3. Each of the peers send an `AnswerSignal` if they succesfully created a
  *    peer connection in response to the `OfferSignal`.
+ * 4. TODO: What does `CandidateSignal` *really* do?
  */
 export type Signal =
   OfferSignal |
-  AnswerSignal;
+  AnswerSignal |
+  CandidateSignal;
 
 export type OfferSignal = {
   readonly type: 'offer',
@@ -60,4 +62,10 @@ export type OfferSignal = {
 export type AnswerSignal = {
   readonly type: 'answer',
   readonly sdp: string,
+};
+
+export type CandidateSignal = {
+  readonly type: 'candidate',
+  readonly sdpMLineIndex: number,
+  readonly candidate: string,
 };

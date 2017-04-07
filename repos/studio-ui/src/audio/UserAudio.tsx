@@ -114,7 +114,7 @@ export class UserAudio extends React.PureComponent<Props, State> {
             stream,
             source,
           },
-        })
+        });
       },
       // Otherwise, handle the error. The user probably did not give us
       // audio permissions.
