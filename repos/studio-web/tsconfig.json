@@ -8,12 +8,14 @@
     "jsx": "react",
     "baseUrl": ".",
     "paths": {
-      "@decode/studio-ui/*": ["../studio-ui/src/*"]
+      "@decode/studio-ui/*": ["../studio-ui/src/*"],
+      "@decode/studio-signal-exchange/*": ["../studio-signal-exchange/src/*"]
     }
   },
   "include": [
     "./src",
     "../studio-ui/src",
+    "../studio-signal-exchange/src",
     "../typescript/typings"
   ]
 }

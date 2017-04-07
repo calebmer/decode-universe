@@ -2,10 +2,11 @@
   "extends": "../typescript/config/base",
   "compilerOptions": {
     "noEmit": true,
-    "baseUrl": "./src",
     "jsx": "react",
+    "baseUrl": ".",
     "paths": {
-      "@decode/studio-ui/*": ["../../studio-ui/src/*"]
+      "@decode/studio-ui/*": ["../studio-ui/src/*"],
+      "@decode/studio-signal-exchange/*": ["../studio-signal-exchange/src/*"]
     }
   },
   "exclude": [

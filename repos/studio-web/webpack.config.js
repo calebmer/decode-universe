@@ -67,6 +67,7 @@ module.exports = {
         include: [
           path.join(__dirname, './src'),
           path.join(__dirname, '../studio-ui/src'),
+          path.join(__dirname, '../studio-signal-exchange/src'),
         ],
         loader: 'awesome-typescript-loader',
       },
@@ -78,6 +79,7 @@ module.exports = {
         include: [
           path.join(__dirname, './src'),
           path.join(__dirname, '../studio-ui/src'),
+          path.join(__dirname, '../studio-signal-exchange/src'),
         ],
         loader: 'source-map-loader',
       },

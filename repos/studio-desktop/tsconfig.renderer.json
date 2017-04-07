@@ -2,11 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "target": "es2015",
-    "baseUrl": ".",
-    "paths": {
-      "@decode/studio-ui/*": ["../studio-ui/src/*"]
-    }
+    "target": "es2015"
   },
   "include": [
     "./src/renderer",
