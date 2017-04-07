@@ -12,7 +12,8 @@
     }
   },
   "include": [
-    "./src/renderer",
-    "../../repos/typescript/typings"
+    "./src",
+    "../studio-ui/src",
+    "../typescript/typings"
   ]
 }
