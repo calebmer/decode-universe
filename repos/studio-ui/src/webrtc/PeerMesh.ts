@@ -48,6 +48,20 @@ export class PeerMesh extends React.Component<Props, State> {
     peers: {},
   };
 
+  /**
+   * This is part of a total hack that we do to get schedule negotiations in
+   * race conditions. This `Set` tracks all of the peer addresses that we have
+   * *initiated* signal negotiations for, and so for these addresses we are
+   * waiting for an answer.
+   *
+   * This `Set` is mostly reliable. If an error occurs this set has no idea.
+   *
+   * This `Set` is used in `componentDidUpdate` when we are determining when to
+   * restart negotiations after streams have been changed.
+   */
+  // TODO: Find a more durable solution to this problem.
+  private peersWaitingForAnswer = new Set<string>();
+
   componentDidMount() {
     // Connect our signal client now that the component has mounted.
     this.connectSignalClient().catch(error => console.error(error));
@@ -89,15 +103,44 @@ export class PeerMesh extends React.Component<Props, State> {
     if (previousProps.stream !== nextProps.stream) {
       for (const [address, peer] of Object.entries(nextState.peers)) {
         if (peer !== undefined) {
+          const { connection } = peer;
+          // If we had a stream previously then we need to remove that stream.
           if (previousProps.stream !== null) {
-            peer.connection.removeStream(previousProps.stream);
+            connection.removeStream(previousProps.stream);
           }
+          // If we have a new stream then we want to add that.
           if (nextProps.stream !== null) {
-            peer.connection.addStream(nextProps.stream);
+            connection.addStream(nextProps.stream);
           }
-          // Because we changed the stream we will need to re-negotiate.
-          this.startPeerNegotiations(address, peer.connection)
-            .catch(error => console.error(error));
+          // HACK WARNING. In some race-casey conditions peer negotiations will
+          // already be happening when we try to start new peer negotations. In
+          // that case we want to wait for the other negotiations complete
+          // before we start new negotiations. To do this we use a hacky
+          // `peersWaitingForAnswer` `Set` to hold all of the peer addresses
+          // that we are pretty sure are currently waiting for an answer.
+          //
+          // If we are not currently waiting for an answer from the peer with a
+          // given address then we can immeadiately start negotiations.
+          //
+          // If we are waiting for an answer then we setup a really basic
+          // interval (this is where things start getting really hacky). If the
+          // interval runs and we are still waiting for an answer nothing will
+          // happen. The interval will keep running until we are no longer
+          // waiting for an answer and can “safely” start negotiations.
+          //
+          // TODO: Find a better solution.
+          if (!this.peersWaitingForAnswer.has(address)) {
+            this.startPeerNegotiations(address, peer.connection)
+              .catch(error => console.error(error));
+          } else {
+            const intervalID = setInterval(() => {
+              if (!this.peersWaitingForAnswer.has(address)) {
+                clearTimeout(intervalID);
+                this.startPeerNegotiations(address, peer.connection)
+                  .catch(error => console.error(error));
+              }
+            }, 100);
+          }
         }
       }
     }
@@ -288,6 +331,9 @@ export class PeerMesh extends React.Component<Props, State> {
     address: string,
     peer: RTCPeerConnection,
   ): Promise<void> {
+    // Mark this address as a peer that is currently signaling.
+    this.peersWaitingForAnswer.add(address);
+
     const { signalClient } = this.state;
     // Create the offer that we will send to the peer.
     const offer = await peer.createOffer();
@@ -363,6 +409,8 @@ export class PeerMesh extends React.Component<Props, State> {
       // business for peer-to-peer communciation!
       case 'answer': {
         await peer.setRemoteDescription(new RTCSessionDescription(signal));
+        // We got an answer. We can delete it from the set!
+        this.peersWaitingForAnswer.delete(from);
         break;
       }
 
