@@ -77,12 +77,12 @@ export class AudioVisualization extends React.Component<Props, {}> {
 
     // Cut off the last x% of bars as it seems that in practice they rarely
     // have data.
-    this.barsCount = Math.round(analyserData.length - (analyserData.length * 0.8));
+    this.barsCount = Math.round(analyserData.length - (analyserData.length * 0.7));
   }
 
   render() {
     const { barsCount } = this;
-    const barMargin = 0.75;
+    const barMargin = 0.6;
     const barJsxNodes: Array<JSX.Element> = [];
 
     for (let i = 0; i < barsCount; i++) {
