@@ -4,12 +4,24 @@ import { SignalClient, Signal } from '@decode/studio-signal-exchange/client';
 type Props = {
   roomName: string,
   stream: MediaStream | null,
-  render: (addresses: Array<string>) => JSX.Element,
+  render: (peers: Array<Peer>) => JSX.Element,
+};
+
+type Peer = {
+  id: string,
+  stream: MediaStream | null,
 };
 
 type State = {
   signalClient: SignalClient,
-  peers: { [address: string]: RTCPeerConnection },
+  peers: { [address: string]: PeerState },
+};
+
+type PeerState = {
+  connection: RTCPeerConnection,
+  // We allow a peer to give us multiple streams, but we only end up delivering
+  // the first one to our children.
+  streams: Array<MediaStream>,
 };
 
 export class PeerMesh extends React.Component<Props, State> {
@@ -59,13 +71,13 @@ export class PeerMesh extends React.Component<Props, State> {
     if (previousProps.stream !== nextProps.stream) {
       for (const [address, peer] of Object.entries(nextState.peers)) {
         if (previousProps.stream !== null) {
-          peer.removeStream(previousProps.stream);
+          peer.connection.removeStream(previousProps.stream);
         }
         if (nextProps.stream !== null) {
-          peer.addStream(nextProps.stream);
+          peer.connection.addStream(nextProps.stream);
         }
         // Because we changed the stream we will need to re-negotiate.
-        this.startPeerNegotiations(address, peer)
+        this.startPeerNegotiations(address, peer.connection)
           .catch(error => console.error(error));
       }
     }
@@ -127,13 +139,12 @@ export class PeerMesh extends React.Component<Props, State> {
    * true.
    */
   private createPeer(address: string): RTCPeerConnection {
-    const { stream } = this.props;
     const { signalClient } = this.state;
     // Create the peer.
-    const peer = new RTCPeerConnection({});
+    const connection = new RTCPeerConnection({});
     // Everytime we get an ICE candidate, we want to send a signal to our peer
     // with the candidate information.
-    peer.addEventListener('icecandidate', event => {
+    connection.addEventListener('icecandidate', event => {
       // Skip if the event candidate is null.
       if (event.candidate === null) {
         return;
@@ -151,25 +162,70 @@ export class PeerMesh extends React.Component<Props, State> {
         candidate,
       });
     });
-    peer.addEventListener('addstream', event => {
-      console.log(event)
+    // Every time our peer has a new stream available for us we need to take
+    // that stream and use it to update our state.
+    connection.addEventListener('addstream', event => {
+      // Extract the stream.
+      const { stream } = event;
+      // If the stream was null then return!
+      if (stream === null) {
+        return;
+      }
+      // Update the state by immutably adding our new stream to the end of the
+      // peer’s stream array.
+      this.setState((previousState: State): Partial<State> => ({
+        peers: {
+          ...previousState.peers,
+          [address]: {
+            ...previousState.peers[address],
+            streams: [...previousState.peers[address].streams, stream],
+          },
+        },
+      }));
     });
-    peer.addEventListener('removestream', event => {
-      console.log(event);
+    // Whenever our peer wants to remove a stream we respect that request and
+    // remove it from our peer state.
+    connection.addEventListener('removestream', event => {
+      // Extract the stream.
+      const { stream } = event;
+      // If the stream was null then return!
+      if (stream === null) {
+        return;
+      }
+      // Immutably remove our stream from the streams array.
+      this.setState((previousState: State): Partial<State> => ({
+        peers: {
+          ...previousState.peers,
+          [address]: {
+            ...previousState.peers[address],
+            // Remove the stream using `filter` and a referential equality
+            // check.
+            streams: previousState.peers[address].streams.filter(
+              previousStream => previousStream === stream,
+            ),
+          },
+        },
+      }));
     });
-    // Add the stream we were given in props to the peer connection we are
-    // creating. This will trigger an `icecandidate` event.
-    if (stream !== null) {
-      peer.addStream(stream);
+    {
+      const { stream } = this.props;
+      // Add the stream we were given in props to the peer connection we are
+      // creating. This will trigger an `icecandidate` event.
+      if (stream !== null) {
+        connection.addStream(stream);
+      }
     }
     // Add the peer to our map of addresses to peers.
-    this.setState(previousState => ({
+    this.setState((previousState: State): Partial<State> => ({
       peers: {
         ...previousState.peers,
-        [address]: peer,
+        [address]: {
+          connection,
+          streams: [],
+        },
       },
     }));
-    return peer;
+    return connection;
   }
 
   /**
@@ -203,12 +259,12 @@ export class PeerMesh extends React.Component<Props, State> {
     // It is actually important that we destructure up here. This ensures that
     // `this.state` will not change under us while we do asynchronous work.
     const { signalClient, peers } = this.state;
-    // Get the peer from our peers map.
-    let peer = peers[from];
-    // If the peer does not exist we need to create a new peer.
-    if (peer === undefined) {
-      peer = this.createPeer(from);
-    }
+    // Get the peer from our peers map, or create a new peer if no peer exists
+    // in the map.
+    let peer = peers[from] !== undefined
+      ? peers[from].connection
+      : this.createPeer(from);
+
     switch (signal.type) {
       // When we get an offer singal then we want to setup our peer for that
       // offer by setting the remote description with the offer. After that we
@@ -255,15 +311,23 @@ export class PeerMesh extends React.Component<Props, State> {
   }
 
   public render() {
-    return this.props.render(Object.keys(this.state.peers));
+    // Create our peers array from our peers object.
+    const peers =
+      Array.from(Object.entries(this.state.peers))
+        .map(([address, peer]): Peer => ({
+          id: address,
+          stream: peer.streams[0] || null,
+        }));
+    // Call our children render function with our peers.
+    return this.props.render(peers);
   }
 }
 
 /**
  * Closes the peers object we have in state.
  */
-function closePeers(peers: { [address: string]: RTCPeerConnection }): void {
+function closePeers(peers: { [address: string]: PeerState }): void {
   for (const [, peer] of Object.entries(peers)) {
-    peer.close();
+    peer.connection.close();
   }
 }

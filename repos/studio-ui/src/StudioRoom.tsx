@@ -60,10 +60,12 @@ export class StudioRoom extends React.Component<{}, State> {
                 <PeerMesh
                   roomName="hello world"
                   stream={audio.stream}
-                  render={addresses => (
+                  render={peers => (
                     <ul>
-                      {addresses.map(address => (
-                        <li key={address}>{address}</li>
+                      {peers.map(peer => (
+                        <li key={peer.id}>
+                          <p>{peer.id}</p>
+                        </li>
                       ))}
                     </ul>
                   )}
