@@ -9,7 +9,7 @@ type Props = {
 
 type State = {
   signalClient: SignalClient,
-  peers: { [address: string]: RTCPeerConnection | undefined },
+  peers: { [address: string]: RTCPeerConnection },
 };
 
 export class PeerMesh extends React.Component<Props, State> {
@@ -58,17 +58,15 @@ export class PeerMesh extends React.Component<Props, State> {
     // our peers and add this new stream.
     if (previousProps.stream !== nextProps.stream) {
       for (const [address, peer] of Object.entries(nextState.peers)) {
-        if (peer !== undefined) {
-          if (previousProps.stream !== null) {
-            peer.removeStream(previousProps.stream);
-          }
-          if (nextProps.stream !== null) {
-            peer.addStream(nextProps.stream);
-          }
-          // Because we changed the stream we will need to re-negotiate.
-          this.startPeerNegotiations(address, peer)
-            .catch(error => console.error(error));
+        if (previousProps.stream !== null) {
+          peer.removeStream(previousProps.stream);
         }
+        if (nextProps.stream !== null) {
+          peer.addStream(nextProps.stream);
+        }
+        // Because we changed the stream we will need to re-negotiate.
+        this.startPeerNegotiations(address, peer)
+          .catch(error => console.error(error));
       }
     }
   }
@@ -264,10 +262,8 @@ export class PeerMesh extends React.Component<Props, State> {
 /**
  * Closes the peers object we have in state.
  */
-function closePeers(peers: { [address: string]: RTCPeerConnection | undefined }): void {
+function closePeers(peers: { [address: string]: RTCPeerConnection }): void {
   for (const [, peer] of Object.entries(peers)) {
-    if (peer !== undefined) {
-      peer.close();
-    }
+    peer.close();
   }
 }
