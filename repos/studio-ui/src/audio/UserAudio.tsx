@@ -5,16 +5,19 @@ type AudioState = {
   readonly rejected: false,
   readonly error: null,
   readonly stream: null,
+  readonly previousStream: MediaStream | null,
 } | {
   readonly loading: false,
   readonly rejected: true,
   readonly error: any,
   readonly stream: null,
+  readonly previousStream: null,
 } | {
   readonly loading: false,
   readonly rejected: false,
   readonly error: null,
   readonly stream: MediaStream,
+  readonly previousStream: null,
 };
 
 type Props = {
@@ -27,24 +30,18 @@ type State = {
 };
 
 /**
- * We use a single instance of loading data so that if we are loading and we set
- * the state to loading again then the component won’t update because the
- * loading states will be referentially equal.
- */
-const loadingAudio: AudioState = {
-  loading: true,
-  rejected: false,
-  error: null,
-  stream: null,
-};
-
-/**
  * Gets an audio source object for the current user’s browser with
  * `getUserMedia`.
  */
 export class UserAudio extends React.PureComponent<Props, State> {
   state: State = {
-    audio: loadingAudio,
+    audio: {
+      loading: true,
+      rejected: false,
+      error: null,
+      stream: null,
+      previousStream: null,
+    },
   };
 
   componentDidMount() {
@@ -66,8 +63,24 @@ export class UserAudio extends React.PureComponent<Props, State> {
   tryToGetUserAudioNode() {
     const { inputDeviceID } = this.props;
 
-    // Set state to loading...
-    this.setState({ audio: loadingAudio });
+    // Set state to loading if we are not currently loading.
+    this.setState((previousState: State): Partial<State> => {
+      // If we are currently loading then update nothing.
+      if (previousState.audio.loading === true) {
+        return {};
+      }
+      return {
+        audio: {
+          loading: true,
+          rejected: false,
+          error: null,
+          stream: null,
+          // Set the previous stream to whatever the stream was in the
+          // previous state.
+          previousStream: previousState.audio.stream,
+        },
+      };
+    });
 
     // Get user media. We only want audio so `video` is set to false.
     navigator.mediaDevices.getUserMedia({
@@ -89,6 +102,7 @@ export class UserAudio extends React.PureComponent<Props, State> {
             rejected: false,
             error: null,
             stream,
+            previousStream: null,
           },
         });
       },
@@ -102,6 +116,7 @@ export class UserAudio extends React.PureComponent<Props, State> {
             rejected: true,
             error,
             stream: null,
+            previousStream: null,
           },
         });
       },

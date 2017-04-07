@@ -434,7 +434,8 @@ export class PeerMesh extends React.Component<Props, State> {
         .filter(([, peer]) => peer !== undefined)
         .map(([address, peer]): Peer => ({
           id: address,
-          stream: peer!.streams[0] || null,
+          // Use the first active stream.
+          stream: peer!.streams.find(stream => stream.active) || null,
         }));
     // Call our children render function with our peers.
     return this.props.render(peers);
