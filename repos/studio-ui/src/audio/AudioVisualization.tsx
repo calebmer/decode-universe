@@ -9,7 +9,7 @@ type Props = {
 /**
  * Renders an `<svg>` visualization of an `AudioNode` that fills its container.
  */
-export class AudioVisualization extends React.Component<Props, {}> {
+export class AudioVisualization extends React.PureComponent<Props, {}> {
   /**
    * An instance of `AnalyserNode` we use in conjunction with the `analyserData`
    * array to get the frequency data of the `AudioNode` passed in as a prop.

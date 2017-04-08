@@ -1,9 +1,9 @@
 import * as React from 'react';
-import { UserAudioDevices, DevicesState } from './audio/UserAudioDevices';
-import { UserAudio, AudioState } from './audio/UserAudio';
+import { UserAudioDevices } from './audio/UserAudioDevices';
+import { UserAudio } from './audio/UserAudio';
 import { AudioVisualization } from './audio/AudioVisualization';
 import { AudioDevicesSelect } from './audio/AudioDevicesSelect';
-import { PeerMesh, Peer } from './webrtc/PeerMesh';
+import { PeerMesh } from './webrtc/PeerMesh';
 
 type State = {
   name: string,
@@ -73,7 +73,7 @@ export class StudioRoom extends React.Component<{}, State> {
                 }}>
                   {!audio.loading && (
                     <AudioVisualization
-                      node={audioContext.createMediaStreamSource(audio.stream)}
+                      node={getMediaStreamSource(audio.stream)}
                     />
                   )}
                 </div>
@@ -81,7 +81,7 @@ export class StudioRoom extends React.Component<{}, State> {
                   roomName="hello world"
                   data={{ name: this.state.name || null }}
                   stream={audio.stream || audio.previousStream}
-                  render={(peers: Array<Peer>) => (
+                  render={peers => (
                     <ul>
                       {peers.map(peer => (
                         <li key={peer.id}>
@@ -93,7 +93,7 @@ export class StudioRoom extends React.Component<{}, State> {
                           }}>
                             {peer.stream !== null && (
                               <AudioVisualization
-                                node={audioContext.createMediaStreamSource(peer.stream)}
+                                node={getMediaStreamSource(peer.stream)}
                               />
                             )}
                           </div>
@@ -109,4 +109,13 @@ export class StudioRoom extends React.Component<{}, State> {
       </div>
     );
   }
+}
+
+// Temporary function to get caching some behaviors.
+const cache = new WeakMap<MediaStream, MediaStreamAudioSourceNode>();
+function getMediaStreamSource(stream: MediaStream): MediaStreamAudioSourceNode {
+  if (!cache.has(stream)) {
+    cache.set(stream, audioContext.createMediaStreamSource(stream));
+  }
+  return cache.get(stream)!;
 }
