@@ -23,6 +23,7 @@
     "transform": {
       ".(js|ts|tsx)": "<rootDir>/node_modules/ts-jest/preprocessor.js"
     },
+    "testResultsProcessor": "<rootDir>/node_modules/ts-jest/coverageprocessor.js",
     "roots": [
       "<rootDir>/src"
     ],

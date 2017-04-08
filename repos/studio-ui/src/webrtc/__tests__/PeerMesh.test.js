@@ -21,6 +21,8 @@ global.RTCPeerConnection = jest.fn(class RTCPeerConnection {
   setRemoteDescription = jest.fn();
   addIceCandidate = jest.fn();
   createDataChannel = jest.fn(() => new RTCDataChannel());
+  addStream = jest.fn();
+  removeStream = jest.fn();
   close = jest.fn();
 
   __eventListeners = new Map();
@@ -470,4 +472,128 @@ test('closes the previous signal client and then create a new one if the room na
   expect(signalClient2.close).not.toHaveBeenCalled();
   wrapper.unmount();
   expect(signalClient2.close).toHaveBeenCalled();
+});
+
+test('sends data diffs to channels when component updates', () => {
+  SignalClient.mockClear();
+  SignalClient.prototype.connect.mockReturnValue([]);
+  const wrapper = mount(
+    <PeerMesh
+      roomName="foo"
+      data={{ name: 'Test' }}
+      stream={null}
+      render={() => null}
+    />
+  );
+  const channel1 = { send: jest.fn(), close: jest.fn() };
+  const channel2 = { send: jest.fn(), close: jest.fn() };
+  wrapper.setState({
+    peers: {
+      address1: {
+        connection: new RTCPeerConnection(),
+        channel: channel1,
+        streams: [],
+      },
+      address2: {
+        connection: new RTCPeerConnection(),
+        channel: channel2,
+        streams: [],
+      },
+    },
+  });
+  expect(channel1.send.mock.calls).toEqual([]);
+  expect(channel2.send.mock.calls).toEqual([]);
+  wrapper.setProps({
+    data: {
+      name: 'bar',
+    },
+  });
+  expect(channel1.send.mock.calls).toEqual([
+    [JSON.stringify({ name: 'bar' })],
+  ]);
+  expect(channel2.send.mock.calls).toEqual([
+    [JSON.stringify({ name: 'bar' })],
+  ]);
+  wrapper.setProps({
+    data: {
+      x: 1,
+      y: 2,
+      z: 3,
+      name: 'bar',
+    },
+  });
+  expect(channel1.send.mock.calls).toEqual([
+    [JSON.stringify({ name: 'bar' })],
+    [JSON.stringify({ x: 1, y: 2, z: 3 })],
+  ]);
+  expect(channel2.send.mock.calls).toEqual([
+    [JSON.stringify({ name: 'bar' })],
+    [JSON.stringify({ x: 1, y: 2, z: 3 })],
+  ]);
+  wrapper.setProps({
+    data: {
+      x: 3,
+      y: 2,
+      z: 1,
+      name: 'bar',
+    },
+  });
+  expect(channel1.send.mock.calls).toEqual([
+    [JSON.stringify({ name: 'bar' })],
+    [JSON.stringify({ x: 1, y: 2, z: 3 })],
+    [JSON.stringify({ x: 3, z: 1 })],
+  ]);
+  expect(channel2.send.mock.calls).toEqual([
+    [JSON.stringify({ name: 'bar' })],
+    [JSON.stringify({ x: 1, y: 2, z: 3 })],
+    [JSON.stringify({ x: 3, z: 1 })],
+  ]);
+  expect(channel1.close).not.toHaveBeenCalled();
+  expect(channel2.close).not.toHaveBeenCalled();
+  wrapper.unmount();
+  expect(channel1.close).toHaveBeenCalled();
+  expect(channel2.close).toHaveBeenCalled();
+});
+
+test('adds and removes streams when streams change', () => {
+  SignalClient.mockClear();
+  SignalClient.prototype.connect.mockReturnValue([]);
+  const wrapper = mount(
+    <PeerMesh
+      roomName="foo"
+      data={{ name: 'Test' }}
+      stream={null}
+      render={() => null}
+    />
+  );
+  const connection1 = new RTCPeerConnection();
+  const connection2 = new RTCPeerConnection();
+  const stream1 = Symbol('stream1');
+  const stream2 = Symbol('stream2');
+  wrapper.setState({
+    peers: {
+      address1: { connection: connection1, channel: null, streams: [] },
+      address2: { connection: connection2, channel: null, streams: [] },
+    },
+  });
+  expect(connection1.removeStream.mock.calls).toEqual([]);
+  expect(connection1.addStream.mock.calls).toEqual([]);
+  expect(connection2.removeStream.mock.calls).toEqual([]);
+  expect(connection2.addStream.mock.calls).toEqual([]);
+  wrapper.setProps({ stream: stream1 });
+  expect(connection1.removeStream.mock.calls).toEqual([]);
+  expect(connection1.addStream.mock.calls).toEqual([[stream1]]);
+  expect(connection2.removeStream.mock.calls).toEqual([]);
+  expect(connection2.addStream.mock.calls).toEqual([[stream1]]);
+  wrapper.setProps({ stream: stream2 });
+  expect(connection1.removeStream.mock.calls).toEqual([[stream1]]);
+  expect(connection1.addStream.mock.calls).toEqual([[stream1], [stream2]]);
+  expect(connection2.removeStream.mock.calls).toEqual([[stream1]]);
+  expect(connection2.addStream.mock.calls).toEqual([[stream1], [stream2]]);
+  wrapper.setProps({ stream: null });
+  expect(connection1.removeStream.mock.calls).toEqual([[stream1], [stream2]]);
+  expect(connection1.addStream.mock.calls).toEqual([[stream1], [stream2]]);
+  expect(connection2.removeStream.mock.calls).toEqual([[stream1], [stream2]]);
+  expect(connection2.addStream.mock.calls).toEqual([[stream1], [stream2]]);
+  wrapper.unmount();
 });
