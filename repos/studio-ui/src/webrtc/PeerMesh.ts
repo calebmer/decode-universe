@@ -5,7 +5,7 @@ type Props = {
   roomName: string,
   data: PeerData,
   stream: MediaStream | null,
-  render: (peers: Array<Peer>) => JSX.Element,
+  render: (peers: Array<Peer>) => JSX.Element | null,
 };
 
 export type Peer = {
@@ -220,7 +220,7 @@ export class PeerMesh extends React.Component<Props, State> {
       // The timer we use to debounce negotiations.
       let debounceTimer: any = null;
 
-      connection.addEventListener('negotiationneeded', event => {
+      connection.addEventListener('negotiationneeded', () => {
         // If this is the first negotiation...
         if (firstNegotiation === true) {
           // We will never have another first negotiation.
@@ -463,9 +463,7 @@ export class PeerMesh extends React.Component<Props, State> {
   private destroyPeer(address: string): void {
     // Get the peer’s connection and close it.
     const peer = this.state.peers[address];
-    if (peer !== undefined) {
-      peer.connection.close();
-    }
+    closePeer(peer);
     // Remove the peer from state.
     this.setState((previousState: State): Partial<State> => ({
       peers: {
@@ -484,7 +482,7 @@ export class PeerMesh extends React.Component<Props, State> {
     const { signalClient, peers } = this.state;
     // Get the peer from our peers map, or create a new peer if no peer exists
     // in the map.
-    let peer = peers[from] !== undefined
+    let connection = peers[from] !== undefined
       ? peers[from]!.connection
       : this.createPeer(from, false);
 
@@ -495,10 +493,10 @@ export class PeerMesh extends React.Component<Props, State> {
       // service.
       case 'offer': {
         // Set the remote description to the offer we recieved.
-        await peer.setRemoteDescription(new RTCSessionDescription(signal));
+        await connection.setRemoteDescription(new RTCSessionDescription(signal));
         // Create an answer.
-        const answer = await peer.createAnswer();
-        await peer.setLocalDescription(answer);
+        const answer = await connection.createAnswer();
+        await connection.setLocalDescription(answer);
         // Type-check for TypeScript.
         if (answer.sdp === null) {
           throw new Error('Expected an `sdp` in the created answer.');
@@ -516,7 +514,7 @@ export class PeerMesh extends React.Component<Props, State> {
       // remote description on that peer. After this happens we should be in
       // business for peer-to-peer communciation!
       case 'answer': {
-        await peer.setRemoteDescription(new RTCSessionDescription(signal));
+        await connection.setRemoteDescription(new RTCSessionDescription(signal));
         break;
       }
 
@@ -524,7 +522,7 @@ export class PeerMesh extends React.Component<Props, State> {
       // peer.
       case 'candidate': {
         const { sdpMLineIndex, candidate } = signal;
-        peer.addIceCandidate(new RTCIceCandidate({
+        connection.addIceCandidate(new RTCIceCandidate({
           sdpMLineIndex,
           candidate,
         }));
@@ -555,9 +553,19 @@ export class PeerMesh extends React.Component<Props, State> {
  */
 function closePeers(state: State): void {
   for (const [, peer] of Object.entries(state.peers)) {
-    if (peer !== undefined) {
-      peer.connection.close();
+    closePeer(peer);
+  }
+}
+
+/**
+ * Close a single peer based on its state.
+ */
+function closePeer(peer: PeerState | undefined): void {
+  if (peer !== undefined) {
+    if (peer.channel !== null) {
+      peer.channel.close();
     }
+    peer.connection.close();
   }
 }
 
