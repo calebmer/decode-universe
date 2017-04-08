@@ -12,21 +12,23 @@ type State = {
 
 const audioContext = new AudioContext();
 
-const lastSelectedInputDeviceIDKey =
-  '@decode/studio-ui/lastSelectedInputDeviceIDKey';
+const nameKey = '@decode/studio-ui/name';
+const selectedInputDeviceIDKey = '@decode/studio-ui/selectedInputDeviceID';
 
 export class StudioRoom extends React.Component<{}, State> {
   state: State = {
-    name: '',
-    selectedInputDeviceID: localStorage.getItem(lastSelectedInputDeviceIDKey),
+    name: localStorage.getItem(nameKey) || '',
+    selectedInputDeviceID: localStorage.getItem(selectedInputDeviceIDKey),
   };
 
   handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    this.setState({ name: event.target.value });
+    const name = event.target.value;
+    localStorage.setItem(nameKey, name);
+    this.setState({ name });
   };
 
   handleSelectDevice = (deviceID: string) => {
-    localStorage.setItem(lastSelectedInputDeviceIDKey, deviceID);
+    localStorage.setItem(selectedInputDeviceIDKey, deviceID);
     this.setState({ selectedInputDeviceID: deviceID });
   };
 
@@ -97,9 +99,9 @@ export class StudioRoom extends React.Component<{}, State> {
 
   renderPeers = (peers: Array<Peer>) => (
     <ul>
-      {peers.map(peer => (
+      {peers.map((peer, i) => (
         <li key={peer.id}>
-          <p>{peer.id}</p>
+          <p>Guest {i + 1}</p>
           <div style={{
             width: '500px',
             height: '100px',
