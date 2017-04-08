@@ -9,7 +9,9 @@
       "@decode/studio-signal-exchange/*": ["../studio-signal-exchange/src/*"]
     }
   },
-  "exclude": [
-    "node_modules"
+  "include": [
+    "./src",
+    "../typescript/typings/env.d.ts",
+    "../typescript/typings/webrtc.d.ts"
   ]
 }

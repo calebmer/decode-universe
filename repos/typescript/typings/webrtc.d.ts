@@ -8,10 +8,16 @@ declare interface MediaDevices {
 
 // Extend the `RTCPeerConnection` interface provided by the TypeScript lib.
 declare interface RTCPeerConnection {
+  ondatachannel: (this: RTCPeerConnection, ev: RTCDataChannelEvent) => any;
   /**
    * https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/createDataChannel
    */
   createDataChannel(label: string, options: RTCDataChannelInit): RTCDataChannel;
+}
+
+// Extend the `RTCPeerConnectionEventMap` interface provided by the TypeScript lib.
+interface RTCPeerConnectionEventMap {
+  'datachannel': RTCDataChannelEvent;
 }
 
 /**
@@ -63,5 +69,12 @@ declare interface RTCDataChannel extends EventTarget {
    */
   send(data: USVString | Blob | ArrayBuffer | ArrayBufferView): void;
 
-  addEventListener<K extends keyof RTCDataChannel>(type: K, listener: (this: RTCDataChannel, ev: RTCDataChannel[K]) => any, useCapture?: boolean): void;
+  addEventListener<K extends keyof RTCDataChannelEventMap>(type: K, listener: (this: RTCDataChannel, ev: RTCDataChannelEventMap[K]) => any, useCapture?: boolean): void;
+}
+
+/**
+ * https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannelEvent
+ */
+declare interface RTCDataChannelEvent extends Event {
+  readonly channel: RTCDataChannel;
 }

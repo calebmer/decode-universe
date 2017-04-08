@@ -3,25 +3,48 @@ import { SignalClient, Signal } from '@decode/studio-signal-exchange/client';
 
 type Props = {
   roomName: string,
+  data: PeerData,
   stream: MediaStream | null,
   render: (peers: Array<Peer>) => JSX.Element,
 };
 
 export type Peer = {
   readonly id: string,
+  readonly data: PeerData,
   readonly stream: MediaStream | null,
 };
 
+// This `PeerData` object will be `JSON.stringify`ed many times and sent over
+// the wire. Make sure that any values used are safe for serialization by JSON.
+//
+// No fields on `PeerData` can be optional! (With `?`) This will break our
+// diffing algorithm. Instead use `| null` if you want to represent a missing
+// value.
+//
+// Try to keep the data object shallow with scalar values that can be tested
+// with `===`. Our diffing algorithm is very simplistic and works best with such
+// scalar values.
+//
+// TODO: Can we handle data and media streams in seperate files? `PeerMesh` is
+// getting pretty large...
+export type PeerData = {
+  readonly name: string | null,
+};
+
 type State = {
-  signalClient: SignalClient,
-  peers: { [address: string]: PeerState | undefined },
+  readonly signalClient: SignalClient,
+  readonly peers: { [address: string]: PeerState | undefined },
 };
 
 type PeerState = {
-  connection: RTCPeerConnection,
+  readonly connection: RTCPeerConnection,
+  // The data channel that this peer can communicate basic data on.
+  readonly channel: RTCDataChannel | null,
+  // The basic data from our connection’s data channel.
+  readonly data: PeerData | null,
   // We allow a peer to give us multiple streams, but we only end up delivering
   // the first one to our children.
-  streams: Array<MediaStream>,
+  readonly streams: Array<MediaStream>,
 };
 
 /**
@@ -83,6 +106,24 @@ export class PeerMesh extends React.Component<Props, State> {
       closePeers(previousState);
       // Connect the new signal client.
       this.connectSignalClient().catch(error => console.error(error));
+    }
+    // If the data is not referentially equal then we want to send the diff
+    // update in our data to all of our peers.
+    if (previousProps.data !== nextProps.data) {
+      // Diff the previous and next data.
+      const dataDiff = diffPeerData(previousProps.data, nextProps.data);
+      // Only continue if there were changes (null was not returned).
+      if (dataDiff !== null) {
+        // Stringify the diff.
+        const dataDiffString = JSON.stringify(dataDiff);
+        // Send the diff to all of our peers that have data channels
+        // initialized.
+        for (const [, peer] of Object.entries(nextState.peers)) {
+          if (peer !== undefined && peer.channel !== null) {
+            peer.channel.send(dataDiffString);
+          }
+        }
+      }
     }
     // If the stream updated then we need to remove all of the old streams on
     // our peers and add this new stream.
@@ -311,12 +352,80 @@ export class PeerMesh extends React.Component<Props, State> {
         connection.addStream(stream);
       }
     }
+    // Everything necessary to setup a data channel with our peer. Using that
+    // data channel we can communicate background data that is not the
+    // fundamental media stream.
+    let initialChannel: RTCDataChannel | null = null;
+    {
+      /**
+       * A helper function that will add the appropriate event listeners to an
+       * `RTCDataChannel` no matter where it comes from.
+       */
+      const initializeChannel = (channel: RTCDataChannel): void => {
+        // When the channel opens we want to send our entire data object over to
+        // our peer.
+        channel.addEventListener('open', () => {
+          channel.send(JSON.stringify(this.props.data));
+        });
+        // When we get a message from our data channel we want to incorporate
+        // that into our component’s state.
+        channel.addEventListener('message', event => {
+          // Parse our new data.
+          const newData: Partial<PeerData> = JSON.parse(event.data);
+          // Actuall update our data.
+          this.setState((previousState: State): Partial<State> => ({
+            peers: {
+              ...previousState.peers,
+              [address]: {
+                ...previousState.peers[address],
+                data: {
+                  // We may only get partial data, so we have to spread out our
+                  // old data as well to be sure we still have all the
+                  // properties we need.
+                  ...previousState.peers[address]!.data,
+                  ...newData,
+                },
+              },
+            },
+          }));
+        });
+      };
+      // If we are initiating the connection with our peer then we want to
+      // create a data channel. Our peer will get this data channel from a
+      // `datachannel` event.
+      if (initiator === true) {
+        // Create a data channel. This will trigger a `negotiationneeded` event.
+        const channel = initialChannel = connection.createDataChannel('data', {
+          ordered: true,
+        });
+        // Initialize the channel.
+        initializeChannel(channel);
+      } else {
+        connection.addEventListener('datachannel', ({ channel }) => {
+          // Add the data channel to our state.
+          this.setState((previousState: State): Partial<State> => ({
+            peers: {
+              ...previousState.peers,
+              [address]: {
+                ...previousState.peers[address],
+                channel,
+              },
+            },
+          }));
+          // Initialize the channel.
+          initializeChannel(channel);
+        });
+      }
+    }
+    // channel.addEventListener('message');
     // Add the peer to our map of addresses to peers.
     this.setState((previousState: State): Partial<State> => ({
       peers: {
         ...previousState.peers,
         [address]: {
           connection,
+          channel: initialChannel,
+          data: null,
           streams: [],
         },
       },
@@ -428,9 +537,11 @@ export class PeerMesh extends React.Component<Props, State> {
     // Create our peers array from our peers object.
     const peers =
       Array.from(Object.entries(this.state.peers))
-        .filter(([, peer]) => peer !== undefined)
+        .filter(([, peer]) => peer !== undefined && peer.data !== null)
         .map(([address, peer]): Peer => ({
           id: address,
+          // We confirmed that the data exists in our filter above.
+          data: peer!.data!,
           // Use the first active stream.
           stream: peer!.streams.find(stream => stream.active) || null,
         }));
@@ -448,4 +559,26 @@ function closePeers(state: State): void {
       peer.connection.close();
     }
   }
+}
+
+/**
+ * A simple, shallow diff of the two data objects. If nothing changed between
+ * the two items them null will be returned.
+ */
+function diffPeerData(previousData: PeerData, nextData: PeerData): Partial<PeerData> | null {
+  // We want to track if there are any changes.
+  let changed = false;
+  // The diffed object.
+  const dataDiff: Partial<PeerData> = {};
+  // For all of the key/value pairs in the new data we want to see if that data
+  // is different from the previous data.
+  for (const [key, nextValue] of Object.entries(nextData)) {
+    if ((previousData as any)[key] !== nextValue) {
+      changed = true;
+      (dataDiff as any)[key] = nextValue;
+    }
+  }
+  // If there were no changes then we want to return null. If there were changes
+  // we want to return the diff.
+  return changed ? dataDiff : null;
 }
