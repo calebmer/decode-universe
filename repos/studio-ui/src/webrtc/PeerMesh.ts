@@ -7,7 +7,7 @@ type Props = {
   render: (peers: Array<Peer>) => JSX.Element,
 };
 
-type Peer = {
+export type Peer = {
   id: string,
   stream: MediaStream | null,
 };

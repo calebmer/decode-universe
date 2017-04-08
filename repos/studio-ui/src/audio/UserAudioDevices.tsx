@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-type DevicesState = {
+export type DevicesState = {
   readonly loading: true,
   readonly inputDevices: Array<MediaDeviceInfo>,
   readonly outputDevices: Array<MediaDeviceInfo>,

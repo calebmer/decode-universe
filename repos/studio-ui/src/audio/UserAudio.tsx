@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-type AudioState = {
+export type AudioState = {
   readonly loading: true,
   readonly rejected: false,
   readonly error: null,
