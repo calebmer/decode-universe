@@ -8,8 +8,8 @@ type Props = {
 };
 
 export type Peer = {
-  id: string,
-  stream: MediaStream | null,
+  readonly id: string,
+  readonly stream: MediaStream | null,
 };
 
 type State = {
@@ -47,20 +47,6 @@ export class PeerMesh extends React.Component<Props, State> {
     signalClient: this.createSignalClient(),
     peers: {},
   };
-
-  /**
-   * This is part of a total hack that we do to get schedule negotiations in
-   * race conditions. This `Set` tracks all of the peer addresses that we have
-   * *initiated* signal negotiations for, and so for these addresses we are
-   * waiting for an answer.
-   *
-   * This `Set` is mostly reliable. If an error occurs this set has no idea.
-   *
-   * This `Set` is used in `componentDidUpdate` when we are determining when to
-   * restart negotiations after streams have been changed.
-   */
-  // TODO: Find a more durable solution to this problem.
-  private peersWaitingForAnswer = new Set<string>();
 
   componentDidMount() {
     // Connect our signal client now that the component has mounted.
@@ -101,7 +87,7 @@ export class PeerMesh extends React.Component<Props, State> {
     // If the stream updated then we need to remove all of the old streams on
     // our peers and add this new stream.
     if (previousProps.stream !== nextProps.stream) {
-      for (const [address, peer] of Object.entries(nextState.peers)) {
+      for (const [, peer] of Object.entries(nextState.peers)) {
         if (peer !== undefined) {
           const { connection } = peer;
           // If we had a stream previously then we need to remove that stream.
@@ -111,35 +97,6 @@ export class PeerMesh extends React.Component<Props, State> {
           // If we have a new stream then we want to add that.
           if (nextProps.stream !== null) {
             connection.addStream(nextProps.stream);
-          }
-          // HACK WARNING. In some race-casey conditions peer negotiations will
-          // already be happening when we try to start new peer negotations. In
-          // that case we want to wait for the other negotiations complete
-          // before we start new negotiations. To do this we use a hacky
-          // `peersWaitingForAnswer` `Set` to hold all of the peer addresses
-          // that we are pretty sure are currently waiting for an answer.
-          //
-          // If we are not currently waiting for an answer from the peer with a
-          // given address then we can immeadiately start negotiations.
-          //
-          // If we are waiting for an answer then we setup a really basic
-          // interval (this is where things start getting really hacky). If the
-          // interval runs and we are still waiting for an answer nothing will
-          // happen. The interval will keep running until we are no longer
-          // waiting for an answer and can “safely” start negotiations.
-          //
-          // TODO: Find a better solution.
-          if (!this.peersWaitingForAnswer.has(address)) {
-            this.startPeerNegotiations(address, peer.connection)
-              .catch(error => console.error(error));
-          } else {
-            const intervalID = setInterval(() => {
-              if (!this.peersWaitingForAnswer.has(address)) {
-                clearTimeout(intervalID);
-                this.startPeerNegotiations(address, peer.connection)
-                  .catch(error => console.error(error));
-              }
-            }, 100);
           }
         }
       }
@@ -182,14 +139,8 @@ export class PeerMesh extends React.Component<Props, State> {
     const addresses = await signalClient.connect()
     // Connect all of the addresses as peers in parallel.
     await Promise.all(addresses.map(async address => {
-      // Use the latest stream.
-      const { stream } = this.props;
       // Create the peer.
-      const peer = this.createPeer(address);
-      // Start peer negotiations, but only if there is a stream!
-      if (stream !== null) {
-        await this.startPeerNegotiations(address, peer);
-      }
+      this.createPeer(address, true);
     }));
   }
 
@@ -202,10 +153,57 @@ export class PeerMesh extends React.Component<Props, State> {
    * will create their connection object with the second `canMakeOffers` set to
    * true.
    */
-  private createPeer(address: string): RTCPeerConnection {
+  private createPeer(address: string, initiator: boolean): RTCPeerConnection {
     const { signalClient } = this.state;
     // Create the peer.
     const connection = new RTCPeerConnection(rtcConfig);
+    // We listen to the connection to know when a negotiation is needed between
+    // our local computer and peer connection. Sometimes we do not want to
+    // initiate negotiations, however. We don’t want both peers initiating
+    // negotiations at the same time, and we don’t want one peer to start a race
+    // condition by starting two negotiations in rapid succession. We have some
+    // safeguards in place to prevent both of these.
+    //
+    // Firstly, both peers will trigger a negotiation needed event when they
+    // first get a `MediaStream` instance. We only want the peer initiator to
+    // start negotiations, however. So for the first negotiation if we are not
+    // the initiator we will not start negotiations.
+    //
+    // Secondly, we have a debounce timer in place so that if two
+    // `negotiationneeded` events are fired in rapid succession we will only
+    // fire one. This does mean that there will be some delay between the firing
+    // of `negotiationneeded` and us starting negotiations.
+    {
+      // Track whether or not we are on the first negotiation.
+      let firstNegotiation = true;
+      // The timer we use to debounce negotiations.
+      let debounceTimer: any = null;
+
+      connection.addEventListener('negotiationneeded', event => {
+        // If this is the first negotiation...
+        if (firstNegotiation === true) {
+          // We will never have another first negotiation.
+          firstNegotiation = false;
+          // If we are not the initiator then return early! Do not continue on
+          // to start negotiations.
+          if (initiator !== true) {
+            return;
+          }
+        }
+        // If there is an active debounce timer, cancel it.
+        if (debounceTimer !== null) {
+          clearTimeout(debounceTimer);
+        }
+        // Set a new debounce timer.
+        debounceTimer = setTimeout(() => {
+          // Reset the debounce timer variable.
+          debounceTimer = null;
+          // Start peer negotiations!
+          this.startPeerNegotiations(address, connection)
+            .catch(error => console.error(error));
+        }, 100);
+      });
+    }
     // Everytime we get an ICE candidate, we want to send a signal to our peer
     // with the candidate information.
     connection.addEventListener('icecandidate', event => {
@@ -226,28 +224,30 @@ export class PeerMesh extends React.Component<Props, State> {
         candidate,
       });
     });
-    // Watch the ICE connection state for any changes.
-    let reconnectTimer: any = null;
-    connection.addEventListener('iceconnectionstatechange', event => {
-      // Clear our reconnect timer if it exists.
-      if (reconnectTimer !== null) {
-        clearTimeout(reconnectTimer);
-      }
-      const { iceConnectionState } = connection;
-      // If the connection state is failed or closed then we want to destroy the
-      // peer no questions asked.
-      if (iceConnectionState === 'failed' || iceConnectionState === 'closed') {
-        this.destroyPeer(address);
-      }
-      // If we disconnected then we want to wait a bit before destroying the
-      // connection. This is because the connection may recover from a
-      // disconnect on spotty internet.
-      if (iceConnectionState === 'disconnected') {
-        reconnectTimer = setTimeout(() => {
+    {
+      // Watch the ICE connection state for any changes.
+      let reconnectTimer: any = null;
+      connection.addEventListener('iceconnectionstatechange', event => {
+        // Clear our reconnect timer if it exists.
+        if (reconnectTimer !== null) {
+          clearTimeout(reconnectTimer);
+        }
+        const { iceConnectionState } = connection;
+        // If the connection state is failed or closed then we want to destroy the
+        // peer no questions asked.
+        if (iceConnectionState === 'failed' || iceConnectionState === 'closed') {
           this.destroyPeer(address);
-        }, reconnectTimeout);
-      }
-    });
+        }
+        // If we disconnected then we want to wait a bit before destroying the
+        // connection. This is because the connection may recover from a
+        // disconnect on spotty internet.
+        if (iceConnectionState === 'disconnected') {
+          reconnectTimer = setTimeout(() => {
+            this.destroyPeer(address);
+          }, reconnectTimeout);
+        }
+      });
+    }
     // Every time our peer has a new stream available for us we need to take
     // that stream and use it to update our state.
     connection.addEventListener('addstream', event => {
@@ -305,7 +305,8 @@ export class PeerMesh extends React.Component<Props, State> {
     {
       const { stream } = this.props;
       // Add the stream we were given in props to the peer connection we are
-      // creating. This will trigger an `icecandidate` event.
+      // creating. This will trigger a `negotiationneeded` and `icecandidate`
+      // event.
       if (stream !== null) {
         connection.addStream(stream);
       }
@@ -332,9 +333,6 @@ export class PeerMesh extends React.Component<Props, State> {
     address: string,
     peer: RTCPeerConnection,
   ): Promise<void> {
-    // Mark this address as a peer that is currently signaling.
-    this.peersWaitingForAnswer.add(address);
-
     const { signalClient } = this.state;
     // Create the offer that we will send to the peer.
     const offer = await peer.createOffer();
@@ -379,7 +377,7 @@ export class PeerMesh extends React.Component<Props, State> {
     // in the map.
     let peer = peers[from] !== undefined
       ? peers[from]!.connection
-      : this.createPeer(from);
+      : this.createPeer(from, false);
 
     switch (signal.type) {
       // When we get an offer singal then we want to setup our peer for that
@@ -410,8 +408,6 @@ export class PeerMesh extends React.Component<Props, State> {
       // business for peer-to-peer communciation!
       case 'answer': {
         await peer.setRemoteDescription(new RTCSessionDescription(signal));
-        // We got an answer. We can delete it from the set!
-        this.peersWaitingForAnswer.delete(from);
         break;
       }
 
