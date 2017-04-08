@@ -46,75 +46,67 @@ export class StudioRoom extends React.Component<{}, State> {
         <p>
           Audio Input:{' '}
           <UserAudioDevices
-            render={this.renderUserAudioDevices}
+            render={({ inputDevices }, { reload }) => (
+              <span>
+                <AudioDevicesSelect
+                  devices={inputDevices}
+                  selectedDeviceID={this.state.selectedInputDeviceID}
+                  onSelectDevice={this.handleSelectDevice}
+                />
+                {' '}
+                <button onClick={reload}>Reload</button>
+              </span>
+            )}
           />
         </p>
         <UserAudio
           inputDeviceID={selectedInputDeviceID}
-          render={this.renderUserAudio}
+          render={audio => (
+            audio.rejected ? (
+              <div>Error!</div>
+            ) : (
+              <div>
+                <div style={{
+                  width: '500px',
+                  height: '100px',
+                  backgroundColor: 'tomato',
+                }}>
+                  {!audio.loading && (
+                    <AudioVisualization
+                      node={audioContext.createMediaStreamSource(audio.stream)}
+                    />
+                  )}
+                </div>
+                <PeerMesh
+                  roomName="hello world"
+                  data={{ name: this.state.name || null }}
+                  stream={audio.stream || audio.previousStream}
+                  render={(peers: Array<Peer>) => (
+                    <ul>
+                      {peers.map(peer => (
+                        <li key={peer.id}>
+                          <p>{peer.data.name || 'Guest'}</p>
+                          <div style={{
+                            width: '500px',
+                            height: '100px',
+                            backgroundColor: 'tomato',
+                          }}>
+                            {peer.stream !== null && (
+                              <AudioVisualization
+                                node={audioContext.createMediaStreamSource(peer.stream)}
+                              />
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                />
+              </div>
+            )
+          )}
         />
       </div>
     );
   }
-
-  renderUserAudioDevices = (
-    { inputDevices }: DevicesState,
-    { reload }: { reload: () => void },
-  ) => (
-    <span>
-      <AudioDevicesSelect
-        devices={inputDevices}
-        selectedDeviceID={this.state.selectedInputDeviceID}
-        onSelectDevice={this.handleSelectDevice}
-      />
-      {' '}
-      <button onClick={reload}>Reload</button>
-    </span>
-  );
-
-  renderUserAudio = (audio: AudioState) => (
-    audio.rejected ? (
-      <div>Error!</div>
-    ) : (
-      <div>
-        <div style={{
-          width: '500px',
-          height: '100px',
-          backgroundColor: 'tomato',
-        }}>
-          {!audio.loading && (
-            <AudioVisualization
-              node={audioContext.createMediaStreamSource(audio.stream)}
-            />
-          )}
-        </div>
-        <PeerMesh
-          roomName="hello world"
-          stream={audio.stream || audio.previousStream}
-          render={this.renderPeers}
-        />
-      </div>
-    )
-  );
-
-  renderPeers = (peers: Array<Peer>) => (
-    <ul>
-      {peers.map((peer, i) => (
-        <li key={peer.id}>
-          <p>Guest {i + 1}</p>
-          <div style={{
-            width: '500px',
-            height: '100px',
-            backgroundColor: 'tomato',
-          }}>
-            {peer.stream !== null && (
-              <AudioVisualization
-                node={audioContext.createMediaStreamSource(peer.stream)}
-              />
-            )}
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
 }

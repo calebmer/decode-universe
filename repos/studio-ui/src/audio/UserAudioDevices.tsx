@@ -32,7 +32,7 @@ const loadingDevices: DevicesState = {
   outputDevices: [],
 };
 
-export class UserAudioDevices extends React.Component<Props, State> {
+export class UserAudioDevices extends React.PureComponent<Props, State> {
   state: State = {
     devices: loadingDevices,
   };
