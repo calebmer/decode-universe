@@ -1,4 +1,4 @@
-import socketIO = require('socket.io-client');
+import * as socketIO from 'socket.io-client';
 import {
   JoinRequestMessage,
   JoinResponseMessage,

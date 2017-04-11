@@ -6,6 +6,7 @@
   },
   "include": [
     "./src/renderer",
-    "../../repos/typescript/typings"
+    "../../repos/typescript/typings/env.d.ts",
+    "../../repos/typescript/typings/webrtc.d.ts"
   ]
 }

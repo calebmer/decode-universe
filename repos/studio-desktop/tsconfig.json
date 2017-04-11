@@ -2,6 +2,7 @@
   "extends": "../typescript/config/base",
   "compilerOptions": {
     "noEmit": true,
+    "lib": ["dom", "es2015", "es2016", "es2017"],
     "jsx": "react",
     "baseUrl": ".",
     "paths": {
@@ -9,8 +10,8 @@
       "@decode/studio-signal-exchange/*": ["../studio-signal-exchange/src/*"]
     }
   },
-  "exclude": [
-    "node_modules",
-    "build"
+  "include": [
+    "./src",
+    "../../repos/typescript/typings"
   ]
 }

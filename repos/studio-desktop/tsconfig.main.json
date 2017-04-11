@@ -4,10 +4,12 @@
     "noEmit": false,
     "rootDir": "./src/main",
     "outDir": "./build/main",
+    "target": "es2015",
+    "module": "commonjs",
     "jsx": "preserve"
   },
   "include": [
     "./src/main",
-    "../../repos/typescript/typings"
+    "../../repos/typescript/typings/env.d.ts"
   ]
 }
