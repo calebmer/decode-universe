@@ -1,10 +1,13 @@
 # System Files
 .DS_Store
 
-# Node.js
-node_modules/
-npm-debug.log
+# Notes
+TODO.md
 
 # Build Artifacts
 build/
 coverage/
+
+# Node.js
+node_modules/
+npm-debug.log
