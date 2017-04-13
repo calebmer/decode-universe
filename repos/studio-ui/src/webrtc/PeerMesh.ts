@@ -82,13 +82,19 @@ export class PeerMesh {
   }
 
   /**
-   * Closes our connection to the signaling exchange and all of our peers. We do
-   * not call the `onRemoveConnection` callback for this. We expect that if you
-   * call `close` then you are prepared to clean up the connections yourself.
+   * Closes our connection to the signaling exchange and all of our peers.
+   *
+   * This will also synchronously call `onRemoveConnection` for all of the peers
+   * that are getting closed as a result of this.
    */
   public close(): void {
+    // Close the signal client.
     this.signalClient.close();
-    this.peers.forEach(peer => peer.close());
+    // Close every peer and call the remove callback with its address.
+    this.peers.forEach((peer, address) => {
+      peer.close();
+      this.onRemoveConnection(address);
+    });
   }
 
   /**
@@ -159,6 +165,10 @@ export class PeerMesh {
     // calling this then that initialization will be done before anything else.
     // This prevents us from triggering `negotiationneeded` during
     // initialization, for example.
+    //
+    // It is **VERY** important that this be run before adding an event listener
+    // for `negotiationneeded` so we don’t capture any `negotiationneeded`
+    // events triggered by this callback call.
     this.onAddConnection(address, connection);
     // When we are told that a negotiation is needed we need to start creating
     // and sending offers.
@@ -229,6 +239,8 @@ export class PeerMesh {
         ) {
           // Close the peer.
           peer.close();
+          // Remove the peer from our internal map.
+          this.peers.delete(address);
           // Let the world know that the peer is gone.
           this.onRemoveConnection(address);
         }
