@@ -282,7 +282,10 @@ class Peer {
    * Closes the peer by closing the underlying `RTCPeerConnection` instance.
    */
   public close(): void {
-    this.connection.close();
+    // If the connection is not already closed the close it.
+    if (this.connection.signalingState !== 'closed') {
+      this.connection.close();
+    }
   }
 
   /**

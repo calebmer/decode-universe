@@ -9,7 +9,12 @@ type Props = {};
 type State = {
   deviceID: string | null,
   userStream: MediaStream | null,
-  connections: { [id: string]: RTCPeerConnection },
+  peers: { [id: string]: PeerState },
+};
+
+type PeerState = {
+  connection: RTCPeerConnection,
+  streams: Array<MediaStream>,
 };
 
 const audioContext = new AudioContext();
@@ -20,7 +25,7 @@ export class StudioRoom extends React.Component<Props, State> {
   state: State = {
     deviceID: localStorage.getItem(selectedInputDeviceIDKey),
     userStream: null,
-    connections: {},
+    peers: {},
   };
 
   componentDidUpdate(previousProps: Props, previousState: State) {
@@ -28,7 +33,7 @@ export class StudioRoom extends React.Component<Props, State> {
     // If the user’s stream changed in this update then let us go throw each
     // peer, remove the last stream, and add the new stream.
     if (previousState.userStream !== nextState.userStream) {
-      for (const [, connection] of Object.entries(nextState.connections)) {
+      for (const [, { connection }] of Object.entries(nextState.peers)) {
         // Remove the previous user stream if it was not null.
         if (previousState.userStream !== null) {
           connection.removeStream(previousState.userStream);
@@ -63,9 +68,12 @@ export class StudioRoom extends React.Component<Props, State> {
   handleAddConnection = (id: string, connection: RTCPeerConnection) => {
     // Add the new peer state to our component state.
     this.setState((previousState: State): Partial<State> => ({
-      connections: {
-        ...previousState.connections,
-        [id]: connection,
+      peers: {
+        ...previousState.peers,
+        [id]: {
+          connection,
+          streams: [],
+        },
       },
     }));
     // Add the user’s media stream to our peer if we have one. If we do not have
@@ -76,6 +84,64 @@ export class StudioRoom extends React.Component<Props, State> {
         connection.addStream(userStream);
       }
     }
+    // Every time our peer has a new stream available for us we need to take
+    // that stream and use it to update our state.
+    {
+      connection.addEventListener('addstream', event => {
+        // Extract the stream.
+        const { stream } = event;
+        // If the stream was null then return!
+        if (stream === null) {
+          return;
+        }
+        // Hack, but Chrome won't work without this. We never do anything with
+        // this node, it's just a workaround.
+        //
+        // We took this from: https://github.com/mikeal/waudio/blob/2933809e05f840a4f34121e07f7e61633205906f/index.js#L9-L12
+        // Followup issue: https://github.com/mikeal/waudio/issues/2
+        {
+          const node = new Audio();
+          node.srcObject = stream;
+        }
+        // Update the state by immutably adding our new stream to the end of the
+        // peer’s stream array.
+        this.setState((previousState: State): Partial<State> => ({
+          peers: {
+            ...previousState.peers,
+            [id]: {
+              ...previousState.peers[id],
+              streams: [...previousState.peers[id].streams, stream],
+            },
+          },
+        }));
+      });
+    }
+    // Whenever our peer wants to remove a stream we respect that request and
+    // remove it from our peer state.
+    {
+      connection.addEventListener('removestream', event => {
+        // Extract the stream.
+        const { stream } = event;
+        // If the stream was null then return!
+        if (stream === null) {
+          return;
+        }
+        // Immutably remove our stream from the streams array.
+        this.setState((previousState: State): Partial<State> => ({
+          peers: {
+            ...previousState.peers,
+            [id]: {
+              ...previousState.peers[id],
+              // Remove the stream using `filter` and a referential equality
+              // check.
+              streams: previousState.peers[id].streams.filter(
+                previousStream => previousStream !== stream,
+              ),
+            },
+          },
+        }));
+      });
+    }
   };
 
   handleRemoveConnection = (id: string) => {
@@ -84,17 +150,17 @@ export class StudioRoom extends React.Component<Props, State> {
       // Use destructuring to get all of our peers except the peer with the id
       // we want to remove.
       const {
-        [id]: removedConnection,
-        ...nextConnections,
-      } = previousState.connections;
+        [id]: removedPeer,
+        ...nextPeers,
+      } = previousState.peers;
       return {
-        connections: nextConnections,
+        peers: nextPeers,
       };
     });
   };
 
   render() {
-    const { deviceID, userStream } = this.state;
+    const { deviceID, userStream, peers } = this.state;
     return (
       <div>
         <UserAudioController
@@ -102,11 +168,11 @@ export class StudioRoom extends React.Component<Props, State> {
           onStream={this.handleUserAudioStream}
           onError={this.handleUserAudioError}
         />
-        {/*<PeerMeshController
+        <PeerMeshController
           roomName="hello world"
           onAddConnection={this.handleAddConnection}
           onRemoveConnection={this.handleRemoveConnection}
-        />*/}
+        />
         <p>
           Audio Input:{' '}
           <UserAudioDevicesSelect
@@ -126,6 +192,24 @@ export class StudioRoom extends React.Component<Props, State> {
             />
           )}
         </div>
+        <ul>
+          {Object.entries(peers).map(([id, peer]) => (
+            <li key={id}>
+              <p>{id}</p>
+              <div style={{
+                width: '500px',
+                height: '100px',
+                backgroundColor: 'tomato',
+              }}>
+                {peer.streams.length > 0 && (
+                  <AudioVisualization
+                    node={getMediaStreamSource(peer.streams[0])}
+                  />
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
     );
   }
