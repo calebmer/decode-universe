@@ -1,2 +1,2 @@
 export { SignalClient } from './SignalClient';
-export { Signal } from '../shared/MessageTypes';
+export { Signal, OfferSignal, AnswerSignal, CandidateSignal } from '../shared/MessageTypes';
