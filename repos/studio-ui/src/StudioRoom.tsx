@@ -2,7 +2,7 @@ import * as React from 'react';
 import { UserAudioDevicesSelect } from './audio/UserAudioDevicesSelect';
 import { UserAudioController } from './audio/UserAudioController';
 import { AudioVisualization } from './audio/AudioVisualization';
-import { PeerMeshController } from './webrtc/PeerMeshController';
+import { PeersMeshController } from './webrtc/PeersMeshController';
 
 type Props = {};
 
@@ -168,7 +168,7 @@ export class StudioRoom extends React.Component<Props, State> {
           onStream={this.handleUserAudioStream}
           onError={this.handleUserAudioError}
         />
-        <PeerMeshController
+        <PeersMeshController
           roomName="hello world"
           onAddConnection={this.handleAddConnection}
           onRemoveConnection={this.handleRemoveConnection}

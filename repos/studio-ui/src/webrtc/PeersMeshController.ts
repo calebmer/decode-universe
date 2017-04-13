@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PeerMesh } from './PeerMesh';
+import { PeersMesh } from './PeersMesh';
 
 type Props = {
   roomName: string,
@@ -8,18 +8,18 @@ type Props = {
 };
 
 type State = {
-  peerMesh: PeerMesh,
+  peersMesh: PeersMesh,
 };
 
-export class PeerMeshController extends React.PureComponent<Props, State> {
+export class PeersMeshController extends React.PureComponent<Props, State> {
   state: State = {
-    peerMesh: createPeerMesh(this.props),
+    peersMesh: createPeersMesh(this.props),
   };
 
   componentDidMount() {
-    const { peerMesh } = this.state;
+    const { peersMesh } = this.state;
     // Connect the peer mesh we instantiated.
-    peerMesh.connect().catch(error => console.error(error));
+    peersMesh.connect().catch(error => console.error(error));
   }
 
   // NOTE: Remember that there can be no side effects in this method! We should
@@ -31,7 +31,7 @@ export class PeerMeshController extends React.PureComponent<Props, State> {
     // allowed.
     if (previousProps.roomName !== nextProps.roomName) {
       this.setState({
-        peerMesh: createPeerMesh(nextProps),
+        peersMesh: createPeersMesh(nextProps),
       });
     }
   }
@@ -40,18 +40,18 @@ export class PeerMeshController extends React.PureComponent<Props, State> {
     const nextState = this.state;
     // If the peer mesh changed then we want to close the last mesh and connect
     // the new mesh.
-    if (previousState.peerMesh !== nextState.peerMesh) {
+    if (previousState.peersMesh !== nextState.peersMesh) {
       // Close the last mesh.
-      previousState.peerMesh.close();
+      previousState.peersMesh.close();
       // Connect the new mesh.
-      nextState.peerMesh.connect().catch(error => console.error(error));
+      nextState.peersMesh.connect().catch(error => console.error(error));
     }
   }
 
   componentWillUnmount() {
-    const { peerMesh } = this.state;
+    const { peersMesh } = this.state;
     // Close the peer mesh.
-    peerMesh.close();
+    peersMesh.close();
   }
 
   render() {
@@ -60,15 +60,15 @@ export class PeerMeshController extends React.PureComponent<Props, State> {
 }
 
 /**
- * Creates a new `PeerMesh` using a set of props for the `PeerMeshController`
+ * Creates a new `PeersMesh` using a set of props for the `PeersMeshController`
  * component.
  */
-function createPeerMesh({
+function createPeersMesh({
   roomName,
   onAddConnection,
   onRemoveConnection,
-}: Props): PeerMesh {
-  return new PeerMesh({
+}: Props): PeersMesh {
+  return new PeersMesh({
     roomName,
     onAddConnection,
     onRemoveConnection,

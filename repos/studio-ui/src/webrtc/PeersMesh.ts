@@ -19,21 +19,21 @@ const rtcConfig = {
 const debounceNegotiationNeededMs = 200;
 
 /**
- * A `PeerMesh` instance is responsible for creating and handling signaling
+ * A `PeersMesh` instance is responsible for creating and handling signaling
  * connections between peers in a mesh configuration. After establishing
- * connections and succesfully exchanging signals the `PeerMesh` will notify the
- * world of its new connection, and when that connection is terminated likewise
- * the `PeerMesh` will report that the peer should be deleted. The `PeerMesh`
- * will manage the closing of connections.
+ * connections and succesfully exchanging signals the `PeersMesh` will notify
+ * the world of its new connection, and when that connection is terminated
+ * likewise the `PeersMesh` will report that the peer should be deleted. The
+ * `PeersMesh` will manage the closing of connections.
  *
- * `PeerMesh` *intentionally* does not handle any `MediaStream`s or
+ * `PeersMesh` *intentionally* does not handle any `MediaStream`s or
  * `RTCDataChannel`s between peers. This would only complicate the mesh protocol
  * implemented in this file.
  *
- * `PeerMesh` holds very little state, instead letting the state be handled by
+ * `PeersMesh` holds very little state, instead letting the state be handled by
  * external callers.
  */
-export class PeerMesh {
+export class PeersMesh {
   /**
    * Our client to the signaling exchange that we use to establish connections
    * between peers.
