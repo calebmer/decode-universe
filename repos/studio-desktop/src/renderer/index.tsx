@@ -1,8 +1,8 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { StudioRoom } from '@decode/studio-ui/StudioRoom';
+import { App } from './App';
 
 ReactDOM.render(
-  <StudioRoom/>,
+  <App/>,
   document.getElementById('root'),
 );
