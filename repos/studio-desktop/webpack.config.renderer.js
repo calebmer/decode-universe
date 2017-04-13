@@ -29,8 +29,8 @@ module.exports = {
     pathinfo: true,
     // There will be one main bundle with other smaller bundles when code
     // splitting.
-    filename: 'static/js/[name].[hash:8].js',
-    chunkFilename: 'static/js/[name].[chunkhash:8].chunk.js',
+    filename: DEV ? 'static/js/bundle.js' : 'static/js/[name].[hash:8].js',
+    chunkFilename: DEV ? undefined : 'static/js/[name].[chunkhash:8].chunk.js',
   },
   // Externalize all of the modules in `node_modules`. We don’t want them
   // bundled!

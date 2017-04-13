@@ -10,6 +10,7 @@
   },
   "include": [
     "./src/main",
+    "../../repos/typescript/typings/mixed.d.ts",
     "../../repos/typescript/typings/env.d.ts"
   ]
 }

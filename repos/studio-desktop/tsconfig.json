@@ -12,6 +12,8 @@
   },
   "include": [
     "./src",
-    "../../repos/typescript/typings"
+    "../../repos/typescript/typings/mixed.d.ts",
+    "../../repos/typescript/typings/env.d.ts",
+    "../../repos/typescript/typings/webrtc.d.ts"
   ]
 }
