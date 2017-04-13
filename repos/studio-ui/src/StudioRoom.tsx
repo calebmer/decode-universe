@@ -1,16 +1,19 @@
 import * as React from 'react';
+import { UserAudioDevicesSelect } from './audio/UserAudioDevicesSelect';
 import { UserAudioController } from './audio/UserAudioController';
 import { PeerMeshController } from './webrtc/PeerMeshController';
 
 type Props = {};
 
 type State = {
+  deviceID: string | null,
   userStream: MediaStream | null,
   connections: { [id: string]: RTCPeerConnection },
 };
 
 export class StudioRoom extends React.Component<Props, State> {
   state: State = {
+    deviceID: null,
     userStream: null,
     connections: {},
   };
@@ -32,6 +35,11 @@ export class StudioRoom extends React.Component<Props, State> {
       }
     }
   }
+
+  handleSelectDeviceID = (deviceID: string) => {
+    // Update the state with the new device id.
+    this.setState({ deviceID });
+  };
 
   handleUserAudioStream = (stream: MediaStream) => {
     // Update the state with the new stream.
@@ -79,9 +87,19 @@ export class StudioRoom extends React.Component<Props, State> {
   };
 
   render() {
+    const { deviceID } = this.state;
     return (
       <div>
+        <p>
+          Audio Input:{' '}
+          <UserAudioDevicesSelect
+            kind="input"
+            deviceID={deviceID}
+            onSelect={this.handleSelectDeviceID}
+          />
+        </p>
         <UserAudioController
+          deviceID={deviceID}
           onStream={this.handleUserAudioStream}
           onError={this.handleUserAudioError}
         />
