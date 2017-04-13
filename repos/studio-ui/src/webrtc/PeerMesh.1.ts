@@ -1,4 +1,4 @@
-import { SignalClient, Signal, OfferSignal, AnswerSignal } from '@decode/studio-signal-exchange/client';
+import { SignalClient, Signal } from '@decode/studio-signal-exchange/client';
 
 /**
  * The configuration we use when creating `RTCPeerConnection` instances.
@@ -34,19 +34,31 @@ const debounceNegotiationNeededMs = 200;
  * external callers.
  */
 export class PeerMesh {
+  /**
+   * Our client to the signaling exchange that we use to establish connections
+   * between peers.
+   */
   private readonly signalClient: SignalClient;
 
   /**
    * The user provided callback we call to signal that a peer was added.
    */
-  private readonly onAddConnection: (id: string, connection: RTCPeerConnection) => void;
+  private readonly onAddConnection: (
+    id: string,
+    connection: RTCPeerConnection,
+  ) => void;
 
   /**
    * The user provided callback we call to signal that a peer was removed.
    */
   private readonly onRemoveConnection: (id: string) => void;
 
-  private readonly connections: Map<string, Peer>;
+  /**
+   * All of the peers that we know about in our mesh. Useful for routing signals
+   * from our signaling exchange to the correct connection we have with that
+   * peer.
+   */
+  private readonly peers: Map<string, Peer>;
 
   constructor({
     roomName,
@@ -66,16 +78,71 @@ export class PeerMesh {
     });
     this.onAddConnection = onAddConnection;
     this.onRemoveConnection = onRemoveConnection;
-    this.connections = new Map();
+    this.peers = new Map();
   }
 
+  /**
+   * Closes our connection to the signaling exchange and all of our peers. We do
+   * not call the `onRemoveConnection` callback for this. We expect that if you
+   * call `close` then you are prepared to clean up the connections yourself.
+   */
   public close(): void {
     this.signalClient.close();
+    this.peers.forEach(peer => peer.close());
   }
 
-  public async connect(): Promise<void> {}
+  /**
+   * Connects the peer mesh to the signaling exchange and all other peers
+   * currently in the room specified by `roomName` in the constructor.
+   */
+  public async connect(): Promise<void> {
+    // Connect the signal client.
+    const addresses = await this.signalClient.connect();
+    // Create a peer for each of oru addresses and start negotiations.
+    await Promise.all(addresses.map(async address => {
+      // Create the peer.
+      const peer = this.createPeer(address);
+      // Start negotiations with the peer.
+      await peer.startNegotiations();
+    }));
+  }
 
-  private createConnection(address: string): void {
+  /**
+   * Handles a signal from the signaling change and routes that signal to the
+   * appropriate peer signal handler.
+   *
+   * If the signal is an offer and we do not have a peer object for the provided
+   * address then a peer object for that address will be created to handle the
+   * signal.
+   */
+  private async handleSignal(address: string, signal: Signal): Promise<void> {
+    // Get the peer using the provided address.
+    let peer = this.peers.get(address);
+
+    // If we could find no peer and the signal is an offer signal then let us
+    // create a new peer. If we could not find a peer and the signal was *not*
+    // an offer signal then we need to throw an error.
+    if (peer === undefined) {
+      if (signal.type === 'offer') {
+        peer = this.createPeer(address);
+      } else {
+        throw new Error(`No peer found with address '${address}'.`);
+      }
+    }
+
+    // Have the peer handle the signal.
+    await peer.handleSignal(signal);
+  }
+
+  /**
+   * Creates a new peer object complete with event listeners on the internal
+   * `RTCPeerConnection` object.
+   *
+   * As side effects we call the `onAddConnection` callback synchronously just
+   * before adding event listeners and adds the newly created peer to the
+   * private instance `peers` map.
+   */
+  private createPeer(address: string): Peer {
     // Create the initial connection. We will adorn it with the appropriate
     // event listeners below.
     const connection = new RTCPeerConnection(rtcConfig);
@@ -86,12 +153,13 @@ export class PeerMesh {
       sendSignal: signal => this.signalClient.send(address, signal),
     });
     // Add the connection to our map.
-    this.connections.set(address, peer);
-    // We added a connection so on the next turn of the event thread let our
-    // consumers know. We defer this so that errors thrown will go uncaught.
-    setImmediate(() => {
-      this.onAddConnection(address, connection);
-    });
+    this.peers.set(address, peer);
+    // We added a connection so let our consumers know. We put this before we
+    // register event listeners so that in case any initialization is done by
+    // calling this then that initialization will be done before anything else.
+    // This prevents us from triggering `negotiationneeded` during
+    // initialization, for example.
+    this.onAddConnection(address, connection);
     // When we are told that a negotiation is needed we need to start creating
     // and sending offers.
     //
@@ -120,9 +188,55 @@ export class PeerMesh {
         );
       });
     }
+    // Everytime we get an ICE candidate, we want to send a signal to our peer
+    // with the candidate information.
+    {
+      connection.addEventListener('icecandidate', event => {
+        // Skip if the event candidate is null.
+        if (event.candidate === null) {
+          return;
+        }
+        const { sdpMLineIndex, candidate } = event.candidate;
+        // Make sure that the values we need are not null. If they are then we
+        // can just skip this event.
+        if (candidate === null || sdpMLineIndex === null) {
+          return;
+        }
+        // Send a candidate signal to our peer.
+        this.signalClient.send(address, {
+          type: 'candidate',
+          sdpMLineIndex,
+          candidate,
+        });
+      });
+    }
+    // We want to listen for complete disconnects from our peer and when they
+    // occur we want to close the connection and notify the outside world about
+    // the close.
+    //
+    // Note that we are not concerned with the temporary disconnects that may
+    // happen from time to time over the course of a connection. Only the total,
+    // fatal, disconnects. Temporary disconnect handling should be done
+    // elsewhere.
+    {
+      connection.addEventListener('iceconnectionstatechange', () => {
+        const { iceConnectionState } = connection;
+        // If the connection state is failed or closed then we want to destroy the
+        // peer no questions asked.
+        if (
+          iceConnectionState === 'failed' ||
+          iceConnectionState === 'closed'
+        ) {
+          // Close the peer.
+          peer.close();
+          // Let the world know that the peer is gone.
+          this.onRemoveConnection(address);
+        }
+      });
+    }
+    // Return the peer for good measure.
+    return peer;
   }
-
-  private async handleSignal(address: string, signal: Signal): Promise<void> {}
 }
 
 /**
@@ -130,9 +244,16 @@ export class PeerMesh {
  * that are nice.
  */
 class Peer {
-  private readonly sendSignal: (signal: Signal) => void;
-
+  /**
+   * The internal `RTCPeerConnection` instance we are wrapping.
+   */
   public readonly connection: RTCPeerConnection;
+
+  /**
+   * A callback we invoke when we want to send a signal to the peer across the
+   * network. This callback will be implemented by the `Peer` constructor.
+   */
+  private readonly sendSignal: (signal: Signal) => void;
 
   constructor({
     connection,
@@ -145,6 +266,17 @@ class Peer {
     this.sendSignal = sendSignal;
   }
 
+  /**
+   * Closes the peer by closing the underlying `RTCPeerConnection` instance.
+   */
+  public close(): void {
+    this.connection.close();
+  }
+
+  /**
+   * Starts negotiations with the peer by creating an offer and then sending
+   * that offer as a signal to the peer.
+   */
   public async startNegotiations(): Promise<void> {
     // Create the offer that we will send to the peer.
     const offer = await this.connection.createOffer();
@@ -160,6 +292,10 @@ class Peer {
     });
   }
 
+  /**
+   * Handles a signal sent by our peer to us. Sometimes we respond with a new
+   * signal, but mostly we just register the signal in our local instance.
+   */
   public async handleSignal(signal: Signal): Promise<void> {
     switch (signal.type) {
       // When we get an offer singal then we want to setup our peer for that
