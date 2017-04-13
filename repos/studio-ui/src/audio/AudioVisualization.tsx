@@ -47,7 +47,7 @@ export class AudioVisualization extends React.PureComponent<Props, {}> {
 
   componentWillUpdate(nextProps: Props) {
     if (this.props.node !== nextProps.node) {
-      this.updateInstance();
+      this.updateInstance(nextProps.node);
     }
   }
 
