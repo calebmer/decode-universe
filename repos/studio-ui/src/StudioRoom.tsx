@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { UserAudioDevicesSelect } from './audio/UserAudioDevicesSelect';
 import { UserAudioController } from './audio/UserAudioController';
+import { AudioVisualization } from './audio/AudioVisualization';
 import { PeerMeshController } from './webrtc/PeerMeshController';
 
 type Props = {};
@@ -11,9 +12,13 @@ type State = {
   connections: { [id: string]: RTCPeerConnection },
 };
 
+const audioContext = new AudioContext();
+
+const selectedInputDeviceIDKey = '@decode/studio-ui/selectedInputDeviceID';
+
 export class StudioRoom extends React.Component<Props, State> {
   state: State = {
-    deviceID: null,
+    deviceID: localStorage.getItem(selectedInputDeviceIDKey),
     userStream: null,
     connections: {},
   };
@@ -39,6 +44,8 @@ export class StudioRoom extends React.Component<Props, State> {
   handleSelectDeviceID = (deviceID: string) => {
     // Update the state with the new device id.
     this.setState({ deviceID });
+    // Update local storage with the new information.
+    localStorage.setItem(selectedInputDeviceIDKey, deviceID);
   };
 
   handleUserAudioStream = (stream: MediaStream) => {
@@ -87,9 +94,19 @@ export class StudioRoom extends React.Component<Props, State> {
   };
 
   render() {
-    const { deviceID } = this.state;
+    const { deviceID, userStream } = this.state;
     return (
       <div>
+        <UserAudioController
+          deviceID={deviceID}
+          onStream={this.handleUserAudioStream}
+          onError={this.handleUserAudioError}
+        />
+        {/*<PeerMeshController
+          roomName="hello world"
+          onAddConnection={this.handleAddConnection}
+          onRemoveConnection={this.handleRemoveConnection}
+        />*/}
         <p>
           Audio Input:{' '}
           <UserAudioDevicesSelect
@@ -98,17 +115,28 @@ export class StudioRoom extends React.Component<Props, State> {
             onSelect={this.handleSelectDeviceID}
           />
         </p>
-        <UserAudioController
-          deviceID={deviceID}
-          onStream={this.handleUserAudioStream}
-          onError={this.handleUserAudioError}
-        />
-        <PeerMeshController
-          roomName="hello world"
-          onAddConnection={this.handleAddConnection}
-          onRemoveConnection={this.handleRemoveConnection}
-        />
+        <div style={{
+          width: '500px',
+          height: '100px',
+          backgroundColor: 'tomato',
+        }}>
+          {userStream !== null && (
+            <AudioVisualization
+              node={getMediaStreamSource(userStream)}
+            />
+          )}
+        </div>
       </div>
     );
   }
+}
+
+// Temporary function to get caching some behaviors.
+const cache = new WeakMap<MediaStream, MediaStreamAudioSourceNode>();
+function getMediaStreamSource(stream: MediaStream): MediaStreamAudioSourceNode {
+  if (!cache.has(stream)) {
+    const source = audioContext.createMediaStreamSource(stream)
+    cache.set(stream, source);
+  }
+  return cache.get(stream)!;
 }
