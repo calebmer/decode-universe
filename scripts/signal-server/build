@@ -1,7 +1,0 @@
-#!/bin/bash
-
-export NODE_ENV=production
-
-rm -rf ./src/node/signal/build
-
-$(npm bin)/webpack --config ./configs/webpack/signal-server.js

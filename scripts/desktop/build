@@ -1,9 +1,0 @@
-#!/bin/bash
-
-export NODE_ENV=production
-
-rm -rf ./src/node/desktop/build
-rm -rf ./src/dom/desktop/build
-
-$(npm bin)/webpack --config ./configs/webpack/desktop-main.js
-$(npm bin)/webpack --config ./configs/webpack/desktop-renderer.js

@@ -4,7 +4,7 @@
     "noEmit": true,
     "target": "es2015",
     "module": "commonjs",
-    "lib": ["dom", "es2015", "es2016", "es2017", "esnext"],
+    "lib": ["es2015", "es2016", "es2017", "esnext"],
     "importHelpers": true
   },
   "include": [
@@ -12,11 +12,6 @@
     "../shared/**/*"
   ],
   "exclude": [
-    "./build",
-    "./*/build",
-    "./node_modules",
-    "./*/node_modules",
-    "../shared/node_modules",
-    "../shared/*/node_modules"
+    "node_modules"
   ]
 }

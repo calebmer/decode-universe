@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { PeersMesh } from '../shared/webrtc/PeersMesh';
 import { StudioRoom } from '../shared/StudioRoom';
 
 type Props = {
