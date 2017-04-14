@@ -1,7 +1,0 @@
-{
-  "license": "unlicensed",
-  "dependencies": {
-    "@types/socket.io-client": "^1.4.29",
-    "socket.io-client": "^1.7.3"
-  }
-}

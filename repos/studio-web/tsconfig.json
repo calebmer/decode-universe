@@ -1,0 +1,22 @@
+{
+  "extends": "../typescript/config/base",
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "es3",
+    "lib": ["dom", "es2015", "es2016", "es2017"],
+    "importHelpers": true,
+    "jsx": "react",
+    "baseUrl": ".",
+    "paths": {
+      "@decode/studio-ui": ["../studio-ui/src/index.ts"],
+      "@decode/studio-ui/*": ["../studio-ui/src/*"],
+      "@decode/studio-signal-exchange/*": ["../studio-signal-exchange/src/*"]
+    }
+  },
+  "include": [
+    "./src",
+    "../studio-ui/src",
+    "../studio-signal-exchange/src",
+    "../typescript/typings"
+  ]
+}

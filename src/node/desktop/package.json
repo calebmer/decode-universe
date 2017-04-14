@@ -1,7 +1,0 @@
-{
-  "license": "unlicensed",
-  "dependencies": {
-    "@types/electron": "^1.4.35",
-    "electron-devtools-installer": "^2.2.0"
-  }
-}
