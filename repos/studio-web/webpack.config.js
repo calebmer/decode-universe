@@ -48,8 +48,8 @@ module.exports = {
     pathinfo: true,
     // There will be one main bundle with other smaller bundles when code
     // splitting.
-    filename: 'static/js/[name].[hash:8].js',
-    chunkFilename: 'static/js/[name].[chunkhash:8].chunk.js',
+    filename: DEV ? 'static/js/bundle.js' : 'static/js/bundle.[hash:8].js',
+    chunkFilename: 'static/js/chunk.[chunkhash:8].chunk.js',
   },
   resolve: {
     // Make sure to add `.ts` to module resolution.
@@ -58,6 +58,9 @@ module.exports = {
       // Allow our code to import from other Decode repos.
       '@decode/studio-ui': path.join(__dirname, '../studio-ui/src'),
       '@decode/studio-signal-exchange': path.join(__dirname, '../studio-signal-exchange/src'),
+      // Make sure we only have one copy of a few common dependencies.
+      immutable: path.join(__dirname, './node_modules/immutable'),
+      rxjs: path.join(__dirname, './node_modules/rxjs'),
     },
   },
   module: {
