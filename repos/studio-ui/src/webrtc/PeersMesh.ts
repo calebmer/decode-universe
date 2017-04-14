@@ -9,13 +9,86 @@ import { Peer } from './Peer';
  */
 const debounceNegotiationNeededMs = 200;
 
+/**
+ * Manages the orchestration of the connection to many peers in a mesh format.
+ * This means that every peer is connected to every other peer and between each
+ * connection the peers exchange data and `MediaStream`s. The arrangement may be
+ * visualized as follows:
+ *
+ * ```
+ * a <----> b
+ * ^ \    / ^
+ * |  \  /  |
+ * |   \/   |
+ * |   /\   |
+ * |  /  \  |
+ * v /    \ v
+ * c <----> d
+ * ```
+ *
+ * Each node is connected to each other in a mesh. If we look from the
+ * perspective of just one node, `a`, then we can’t see the entire mesh. Instead
+ * we can only see our peers `b`, `c`, and `d`.
+ *
+ * ```
+ *      a
+ *     /|\
+ *    / | \
+ *   /  |  \
+ *  /   |   \
+ * b    c    d
+ * ```
+ *
+ * The `PeerMesh` class is implemented from the perspective of a single, local,
+ * node. `PeerMesh` orchestrates the connections between our “local” node (`a`)
+ * and one or more “remote” nodes (or peers; `b`, `c`, and `d`).
+ *
+ * We find our peers using the room name that is passed into the constructor,
+ * and we only connect to the mesh after `connect()` is called. To disconnect
+ * from the mesh one needs to call `close()`.
+ */
 export class PeersMesh {
+  /**
+   * The private subject observable that contains the immutable map of remote
+   * peers we are connected to.
+   *
+   * We use a `BehaviorSubject` so that we can get the latest value of the
+   * observable at any time (by using `.value`). This is critical to be able to
+   * add or remove peers relative to what is already in the map.
+   *
+   * Whenever we need to add or remove a peer our code will often take the form
+   * `this.peersSubject.next(this.peersSubject.value.add(...))` using
+   * Immutable.js mutations to create a new `OrderedMap`.
+   *
+   * We do not want to expose the ability to call `next()` on the
+   * `BehaviorSubject` to users so this property is private. Users are expected
+   * to use the observable `peers` in order to see our peers. The `peers`
+   * observable is simply a clone of `peersSubject` without the dangerous
+   * mutating `next()`, `error()`, or `complete()` methods.
+   *
+   * The map is keyed by the address we use to send messages to our peer through
+   * the `SignalClient`.
+   */
   private readonly peersSubject: BehaviorSubject<OrderedMap<string, Peer>>;
 
+  /**
+   * All of the peers that we are currently connected to keyed by their unique
+   * identifier given to us by our servers.
+   */
   public readonly peers: Observable<OrderedMap<string, Peer>>;
 
+  /**
+   * A signal client instance that can be used to send signals to our peers
+   * outside of the standard RTC process. This is required to negotiate the
+   * terms of real time communication with a peer.
+   */
   private readonly signals: SignalClient;
 
+  /**
+   * The set of local media streams that we provide to our peers. This is the
+   * observable that was passed in during the construction of the `PeerMesh`
+   * made publicly abailable.
+   */
   public readonly localStreams: Observable<Set<MediaStream>>;
 
   constructor({
@@ -37,6 +110,10 @@ export class PeersMesh {
     this.localStreams = localStreams;
   }
 
+  /**
+   * Closes the mesh. We will disconnect from all our peers and we will receive
+   * no more signals from those peers.
+   */
   public close(): void {
     // Close our signal client instance.
     this.signals.close();
@@ -50,6 +127,11 @@ export class PeersMesh {
     });
   }
 
+  /**
+   * Connects us to a mesh of peers. The specific mesh is specified by the
+   * `roomName` we were given at construction. Connects to the signaling server
+   * and all the peers currently in the room.
+   */
   public async connect(): Promise<void> {
     // Connect the signal client and get the addresses that are currently in the
     // room we pointed the signal client towards.
@@ -63,6 +145,10 @@ export class PeersMesh {
     }));
   }
 
+  /**
+   * Creates a peer and adds some event listeners to the `RTCPeerConnection`
+   * instance that we need for signaling and negotiation.
+   */
   private createPeer(address: string): Peer {
     const { localStreams } = this;
     // Create the peer.
@@ -148,6 +234,10 @@ export class PeersMesh {
     return peer;
   }
 
+  /**
+   * Starts negotiations with a peer by creating an offer and then sending that
+   * offer to the peer.
+   */
   private async startPeerNegotiations(
     address: string,
     peer: Peer,
@@ -166,6 +256,9 @@ export class PeersMesh {
     });
   }
 
+  /**
+   * Handles a signal sent to us by the peer with the provided address.
+   */
   private async handleSignal(address: string, signal: Signal): Promise<void> {
     // Get the peer using the provided address.
     let peer: Peer | undefined = this.peersSubject.value.get(address);

@@ -14,11 +14,33 @@ const rtcConfig = {
   ],
 };
 
+/**
+ * A single peer that we communicate with over the course of our application’s
+ * lifecycle.
+ *
+ * The peer is considered “open” on construction, and it can be closed with
+ * `close()`.
+ *
+ * This class is not responsible for negotiations with the peer. That is the
+ * responsibility of classes like `PeersMesh` or other orchestrators. This class
+ * does all of the actual work required to communicate data between the peers,
+ * but does not negotiate.
+ */
 export class Peer {
+  /**
+   * The DOM API object for the connection that we make with our peer.
+   */
   public readonly connection: RTCPeerConnection;
 
+  /**
+   * All of the remote media streams that our peer has given us access to. As
+   * the peer may add and remove streams over time this is an observable.
+   */
   public readonly remoteStreams: Observable<OrderedSet<MediaStream>>;
 
+  /**
+   * Disposables that are to be disposed of when we close the peer.
+   */
   private disposables: Array<{ dispose: () => void }> = [];
 
   constructor({
@@ -26,6 +48,7 @@ export class Peer {
   }: {
     localStreams: Observable<Set<MediaStream>>,
   }) {
+    // Create a new connection using the pre-defined config.
     this.connection = new RTCPeerConnection(rtcConfig);
 
     // Make sure to have a lazy observable ready for all of the remote streams
@@ -40,6 +63,10 @@ export class Peer {
     ));
   }
 
+  /**
+   * Closes the peer be closing the connection and disposing any other resources
+   * created to communicate with the peer.
+   */
   public close(): void {
     // Disposes all of our disposables.
     this.disposables.forEach(disposable => disposable.dispose());
