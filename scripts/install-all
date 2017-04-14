@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Install the packages in the current directory.
+yarn
+
+# Get all of the package.json files that we can find in src that are not inside
+# node_modules.
+for package_path in $(find $(pwd)/src -name "package.json" -not -path "*/node_modules/*"); do
+  # Enter the directory that the package lives in.
+  cd $(dirname $package_path)
+  # Install the dependencies for that package.
+  yarn
+done

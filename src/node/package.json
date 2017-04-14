@@ -1,0 +1,6 @@
+{
+  "license": "unlicensed",
+  "dependencies": {
+    "@types/node": "^7.0.12"
+  }
+}
