@@ -1,0 +1,7 @@
+#!/bin/bash
+
+export NODE_ENV=production
+
+rm -rf ./src/dom/web/build
+
+$(npm bin)/webpack --config ./configs/webpack/web.js

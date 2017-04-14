@@ -13,6 +13,11 @@
     "../shared/**/*"
   ],
   "exclude": [
-    "node_modules"
+    "./build",
+    "./*/build",
+    "./node_modules",
+    "./*/node_modules",
+    "../shared/node_modules",
+    "../shared/*/node_modules"
   ]
 }

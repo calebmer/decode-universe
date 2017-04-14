@@ -3,7 +3,7 @@ import {
   JoinResponseMessage,
   SignalOutgoingMessage,
   SignalIncomingMessage,
-} from '../shared/MessageTypes';
+} from '../../shared/signal/SignalMessageTypes';
 
 /**
  * Sets up a socket with everything it needs to connect and communicate with

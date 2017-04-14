@@ -1,8 +1,6 @@
 import { resolve as resolvePath } from 'path';
 import { app, BrowserWindow } from 'electron';
-
-// Set our global `DEV` environment variable.
-(global as any).DEV = process.env.NODE_ENV === 'development';
+import { DevToolsExtensions } from './DevToolsExtensions';
 
 // Keep a reference to the window so that it is not garbage collected.
 let window: Electron.BrowserWindow | null = null;
@@ -12,7 +10,7 @@ let window: Electron.BrowserWindow | null = null;
 app.on('ready', () => {
   // If we are in development then we want to install our devtools.
   if (DEV) {
-    require('./devtools');
+    DevToolsExtensions.install();
   }
 
   // Create the window.
@@ -21,8 +19,16 @@ app.on('ready', () => {
     height: 600,
   });
 
-  // Load the `index.html` of the page.
-  window.loadURL(`file://${resolvePath(__dirname, '../../build/renderer/index.html')}`);
+  const appHTML = resolvePath(
+    // Start at the directory that holds the bundle.
+    __dirname,
+    // Move from there to the build directory for the desktop application’s HTML
+    // file.
+    '../../../dom/desktop/build/app.html',
+  );
+
+  // Load the `app.html` for the page.
+  window.loadURL(`file://${appHTML}`);
 
   // Open the DevTools.
   window.webContents.openDevTools();

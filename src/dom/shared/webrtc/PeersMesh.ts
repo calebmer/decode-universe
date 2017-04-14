@@ -1,6 +1,7 @@
 import { Set, OrderedMap } from 'immutable';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { SignalClient, Signal } from '@decode/studio-signal-exchange/client';
+import { SignalClient } from '../../../shared/signal/SignalClient';
+import { Signal } from '../../../shared/signal/SignalMessageTypes';
 import { Peer } from './Peer';
 
 /**
