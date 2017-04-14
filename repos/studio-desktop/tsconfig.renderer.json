@@ -5,6 +5,7 @@
     "target": "es2015",
     "baseUrl": ".",
     "paths": {
+      "@decode/studio-ui": ["../studio-ui/src/index.ts"],
       "@decode/studio-ui/*": ["../studio-ui/src/*"],
       "@decode/studio-signal-exchange/*": ["../studio-signal-exchange/src/*"]
     }

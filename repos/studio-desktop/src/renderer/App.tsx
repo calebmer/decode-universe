@@ -1,11 +1,17 @@
 import * as React from 'react';
-import { StudioRoom } from '@decode/studio-ui/StudioRoom';
+import { PeersMesh, StudioRoom } from '@decode/studio-ui';
+
+type Props = {
+  mesh: PeersMesh,
+  onUserAudioStream: (stream: MediaStream) => void,
+  onUserAudioError: (error: mixed) => void,
+};
 
 type State = {
   isRecording: boolean,
 };
 
-export class App extends React.Component<{}, State> {
+export class App extends React.Component<Props, State> {
   state: State = {
     isRecording: false,
   };
@@ -23,6 +29,7 @@ export class App extends React.Component<{}, State> {
   };
 
   render() {
+    const { mesh, onUserAudioStream, onUserAudioError } = this.props;
     const { isRecording } = this.state;
     return (
       <div>
@@ -35,7 +42,11 @@ export class App extends React.Component<{}, State> {
         >
           {isRecording ? 'Stop' : 'Start'} Recording
         </button>
-        <StudioRoom/>
+        <StudioRoom
+          mesh={mesh}
+          onUserAudioStream={onUserAudioStream}
+          onUserAudioError={onUserAudioError}
+        />
       </div>
     );
   }

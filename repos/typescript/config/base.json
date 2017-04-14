@@ -5,6 +5,7 @@
     "newLine": "LF",
     "allowJs": true,
     "moduleResolution": "node",
+    "experimentalDecorators": true,
     "alwaysStrict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
