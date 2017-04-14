@@ -1,3 +1,7 @@
 {
-  "license": "unlicensed"
+  "license": "unlicensed",
+  "dependencies": {
+    "tslib": "^1.6.0",
+    "typescript": "2.3"
+  }
 }
