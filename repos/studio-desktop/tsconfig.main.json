@@ -6,11 +6,7 @@
     "outDir": "./build/main",
     "target": "es2015",
     "module": "commonjs",
-    "jsx": "preserve",
-    "baseUrl": ".",
-    "paths": {
-      "@decode/*": ["../*"]
-    }
+    "jsx": "preserve"
   },
   "include": [
     "./src/main",

@@ -3,6 +3,11 @@
   "compilerOptions": {
     "noEmit": true,
     "target": "es2015",
-    "importHelpers": true
+    "importHelpers": true,
+    "baseUrl": ".",
+    "paths": {
+      "@decode/*": ["../*"],
+      "*": ["./node_modules/*", "*"]
+    }
   }
 }
