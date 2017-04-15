@@ -2,8 +2,8 @@ const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { CheckerPlugin, TsConfigPathsPlugin } = require('awesome-typescript-loader');
-const BabiliPlugin = require('babili-webpack-plugin');
 const WatchMissingNodeModulesPlugin = require('react-dev-utils/WatchMissingNodeModulesPlugin');
+const BabiliPlugin = require('babili-webpack-plugin');
 const builtinModules = require('builtin-modules');
 
 const { DefinePlugin, HotModuleReplacementPlugin } = webpack;
