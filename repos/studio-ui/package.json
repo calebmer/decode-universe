@@ -1,5 +1,11 @@
 {
+  "private": true,
+  "name": "@decode/studio-ui",
+  "version": "0.0.0-versionless",
+  "main": "./src/index.ts",
+  "typings": "./src/index.ts",
   "dependencies": {
+    "@decode/studio-signal-exchange": "file:../studio-signal-exchange",
     "immutable": "^3.8.1",
     "react": "^15.4.2",
     "rxjs": "^5.3.0"

@@ -1,4 +1,9 @@
 {
+  "private": true,
+  "name": "@decode/studio-signal-exchange",
+  "version": "0.0.0-versionless",
+  "main": "./src/client/index.ts",
+  "typings": "./src/client/index.ts",
   "dependencies": {
     "socket.io": "^1.7.3",
     "socket.io-client": "^1.7.3"

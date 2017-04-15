@@ -1,5 +1,9 @@
 {
+  "private": true,
+  "name": "@decode/studio-web",
+  "version": "0.0.0-versionless",
   "dependencies": {
+    "@decode/studio-ui": "file:../studio-ui",
     "immutable": "^3.8.1",
     "react": "^15.4.2",
     "react-dom": "^15.4.2",
