@@ -125,20 +125,20 @@ module.exports = {
     // to restart the development server for Webpack to discover it. This plugin
     // makes the discovery automatic so you don't have to restart.
     DEV && new WatchMissingNodeModulesPlugin(),
-    // // Minify JavaScript in production.
-    // !DEV && new UglifyJsPlugin({
-    //   compress: {
-    //     screw_ie8: true, // React doesn't support IE8
-    //     warnings: false,
-    //   },
-    //   mangle: {
-    //     screw_ie8: true,
-    //   },
-    //   output: {
-    //     comments: false,
-    //     screw_ie8: true,
-    //   },
-    //   sourceMap: true,
-    // }),
+    // Minify JavaScript in production.
+    !DEV && new UglifyJsPlugin({
+      compress: {
+        screw_ie8: true, // React doesn't support IE8
+        warnings: false,
+      },
+      mangle: {
+        screw_ie8: true,
+      },
+      output: {
+        comments: false,
+        screw_ie8: true,
+      },
+      sourceMap: true,
+    }),
   ].filter(Boolean),
 };
