@@ -3,17 +3,5 @@
   "compilerOptions": {
     "noEmit": true,
     "target": "es2015"
-  },
-  "include": [
-    "../typescript/typings/mixed.d.ts",
-    "../typescript/typings/env.d.ts",
-    "../typescript/typings/webrtc.d.ts"
-  ],
-  "exclude": [
-    "./src/main",
-    "./build",
-    "./node_modules",
-    "../*/build",
-    "../*/node_modules"
-  ]
+  }
 }

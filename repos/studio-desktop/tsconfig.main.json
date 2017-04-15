@@ -1,5 +1,5 @@
 {
-  "extends": "./tsconfig",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
     "rootDir": "./src/main",
@@ -7,10 +7,5 @@
     "target": "es2015",
     "module": "commonjs",
     "jsx": "preserve"
-  },
-  "include": [
-    "./src/main",
-    "../typescript/typings/mixed.d.ts",
-    "../typescript/typings/env.d.ts"
-  ]
+  }
 }

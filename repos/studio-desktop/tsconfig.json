@@ -1,5 +1,5 @@
 {
-  "extends": "../typescript/config/base",
+  "extends": "../typescript/config/base.json",
   "compilerOptions": {
     "noEmit": true,
     "lib": ["dom", "es2015", "es2016", "es2017"],
@@ -14,14 +14,9 @@
     }
   },
   "include": [
+    "./src",
     "../typescript/typings/mixed.d.ts",
     "../typescript/typings/env.d.ts",
     "../typescript/typings/webrtc.d.ts"
-  ],
-  "exclude": [
-    "./build",
-    "./node_modules",
-    "../*/build",
-    "../*/node_modules"
   ]
 }
