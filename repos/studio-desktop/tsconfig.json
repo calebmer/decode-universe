@@ -14,9 +14,14 @@
     }
   },
   "include": [
-    "./src",
-    "../../repos/typescript/typings/mixed.d.ts",
-    "../../repos/typescript/typings/env.d.ts",
-    "../../repos/typescript/typings/webrtc.d.ts"
+    "../typescript/typings/mixed.d.ts",
+    "../typescript/typings/env.d.ts",
+    "../typescript/typings/webrtc.d.ts"
+  ],
+  "exclude": [
+    "./build",
+    "./node_modules",
+    "../*/build",
+    "../*/node_modules"
   ]
 }

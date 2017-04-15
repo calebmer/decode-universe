@@ -8,8 +8,15 @@
       "@decode/*": ["../*"]
     }
   },
+  "include": [
+    "../typescript/typings/mixed.d.ts",
+    "../typescript/typings/env.d.ts",
+    "../typescript/typings/webrtc.d.ts"
+  ],
   "exclude": [
-    "node_modules",
-    "build"
+    "./build",
+    "./node_modules",
+    "../*/build",
+    "../*/node_modules"
   ]
 }
