@@ -4,6 +4,9 @@
   "version": "0.0.0-versionless",
   "main": "./src/client/index.ts",
   "typings": "./src/client/index.ts",
+  "scripts": {
+    "postinstall": "rm -rf node_modules/@decode"
+  },
   "dependencies": {
     "socket.io": "^1.7.3",
     "socket.io-client": "^1.7.3"

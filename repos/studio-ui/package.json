@@ -4,6 +4,9 @@
   "version": "0.0.0-versionless",
   "main": "./src/index.ts",
   "typings": "./src/index.ts",
+  "scripts": {
+    "postinstall": "rm -rf node_modules/@decode"
+  },
   "dependencies": {
     "@decode/studio-signal-exchange": "file:../studio-signal-exchange",
     "immutable": "^3.8.1",

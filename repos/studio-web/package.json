@@ -2,6 +2,9 @@
   "private": true,
   "name": "@decode/studio-web",
   "version": "0.0.0-versionless",
+  "scripts": {
+    "postinstall": "rm -rf node_modules/@decode"
+  },
   "dependencies": {
     "@decode/studio-ui": "file:../studio-ui",
     "immutable": "^3.8.1",

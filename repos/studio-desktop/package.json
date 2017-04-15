@@ -3,6 +3,9 @@
   "name": "@decode/studio-desktop",
   "version": "0.0.0-versionless",
   "main": "./build/main/index.js",
+  "scripts": {
+    "postinstall": "rm -rf node_modules/@decode"
+  },
   "dependencies": {
     "@decode/studio-ui": "file:../studio-ui",
     "immutable": "^3.8.1",
