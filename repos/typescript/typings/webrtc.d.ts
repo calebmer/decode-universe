@@ -55,19 +55,15 @@ declare interface RTCDataChannel extends EventTarget {
   readonly ordered: boolean;
   readonly protocol: string;
   readonly readyState: 'connecting' | 'open' | 'closing' | 'closed';
+
+  close(): void;
+  send(data: USVString | Blob | ArrayBuffer | ArrayBufferView): void;
+
   onbufferedamountlow: (this: RTCDataChannel, ev: Event) => any;
   onclose: (this: RTCDataChannel, ev: Event) => any;
   onerror: (this: RTCDataChannel, ev: ErrorEvent) => any;
   onmessage: (this: RTCDataChannel, ev: MessageEvent) => any;
   onopen: (this: RTCDataChannel, ev: Event) => any;
-  /**
-   * https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel/close
-   */
-  close(): void;
-  /**
-   * https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel/send
-   */
-  send(data: USVString | Blob | ArrayBuffer | ArrayBufferView): void;
 
   addEventListener<K extends keyof RTCDataChannelEventMap>(type: K, listener: (this: RTCDataChannel, ev: RTCDataChannelEventMap[K]) => any, useCapture?: boolean): void;
 }

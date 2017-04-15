@@ -3,8 +3,10 @@ import { PeersMesh, StudioRoom } from '@decode/studio-ui';
 
 type Props = {
   mesh: PeersMesh,
-  onUserAudioStream: (stream: MediaStream) => void,
+  onUserAudioStream: (stream: MediaStream, previousStream: MediaStream | null) => void,
   onUserAudioError: (error: mixed) => void,
+  onStartRecording: () => void,
+  onStopRecording: () => void,
 };
 
 type State = {
@@ -17,15 +19,13 @@ export class App extends React.Component<Props, State> {
   };
 
   handleStartRecording = () => {
-    this.setState({
-      isRecording: true,
-    });
+    this.setState({ isRecording: true });
+    this.props.onStartRecording();
   };
 
   handleStopRecording = () => {
-    this.setState({
-      isRecording: false,
-    });
+    this.setState({ isRecording: false });
+    this.props.onStopRecording();
   };
 
   render() {

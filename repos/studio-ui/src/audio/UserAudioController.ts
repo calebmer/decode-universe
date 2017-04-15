@@ -2,7 +2,7 @@ import * as React from 'react';
 
 type Props = {
   deviceID: string | null,
-  onStream: (stream: MediaStream) => void,
+  onStream: (stream: MediaStream, previousStream: MediaStream | null) => void,
   onError: (error: mixed) => void,
 };
 
@@ -23,6 +23,9 @@ export class UserAudioController extends React.PureComponent<Props, {}> {
   // Used to “cancel” promises.
   private currentZoneID = 0;
 
+  // The previous stream that we gave to the user.
+  private previousStream: MediaStream | null = null;
+
   private tryToGetUserAudio() {
     const zoneID = this.currentZoneID += 1;
     const { deviceID, onStream, onError } = this.props;
@@ -41,7 +44,8 @@ export class UserAudioController extends React.PureComponent<Props, {}> {
       // If we are in the same zone then report the new stream we have.
       stream => {
         if (zoneID === this.currentZoneID) {
-          onStream(stream);
+          onStream(stream, this.previousStream);
+          this.previousStream = stream;
         }
       },
       // If we are in the same zone then report the error we got.

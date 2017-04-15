@@ -7,7 +7,7 @@ import { PeersMesh } from './webrtc/PeersMesh';
 
 type Props = {
   mesh: PeersMesh,
-  onUserAudioStream: (stream: MediaStream) => void,
+  onUserAudioStream: (stream: MediaStream, previousStream: MediaStream) => void,
   onUserAudioError: (error: mixed) => void,
 };
 
