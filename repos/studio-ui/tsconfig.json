@@ -7,7 +7,7 @@
     "jsx": "react",
     "baseUrl": ".",
     "paths": {
-      "@decode/studio-signal-exchange/*": ["../studio-signal-exchange/src/*"]
+      "@decode/*": ["../*"]
     }
   },
   "include": [

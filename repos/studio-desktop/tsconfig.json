@@ -6,9 +6,7 @@
     "jsx": "react",
     "baseUrl": ".",
     "paths": {
-      "@decode/studio-ui": ["../studio-ui/src/index.ts"],
-      "@decode/studio-ui/*": ["../studio-ui/src/*"],
-      "@decode/studio-signal-exchange/*": ["../studio-signal-exchange/src/*"],
+      "@decode/*": ["../*"],
       "immutable": ["./node_modules/immutable"],
       "immutable/*": ["./node_modules/immutable/*"],
       "rxjs": ["./node_modules/rxjs"],

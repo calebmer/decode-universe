@@ -2,7 +2,11 @@
   "extends": "../typescript/config/base",
   "compilerOptions": {
     "noEmit": true,
-    "lib": ["dom", "es2015", "es2016", "es2017"]
+    "lib": ["dom", "es2015", "es2016", "es2017"],
+    "baseUrl": ".",
+    "paths": {
+      "@decode/*": ["../*"]
+    }
   },
   "exclude": [
     "node_modules",
