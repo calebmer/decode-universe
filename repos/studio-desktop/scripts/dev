@@ -2,10 +2,6 @@
 
 export NODE_ENV=development
 
-rm -rf build
-
-$(npm bin)/webpack --config ./webpack.config.renderer.js
-
 $(npm bin)/concurrently \
-  '$(npm bin)/webpack --config ./webpack.config.renderer.js --watch' \
-  '$(npm bin)/tsc --project ./tsconfig.main.json && $(npm bin)/electron .'
+  '$(npm bin)/webpack-dev-server --config ./webpack.config.renderer.js --port 1998' \
+  'sleep 1 && $(npm bin)/tsc --project ./tsconfig.main.json && $(npm bin)/electron .'

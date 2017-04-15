@@ -1,4 +1,3 @@
-import { resolve as resolvePath } from 'path';
 import { app, BrowserWindow } from 'electron';
 
 // Set our global `DEV` environment variable.
@@ -22,7 +21,7 @@ app.on('ready', () => {
   });
 
   // Load the `index.html` of the page.
-  window.loadURL(`file://${resolvePath(__dirname, '../../build/renderer/index.html')}`);
+  window.loadURL('http://localhost:1998/index.html');
 
   // Open the DevTools.
   window.webContents.openDevTools();
