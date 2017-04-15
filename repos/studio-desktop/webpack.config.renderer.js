@@ -38,13 +38,14 @@ module.exports = {
   resolve: {
     // Make sure to add `.ts` to module resolution.
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+    // Allow our code to import from other Decode repos.
     alias: {
-      // Allow our code to import from other Decode repos.
       '@decode': path.resolve(__dirname, '..'),
-      // Make sure we only have one copy of a few common dependencies.
-      immutable: path.join(__dirname, './node_modules/immutable'),
-      rxjs: path.join(__dirname, './node_modules/rxjs'),
     },
+    // We only want to lookup modules in our own `node_modules` folder. We do
+    // *not* want to lookup modules in relative `node_modules` folders. All
+    // dependencies should be specified in our `package.json` file.
+    modules: [path.resolve(__dirname, './node_modules')],
   },
   module: {
     rules: [
