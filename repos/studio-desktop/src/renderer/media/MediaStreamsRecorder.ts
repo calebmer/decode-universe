@@ -1,5 +1,7 @@
 import { writeFile } from 'fs';
 import { BehaviorSubject } from 'rxjs';
+import { Recorder } from './recorder/Recorder';
+import { WAVRecorder } from './recorder/WAVRecorder';
 
 /**
  * A state that the recorder could be in. Terminology taken directly from
@@ -25,12 +27,14 @@ export enum RecordingState {
   paused,
 }
 
+const audioContext = new AudioContext();
+
 export class MediaStreamsRecorder {
   private readonly stateSubject = new BehaviorSubject(RecordingState.inactive);
 
   public readonly state = this.stateSubject.asObservable();
 
-  private readonly recorders = new Map<MediaStream, MediaRecorder>();
+  private readonly recorders = new Map<MediaStream, Recorder>();
 
   public addStream(stream: MediaStream): void {
     // If we already have a recorder for this stream then noop.
@@ -56,36 +60,10 @@ export class MediaStreamsRecorder {
     this.recorders.delete(stream);
   }
 
-  private createRecorder(stream: MediaStream): MediaRecorder {
-    const recorder = new MediaRecorder(stream, {
-      // As of the time of this code being written, Chrome only supports
-      // `audio/webm`. If it ever supports WAV or MP3 formats in the future we
-      // may want to use those.
-      mimeType: 'audio/webm',
-      // We would like to set our audio bits-per-second to 256 kbit/s because
-      // according to Wikipedia it is a [commonly used high-quality bitrate for
-      // MP3][1]. However, Chrome clamps the bitrate to 128 kbit/s so we can’t
-      // use 256 kbit/s.
-      //
-      // [1]: https://en.wikipedia.org/wiki/Bit_rate#MP3
-      //
-      // TODO: Consult with a professional to see if this is actually the best
-      // bitrate for our product. This bitrate is also for WebM and not MP3 so
-      // there may be a difference?
-      audioBitsPerSecond: 128000,
-    });
-    recorder.addEventListener('dataavailable', ({ data }) => {
-      blobToBuffer(data)
-        .then(buffer => new Promise((resolve, reject) => {
-          writeFile(`/Users/calebmer/Desktop/test-${Math.round(Math.random() * 1000)}.webm`, buffer, error => {
-            if (error) {
-              reject(error);
-            } else {
-              resolve();
-            }
-          });
-        }))
-        .catch(console.error)
+  private createRecorder(stream: MediaStream): Recorder {
+    const recorder = new WAVRecorder({
+      stream,
+      context: audioContext,
     });
     // Change the recorder’s state based on our current state.
     switch (this.stateSubject.value) {
@@ -135,7 +113,18 @@ export class MediaStreamsRecorder {
   public stop(): void {
     // Stop all of our recorders.
     for (const recorder of this.recorders.values()) {
-      recorder.stop();
+      recorder.stop()
+        .then(blob => blobToBuffer(blob))
+        .then(buffer => new Promise((resolve, reject) => {
+          writeFile(`/Users/calebmer/Desktop/test-${Math.round(Math.random() * 1000)}.wav`, buffer, error => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve();
+            }
+          });
+        }))
+        .catch(console.error);
     }
     // Set our state to paused.
     this.stateSubject.next(RecordingState.inactive);

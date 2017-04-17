@@ -6,7 +6,7 @@
     "baseUrl": ".",
     "paths": {
       "@decode/*": ["../*"],
-      "*": ["./node_modules/*", "*"]
+      "rxjs": ["./node_modules/rxjs"]
     }
   }
 }
