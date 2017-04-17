@@ -4,6 +4,7 @@ import { UserAudioDevicesSelect } from './audio/UserAudioDevicesSelect';
 import { UserAudioController } from './audio/UserAudioController';
 import { AudioVisualization } from './audio/AudioVisualization';
 import { PeersMesh } from './rtc/PeersMesh';
+import { PeerConnectionStatus } from './rtc/Peer';
 
 type Props = {
   mesh: PeersMesh,
@@ -69,7 +70,15 @@ export class StudioRoom extends React.Component<Props, State> {
             <ul>
               {peers.map((peer, id) => (
                 <li key={id}>
-                  <p>{id}</p>
+                  <p>
+                    {id}{' '}
+                    {ReactObservable.render(
+                      peer!.connectionStatus,
+                      connectionStatus => (
+                        <span>({PeerConnectionStatus[connectionStatus]})</span>
+                      ),
+                    )}
+                  </p>
                   <div style={{
                     width: '500px',
                     height: '100px',
