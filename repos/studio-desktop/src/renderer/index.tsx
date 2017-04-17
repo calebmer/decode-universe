@@ -1,19 +1,10 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { Set } from 'immutable';
-import { BehaviorSubject } from 'rxjs';
 import { PeersMesh } from '@decode/studio-ui';
 import { MediaStreamsRecorder } from './media/MediaStreamsRecorder';
 import { App } from './App';
 
-const userStream = new BehaviorSubject<MediaStream | null>(null);
-
-const mesh = new PeersMesh({
-  roomName: 'hello world',
-  localStreams: userStream.map((stream): Set<MediaStream> =>
-    stream === null ? Set<MediaStream>() : Set([stream])
-  ),
-});
+const mesh = new PeersMesh({ roomName: 'hello world' });
 
 mesh.connect().catch(error => console.error(error));
 
@@ -23,15 +14,19 @@ ReactDOM.render(
   <App
     mesh={mesh}
     onUserAudioStream={(stream, previousStream) => {
-      userStream.next(stream);
       if (previousStream !== null) {
+        mesh.removeStream(previousStream);
         recorder.removeStream(previousStream);
       }
+      mesh.addStream(stream);
       recorder.addStream(stream);
     }}
-    onUserAudioError={error => {
+    onUserAudioError={(error, previousStream) => {
       console.error(error);
-      userStream.next(null);
+      if (previousStream !== null) {
+        mesh.removeStream(previousStream);
+        recorder.removeStream(previousStream);
+      }
     }}
     onStartRecording={() => recorder.start()}
     onStopRecording={() => recorder.stop()}

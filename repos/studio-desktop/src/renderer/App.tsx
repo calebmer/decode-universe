@@ -4,7 +4,7 @@ import { PeersMesh, StudioRoom } from '@decode/studio-ui';
 type Props = {
   mesh: PeersMesh,
   onUserAudioStream: (stream: MediaStream, previousStream: MediaStream | null) => void,
-  onUserAudioError: (error: mixed) => void,
+  onUserAudioError: (error: mixed, previousStream: MediaStream | null) => void,
   onStartRecording: () => void,
   onStopRecording: () => void,
 };

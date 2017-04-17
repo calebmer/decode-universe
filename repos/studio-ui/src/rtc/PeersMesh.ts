@@ -84,19 +84,10 @@ export class PeersMesh {
    */
   private readonly signals: SignalClient;
 
-  /**
-   * The set of local media streams that we provide to our peers. This is the
-   * observable that was passed in during the construction of the `PeerMesh`
-   * made publicly abailable.
-   */
-  public readonly localStreams: Observable<Set<MediaStream>>;
-
   constructor({
     roomName,
-    localStreams,
   }: {
     roomName: string,
-    localStreams: Observable<Set<MediaStream>>,
   }) {
     this.signals = new SignalClient({
       roomName,
@@ -107,7 +98,6 @@ export class PeersMesh {
     });
     this.peersSubject = new BehaviorSubject(OrderedMap<string, Peer>());
     this.peers = this.peersSubject.asObservable();
-    this.localStreams = localStreams;
   }
 
   /**
@@ -150,11 +140,18 @@ export class PeersMesh {
    * instance that we need for signaling and negotiation.
    */
   private createPeer(address: string): Peer {
-    const { localStreams } = this;
     // Create the peer.
-    const peer = new Peer({ localStreams });
+    const peer = new Peer();
     // Update our peers map by adding this peer keyed by its address.
     this.peersSubject.next(this.peersSubject.value.set(address, peer));
+    // Add all of the streams in our local cache to the peer. It is important
+    // that this happens *before* we add the event listener for
+    // `negotiationneeded`.
+    this.localStreamsSubject.value.forEach(stream => {
+      if (stream !== undefined) {
+        peer.addStream(stream);
+      }
+    });
     // When we are told that a negotiation is needed we need to start creating
     // and sending offers.
     //
@@ -319,5 +316,45 @@ export class PeersMesh {
         break;
       }
     }
+  }
+
+  /**
+   * A private cache of streams that will be used to hydrate peers when they
+   * come online.
+   */
+  private readonly localStreamsSubject = new BehaviorSubject(Set<MediaStream>());
+
+  /**
+   * An observable that allows external consumers to see the internal state of
+   * the local streams being distributed to peers inside the mesh.
+   */
+  public readonly localStreams = this.localStreamsSubject.asObservable();
+
+  /**
+   * Adds a stream that will be distributed to all of the peers in the mesh.
+   */
+  public addStream(stream: MediaStream): void {
+    // Adds the stream to our local cache.
+    this.localStreamsSubject.next(this.localStreamsSubject.value.add(stream));
+    // Add the stream to all of our peers.
+    this.peersSubject.value.forEach(peer => {
+      if (peer !== undefined) {
+        peer.addStream(stream);
+      }
+    });
+  }
+
+  /**
+   * Removes a stream that will be removed from all of the peers in the mesh.
+   */
+  public removeStream(stream: MediaStream): void {
+    // Remove the stream from our local cache.
+    this.localStreamsSubject.next(this.localStreamsSubject.value.remove(stream));
+    // Removes the stream from all our peers.
+    this.peersSubject.value.forEach(peer => {
+      if (peer !== undefined) {
+        peer.removeStream(stream);
+      }
+    });
   }
 }

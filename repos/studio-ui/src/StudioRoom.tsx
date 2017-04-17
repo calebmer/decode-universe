@@ -7,8 +7,8 @@ import { PeersMesh } from './rtc/PeersMesh';
 
 type Props = {
   mesh: PeersMesh,
-  onUserAudioStream: (stream: MediaStream, previousStream: MediaStream) => void,
-  onUserAudioError: (error: mixed) => void,
+  onUserAudioStream: (stream: MediaStream, previousStream: MediaStream | null) => void,
+  onUserAudioError: (error: mixed, previousStream: MediaStream | null) => void,
 };
 
 type State = {
@@ -76,10 +76,10 @@ export class StudioRoom extends React.Component<Props, State> {
                     backgroundColor: 'tomato',
                   }}>
                     {ReactObservable.render(
-                      peer!.remoteStreams,
-                      remoteStreams => remoteStreams.size > 0 && (
+                      peer!.streams,
+                      streams => streams.size > 0 && (
                         <AudioVisualization
-                          node={getMediaStreamSource(remoteStreams.first())}
+                          node={getMediaStreamSource(streams.first())}
                         />
                       ),
                     )}

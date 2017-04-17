@@ -3,7 +3,7 @@ import * as React from 'react';
 type Props = {
   deviceID: string | null,
   onStream: (stream: MediaStream, previousStream: MediaStream | null) => void,
-  onError: (error: mixed) => void,
+  onError: (error: mixed, previousStream: MediaStream | null) => void,
 };
 
 export class UserAudioController extends React.PureComponent<Props, {}> {
@@ -51,7 +51,7 @@ export class UserAudioController extends React.PureComponent<Props, {}> {
       // If we are in the same zone then report the error we got.
       error => {
         if (zoneID === this.currentZoneID) {
-          onError(error);
+          onError(error, this.previousStream);
         }
       },
     );
