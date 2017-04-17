@@ -141,17 +141,11 @@ export class PeersMesh {
    */
   private createPeer(address: string): Peer {
     // Create the peer.
-    const peer = new Peer();
+    const peer = new Peer({
+      localStreams: this.localStreamsSubject.value,
+    });
     // Update our peers map by adding this peer keyed by its address.
     this.peersSubject.next(this.peersSubject.value.set(address, peer));
-    // Add all of the streams in our local cache to the peer. It is important
-    // that this happens *before* we add the event listener for
-    // `negotiationneeded`.
-    this.localStreamsSubject.value.forEach(stream => {
-      if (stream !== undefined) {
-        peer.addStream(stream);
-      }
-    });
     // When we are told that a negotiation is needed we need to start creating
     // and sending offers.
     //
