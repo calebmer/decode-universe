@@ -38,9 +38,18 @@ type ObservableState<T> = {
   state: 'complete',
 };
 
+// Get the display name for `ReactObservableComponent`. We use a function like
+// this so that the name will be mangled when going through an uglification
+// step.
+let displayName: string;
+(() => {
+  function ReactObservable() {}
+  displayName = ReactObservable.name;
+})();
+
 class ReactObservableComponent<T>
 extends React.PureComponent<Props<T>, State<T>> {
-  static displayName = 'ReactObservable';
+  static displayName = displayName;
 
   state: State<T> = {
     observableState: { state: 'waiting' },
@@ -99,8 +108,10 @@ extends React.PureComponent<Props<T>, State<T>> {
           },
         });
       },
-      // If we got an error then we need to update our state with the error.
+      // If we got an error then we need to log that error and then update our
+      // state with the error.
       error: error => {
+        console.error(error);
         this.setState({
           observableState: {
             state: 'error',
