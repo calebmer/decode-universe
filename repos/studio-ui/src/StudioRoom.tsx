@@ -3,7 +3,7 @@ import { ReactObservable } from './shared/observable/ReactObservable';
 import { UserAudioDevicesSelect } from './audio/UserAudioDevicesSelect';
 import { UserAudioController } from './audio/UserAudioController';
 import { AudioVisualization } from './audio/AudioVisualization';
-import { PeersMesh } from './webrtc/PeersMesh';
+import { PeersMesh } from './rtc/PeersMesh';
 
 type Props = {
   mesh: PeersMesh,

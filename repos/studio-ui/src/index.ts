@@ -1,2 +1,2 @@
 export { StudioRoom } from './StudioRoom';
-export { PeersMesh } from './webrtc/PeersMesh';
+export { PeersMesh } from './rtc/PeersMesh';
