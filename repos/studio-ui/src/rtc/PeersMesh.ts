@@ -150,10 +150,10 @@ export class PeersMesh {
    * Creates a peer and adds some event listeners to the `RTCPeerConnection`
    * instance that we need for signaling and negotiation.
    */
-  private createPeer(address: string, initiator: boolean): Peer {
+  private createPeer(address: string, isInitiator: boolean): Peer {
     // Create the peer.
     const peer = new Peer({
-      initiator,
+      isInitiator,
       localState: this.localStateSubject.value,
       localStreams: this.localStreamsSubject.value,
     });
