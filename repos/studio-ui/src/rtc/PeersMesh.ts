@@ -89,8 +89,10 @@ export class PeersMesh {
 
   constructor({
     roomName,
+    localState,
   }: {
     roomName: string,
+    localState: PeerState,
   }) {
     this.signals = new SignalClient({
       roomName,
@@ -99,6 +101,9 @@ export class PeersMesh {
           .catch(error => console.error(error));
       },
     });
+    // Create the local state subject using the initial state provided to us.
+    this.localStateSubject = new BehaviorSubject(localState);
+    this.localState = this.localStateSubject.asObservable();
   }
 
   /**
@@ -116,6 +121,10 @@ export class PeersMesh {
         peer.close();
       }
     });
+    // Complete our subjects. We are done with them.
+    this.peersSubject.complete();
+    this.localStateSubject.complete();
+    this.localStreamsSubject.complete();
   }
 
   /**
@@ -144,6 +153,8 @@ export class PeersMesh {
   private createPeer(address: string, initiator: boolean): Peer {
     // Create the peer.
     const peer = new Peer({
+      initiator,
+      localState: this.localStateSubject.value,
       localStreams: this.localStreamsSubject.value,
     });
     // Update our peers map by adding this peer keyed by its address.
@@ -273,7 +284,7 @@ export class PeersMesh {
     // an offer signal then we need to throw an error.
     if (peer === undefined) {
       if (signal.type === 'offer') {
-        peer = this.createPeer(address);
+        peer = this.createPeer(address, false);
       } else {
         throw new Error(`No peer found with address '${address}'.`);
       }
@@ -324,6 +335,38 @@ export class PeersMesh {
         break;
       }
     }
+  }
+
+  /**
+   * The local state on this peer mesh.
+   */
+  private readonly localStateSubject: BehaviorSubject<PeerState>;
+
+  /**
+   * The local state for this mesh. Use `setState` to update and the updates
+   * from `setState` will be propogated to all of the peers in our mesh.
+   */
+  public readonly localState: Observable<PeerState>;
+
+  /**
+   * Updates the local state with a partial state object. Anyone listening to
+   * the local state will be updated, and any peers will also be updated.
+   */
+  public updateLocalState(partialState: Partial<PeerState>): void {
+    // Create the next state object.
+    const nextState: PeerState = {
+      ...this.localStateSubject.value,
+      ...partialState,
+    };
+    // Updates the local state on all of our peers which will send out the
+    // message.
+    this.peersSubject.value.forEach(peer => {
+      if (peer !== undefined) {
+        peer.setLocalState(nextState);
+      }
+    });
+    // Update our subject so that anyone observing can get the update.
+    this.localStateSubject.next(nextState);
   }
 
   /**

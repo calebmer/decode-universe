@@ -2,7 +2,13 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { PeersMesh, StudioRoom } from '@decode/studio-ui';
 
-const mesh = new PeersMesh({ roomName: 'hello world' });
+const mesh = new PeersMesh({
+  roomName: 'hello world',
+  localState: {
+    isHost: false,
+    name: '',
+  },
+});
 
 mesh.connect().catch(error => console.error(error));
 

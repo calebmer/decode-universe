@@ -12,7 +12,7 @@ declare interface RTCPeerConnection {
   /**
    * https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/createDataChannel
    */
-  createDataChannel(label: string, options: RTCDataChannelInit): RTCDataChannel;
+  createDataChannel(label: string, options?: RTCDataChannelInit): RTCDataChannel;
 }
 
 // Extend the `RTCPeerConnectionEventMap` interface provided by the TypeScript lib.

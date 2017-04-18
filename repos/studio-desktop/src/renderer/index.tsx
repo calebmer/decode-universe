@@ -4,7 +4,13 @@ import { PeersMesh } from '@decode/studio-ui';
 import { MediaStreamsRecorder } from './media/MediaStreamsRecorder';
 import { App } from './App';
 
-const mesh = new PeersMesh({ roomName: 'hello world' });
+const mesh = new PeersMesh({
+  roomName: 'hello world',
+  localState: {
+    isHost: true,
+    name: '',
+  },
+});
 
 mesh.connect().catch(error => console.error(error));
 

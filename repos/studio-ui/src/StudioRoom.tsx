@@ -13,28 +13,45 @@ type Props = {
 };
 
 type State = {
+  name: string,
   deviceID: string | null,
 };
 
 const audioContext = new AudioContext();
 
-const selectedInputDeviceIDKey = '@decode/studio-ui/selectedInputDeviceID';
+const nameKey = '@decode/studio-ui/name';
+const deviceIDKey = '@decode/studio-ui/deviceID';
 
 export class StudioRoom extends React.Component<Props, State> {
   state: State = {
-    deviceID: localStorage.getItem(selectedInputDeviceIDKey),
+    name: localStorage.getItem(nameKey) || 'Guest',
+    deviceID: localStorage.getItem(deviceIDKey),
+  };
+
+  componentDidMount() {
+    this.props.mesh.updateLocalState({ name: this.state.name });
+  }
+
+  handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const name = event.target.value;
+    // Update the state with the new name.
+    this.setState({ name });
+    // Update the local state in the mesh with the new name.
+    this.props.mesh.updateLocalState({ name });
+    // Update local storage with the new information.
+    localStorage.setItem(nameKey, name);
   };
 
   handleSelectDeviceID = (deviceID: string) => {
     // Update the state with the new device id.
     this.setState({ deviceID });
     // Update local storage with the new information.
-    localStorage.setItem(selectedInputDeviceIDKey, deviceID);
+    localStorage.setItem(deviceIDKey, deviceID);
   };
 
   render() {
     const { mesh, onUserAudioStream, onUserAudioError } = this.props;
-    const { deviceID } = this.state;
+    const { name, deviceID } = this.state;
     return (
       <div>
         <UserAudioController
@@ -42,6 +59,13 @@ export class StudioRoom extends React.Component<Props, State> {
           onStream={onUserAudioStream}
           onError={onUserAudioError}
         />
+        <p>
+          Name:{' '}
+          <input
+            value={name}
+            onChange={this.handleNameChange}
+          />
+        </p>
         <p>
           Audio Input:{' '}
           <UserAudioDevicesSelect
@@ -71,7 +95,13 @@ export class StudioRoom extends React.Component<Props, State> {
               {peers.map((peer, id) => (
                 <li key={id}>
                   <p>
-                    {id}{' '}
+                    {ReactObservable.render(
+                      peer!.remoteState,
+                      state => (
+                        <span>{state.name}</span>
+                      ),
+                    )}
+                    {' '}
                     {ReactObservable.render(
                       peer!.connectionStatus,
                       connectionStatus => (

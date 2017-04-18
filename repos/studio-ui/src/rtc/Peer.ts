@@ -1,5 +1,31 @@
 import { Set, OrderedSet } from 'immutable';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
+
+/**
+ * Some basic state that is shared between the peers in a peer to peer
+ * connection.
+ *
+ * This state is designed to be easily serialized to and deserialized from JSON.
+ */
+export type PeerState = {
+  /**
+   * Whether or not the peer is a host of the room we are connected to. Hosts
+   * have elevated privaleges.
+   *
+   * Technically this value is not secure! If a malicious actor wanted to they
+   * could make themselves look like a host. Make sure nothing absolutely
+   * catastrophic to security is hidden behind this flag because it can be
+   * spoofed. Since the privaleges are relatively minor (hosts can start/stop
+   * recordings, mute guests, and a few more administrative behaviors) we aren’t
+   * currently too concerned with this attack vector.
+   */
+  readonly isHost: boolean,
+
+  /**
+   * The name of the peer.
+   */
+  readonly name: string,
+};
 
 /**
  * The configuration we use when creating `RTCPeerConnection` instances.
@@ -24,6 +50,17 @@ const rtcConfig = {
  * responsibility of classes like `PeersMesh` or other orchestrators. This class
  * does all of the actual work required to communicate data between the peers,
  * but does not negotiate.
+ *
+ * You can visualize the connection modeled by the `Peer` class like so:
+ *
+ * ```
+ * Peer A <-------------> Peer B
+ * ```
+ *
+ * If we are peer A then we call any data related to peer A (which is us)
+ * “local” and any data from peer B as “remote.” Both peers A and B will have an
+ * instance of `Peer` that models the same connection. What is “local” and what
+ * is “remote” is swapped in these two instances on different computers.
  */
 export class Peer {
   /**
@@ -43,14 +80,49 @@ export class Peer {
   public readonly connectionStatus: Observable<PeerConnectionStatus>;
 
   /**
-   * Disposables that are to be disposed of when we close the peer.
+   * The remote state subject is where we will send new state objects. The value
+   * will be null while we are loading. The view into this subject for consumers
+   * will filter out nulls.
    */
-  private disposables: Array<{ dispose: () => void }> = [];
+  private readonly remoteStateSubject = new BehaviorSubject<PeerState | null>(null);
+
+  /**
+   * The state of our peer. Will emit the most recent state that we know about
+   * immeadiately on subscription unless we have not yet gotten state from our
+   * peer. In that case there will be no emissions until the peer sends us their
+   * state.
+   */
+  public readonly remoteState: Observable<PeerState> =
+    this.remoteStateSubject.filter(state => state !== null);
+
+  /**
+   * The internal data channel we use to communicate peer state. `null` if we
+   * are not the initiator in the peer connection and are waiting to get the
+   * data channel.
+   */
+  private stateChannel: RTCDataChannel | null = null;
+
+  /**
+   * The current local state. This will only have a value if `stateChannel` is
+   * null. Once we have a `stateChannel` this will be set to null and then never
+   * updated again. We use it so that when `stateChannel` comes online we can
+   * immeadiately send the latest local state.
+   */
+  private currentLocalState: PeerState | null;
+
+  /**
+   * Anything that should be disposed of when we close the peer.
+   */
+  private disposables: Array<Disposable> = [];
 
   constructor({
-    localStreams
+    initiator,
+    localStreams,
+    localState,
   }: {
+    initiator: boolean,
     localStreams: Set<MediaStream>,
+    localState: PeerState,
   }) {
     // Create a new connection using the pre-defined config.
     this.connection = new RTCPeerConnection(rtcConfig);
@@ -60,9 +132,86 @@ export class Peer {
         this.connection.addStream(stream);
       }
     });
+    // Set the current local state to the initial state we were given.
+    this.currentLocalState = localState;
     // Create some observables that watch the connection and emit events.
     this.connectionStatus = watchConnectionStatus(this.connection);
     this.remoteStreams = watchRemoteStreams(this.connection);
+    // If we are the initiator then we want to create some data channels. If we
+    // are not the initiator then we want to set an event listener that waits
+    // for the initiator to create new data channels.
+    if (initiator) {
+      this.stateChannel = this.connection.createDataChannel('state');
+      this.initializeStateChannel(this.stateChannel);
+    } else {
+      // Handle new data channels.
+      const handleDataChannel = ({ channel }: RTCDataChannelEvent) => {
+        // If this the channel for our state then update our instance and
+        // initialize the channel.
+        if (channel.label === 'state') {
+          this.stateChannel = channel;
+          this.initializeStateChannel(this.stateChannel);
+        }
+        // Remove the data channel event listener. We don’t need it anymore!
+        this.connection.removeEventListener('datachannel', handleDataChannel);
+      };
+      // Add the data channel event listener. It will remove itself once its
+      // mission is completed.
+      this.connection.addEventListener('datachannel', handleDataChannel);
+    }
+  }
+
+  /**
+   * Initializes a state channel by sending the current local state to that
+   * channel and adding event listeners which will maintain an observable for
+   * that state.
+   *
+   * This is in its own method because there are two different ways that we may
+   * get our state data channel.
+   */
+  private initializeStateChannel(channel: RTCDataChannel): void {
+    // Send our current local state as soon as the channel opens. After we do
+    // this we no longer need the `currentLocalState` property because
+    // `initializeStateChannel()` should only ever be called once. So we remove
+    // `currentLocalState`.
+    if (this.currentLocalState !== null) {
+      const sendInitialState = () => {
+        // Send the current state before removing our reference to that state.
+        channel.send(JSON.stringify(this.currentLocalState));
+        this.currentLocalState = null;
+        // Remove the event listener.
+        channel.removeEventListener('open', sendInitialState);
+      };
+      // Add the event listener which will send our initial state.
+      channel.addEventListener('open', sendInitialState);
+    } else {
+      throw new Error('Did not expect the current local state to be null.');
+    }
+
+    // Handles a message from our data channel by alerting any listeners to the
+    // remote state observable that there is new data.
+    const handleMessage = (event: MessageEvent) => {
+      const remoteState: PeerState = JSON.parse(event.data);
+      this.remoteStateSubject.next(remoteState);
+    };
+
+    // Handles an error from our data channel by alerting any listeners.
+    const handleError = (event: ErrorEvent) => {
+      this.remoteStateSubject.error(event.error);
+    };
+
+    // Add our event listeners to the data channel.
+    channel.addEventListener('message', handleMessage);
+    channel.addEventListener('error', handleError);
+
+    // Add a disposable which cleans up our event listeners from the data
+    // channel. They will be removed when the peer closes.
+    this.disposables.push({
+      dispose: () => {
+        channel.removeEventListener('message', handleMessage);
+        channel.removeEventListener('error', handleError);
+      },
+    });
   }
 
   /**
@@ -76,6 +225,20 @@ export class Peer {
     // If the connection is not already closed then close it.
     if (this.connection.signalingState !== 'closed') {
       this.connection.close();
+    }
+    // Complete our subjects. We are done with them.
+    this.remoteStateSubject.complete();
+  }
+
+  /**
+   * Sets the new local state. The peer will be notified and should update
+   * accordingly.
+   */
+  public setLocalState(state: PeerState): void {
+    if (this.stateChannel !== null && this.stateChannel.readyState === 'open') {
+      this.stateChannel.send(JSON.stringify(state));
+    } else {
+      this.currentLocalState = state;
     }
   }
 
