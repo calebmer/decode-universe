@@ -11,14 +11,14 @@ ReactDOM.render(
     mesh={mesh}
     onUserAudioStream={(stream, previousStream) => {
       if (previousStream !== null) {
-        mesh.removeStream(previousStream);
+        mesh.removeLocalStream(previousStream);
       }
-      mesh.addStream(stream);
+      mesh.addLocalStream(stream);
     }}
     onUserAudioError={(error, previousStream) => {
       console.error(error);
       if (previousStream !== null) {
-        mesh.removeStream(previousStream);
+        mesh.removeLocalStream(previousStream);
       }
     }}
   />,

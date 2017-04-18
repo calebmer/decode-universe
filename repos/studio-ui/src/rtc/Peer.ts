@@ -35,7 +35,7 @@ export class Peer {
    * All of the remote media streams that our peer has given us access to. As
    * the peer may add and remove streams over time this is an observable.
    */
-  public readonly streams: Observable<OrderedSet<MediaStream>>;
+  public readonly remoteStreams: Observable<OrderedSet<MediaStream>>;
 
   /**
    * Represents the status of the connection that we have with our peer.
@@ -62,7 +62,7 @@ export class Peer {
     });
     // Create some observables that watch the connection and emit events.
     this.connectionStatus = watchConnectionStatus(this.connection);
-    this.streams = watchRemoteStreams(this.connection);
+    this.remoteStreams = watchRemoteStreams(this.connection);
   }
 
   /**
@@ -83,7 +83,7 @@ export class Peer {
    * Adds a stream to the peer connection. The peer will be notified and should
    * update accordingly.
    */
-  public addStream(stream: MediaStream): void {
+  public addLocalStream(stream: MediaStream): void {
     this.connection.addStream(stream);
   }
 
@@ -91,7 +91,7 @@ export class Peer {
    * Removes a stream from the peer connection. The peer will be notified and
    * should update accordingly.
    */
-  public removeStream(stream: MediaStream): void {
+  public removeLocalStream(stream: MediaStream): void {
     this.connection.removeStream(stream);
   }
 }

@@ -15,16 +15,16 @@ ReactDOM.render(
     mesh={mesh}
     onUserAudioStream={(stream, previousStream) => {
       if (previousStream !== null) {
-        mesh.removeStream(previousStream);
+        mesh.removeLocalStream(previousStream);
         recorder.removeStream(previousStream);
       }
-      mesh.addStream(stream);
+      mesh.addLocalStream(stream);
       recorder.addStream(stream);
     }}
     onUserAudioError={(error, previousStream) => {
       console.error(error);
       if (previousStream !== null) {
-        mesh.removeStream(previousStream);
+        mesh.removeLocalStream(previousStream);
         recorder.removeStream(previousStream);
       }
     }}

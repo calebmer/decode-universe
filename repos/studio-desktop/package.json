@@ -8,12 +8,14 @@
   },
   "dependencies": {
     "@decode/studio-ui": "file:../studio-ui",
+    "debug": "^2.6.3",
     "immutable": "^3.8.1",
     "react": "^15.4.2",
     "react-dom": "^15.4.2",
     "rxjs": "^5.3.0"
   },
   "devDependencies": {
+    "@types/debug": "^0.0.29",
     "@types/electron": "^1.4.35",
     "@types/node": "^7.0.12",
     "@types/react-dom": "^0.14.23",

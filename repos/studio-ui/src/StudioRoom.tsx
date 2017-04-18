@@ -85,7 +85,7 @@ export class StudioRoom extends React.Component<Props, State> {
                     backgroundColor: 'tomato',
                   }}>
                     {ReactObservable.render(
-                      peer!.streams,
+                      peer!.remoteStreams,
                       streams => streams.size > 0 && (
                         <AudioVisualization
                           node={getMediaStreamSource(streams.first())}

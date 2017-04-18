@@ -62,7 +62,10 @@ module.exports = {
         /^[a-zA-Z]/.test(request) &&
         // However, we do want to bundle certain Webpack utilities related to
         // hot reloading.
-        !/^webpack\/hot\/dev-server/.test(request)
+        !/^webpack\/hot\/dev-server/.test(request) &&
+        // We also want to bundle some packages that have special browser builds
+        // that won’t activate if we require them as node modules.
+        !['debug'].includes(request)
       ) {
         // If we are in development then we want to use the absolute path of
         // the module because our bundle is hosted from `webpack-dev-server`.
@@ -87,9 +90,11 @@ module.exports = {
   resolve: {
     // Make sure to add `.ts` to module resolution.
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
-    // Allow our code to import from other Decode repos.
     alias: {
+      // Allow our code to import from other Decode repos.
       '@decode': path.resolve(__dirname, '..'),
+      // Use the browser build for debug and not the Node.js build.
+      'debug': path.resolve(__dirname, './node_modules/debug/src/browser.js'),
     },
     // We only want to lookup modules in our own `node_modules` folder. We do
     // *not* want to lookup modules in relative `node_modules` folders. All

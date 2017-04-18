@@ -1,3 +1,4 @@
+import * as createDebugger from 'debug';
 import * as socketIO from 'socket.io-client';
 import {
   JoinRequestMessage,
@@ -6,6 +7,8 @@ import {
   SignalIncomingMessage,
   Signal,
 } from '../shared/MessageTypes';
+
+const debug = createDebugger('@decode/studio-signal-exchange');
 
 export class SignalClient {
   /**
@@ -62,8 +65,13 @@ export class SignalClient {
     }
     // Create the socket.
     const socket = this.socket = socketIO('http://localhost:2000');
+    // When the socket has fully connected, do some stuff.
+    socket.on('connect', () => {
+      debug(`Connected to signal exchange as ${socket.id}`);
+    });
     // When we get a signal from the socket we want to let our listener know.
     socket.on('signal', ({ from, signal }: SignalIncomingMessage) => {
+      debug(`Received ${signal.type} from ${from}`);
       this.onSignal(from, signal);
     });
     // The message we will send to join the room.
@@ -87,5 +95,6 @@ export class SignalClient {
     }
     const message: SignalOutgoingMessage = { to, signal };
     this.socket.emit('signal', message);
+    debug(`Sent ${signal.type} to ${to}`);
   }
 }

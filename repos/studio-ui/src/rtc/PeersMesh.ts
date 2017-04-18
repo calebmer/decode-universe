@@ -1,7 +1,10 @@
+import * as createDebugger from 'debug';
 import { Set, OrderedMap } from 'immutable';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { SignalClient, Signal } from '@decode/studio-signal-exchange';
-import { Peer } from './Peer';
+import { Peer, PeerState } from './Peer';
+
+const debug = createDebugger('@decode/studio-ui:PeersMesh');
 
 /**
  * The number of milliseconds to use when debouncing our response to an
@@ -69,13 +72,13 @@ export class PeersMesh {
    * The map is keyed by the address we use to send messages to our peer through
    * the `SignalClient`.
    */
-  private readonly peersSubject: BehaviorSubject<OrderedMap<string, Peer>>;
+  private readonly peersSubject = new BehaviorSubject(OrderedMap<string, Peer>());
 
   /**
    * All of the peers that we are currently connected to keyed by their unique
    * identifier given to us by our servers.
    */
-  public readonly peers: Observable<OrderedMap<string, Peer>>;
+  public readonly peers = this.peersSubject.asObservable();
 
   /**
    * A signal client instance that can be used to send signals to our peers
@@ -96,8 +99,6 @@ export class PeersMesh {
           .catch(error => console.error(error));
       },
     });
-    this.peersSubject = new BehaviorSubject(OrderedMap<string, Peer>());
-    this.peers = this.peersSubject.asObservable();
   }
 
   /**
@@ -128,10 +129,11 @@ export class PeersMesh {
     const addresses = await this.signals.connect();
     // Create a peer for each of our addresses and start negotiations.
     await Promise.all(addresses.map(async address => {
+      debug(`Initiating connection with peer ${address}`);
       // Create the peer.
-      const peer = this.createPeer(address);
-      // Start negotiations with the peer.
-      this.startPeerNegotiations(address, peer);
+      this.createPeer(address, true);
+      // Schedule negotiation with our peer.
+      this.schedulePeerNegotiations(address);
     }));
   }
 
@@ -139,42 +141,13 @@ export class PeersMesh {
    * Creates a peer and adds some event listeners to the `RTCPeerConnection`
    * instance that we need for signaling and negotiation.
    */
-  private createPeer(address: string): Peer {
+  private createPeer(address: string, initiator: boolean): Peer {
     // Create the peer.
     const peer = new Peer({
       localStreams: this.localStreamsSubject.value,
     });
     // Update our peers map by adding this peer keyed by its address.
     this.peersSubject.next(this.peersSubject.value.set(address, peer));
-    // When we are told that a negotiation is needed we need to start creating
-    // and sending offers.
-    //
-    // We debounce the work done so that if many things trigger a
-    // `negotiationneeded` in a connection in very short succession we should
-    // only start one negotiation.
-    {
-      // The timer we use to debounce negotiations. `any` because timer types
-      // are wierd.
-      let debounceTimer: any = null;
-
-      peer.connection.addEventListener('negotiationneeded', () => {
-        // If there is an active debounce timer, cancel it.
-        if (debounceTimer !== null) {
-          clearTimeout(debounceTimer);
-        }
-        // Set a new debounce timer with the configured debounce milliseconds.
-        debounceTimer = setTimeout(
-          () => {
-            // Reset the debounce timer variable.
-            debounceTimer = null;
-            // Start peer negotiations!
-            this.startPeerNegotiations(address, peer)
-              .catch(error => console.error(error));
-          },
-          debounceNegotiationNeededMs,
-        );
-      });
-    }
     // Everytime we get an ICE candidate, we want to send a signal to our peer
     // with the candidate information.
     {
@@ -226,6 +199,46 @@ export class PeersMesh {
   }
 
   /**
+   * A map of the timers that we track to implement peer negotiation scheduling.
+   */
+  private readonly peerNegotiationTimers = new Map<string, any>();
+
+  /**
+   * Schedules negotiations with the peer at the given address using a debounce
+   * scheduling algorithm. We wait x milliseconds and if another peer
+   * negotiation is requested in that time then we will cancel the first request
+   * and wait another x milliseconds for the request to either be cancelled or
+   * executed if it was not cancelled in that time.
+   *
+   * If by the time the peer negotiation is started there is no peer with the
+   * given address then nothing will happen.
+   */
+  private schedulePeerNegotiations(address: string): void {
+    // If we already have a timer running for this address then let us clear it.
+    // We are about to set a new timer.
+    if (this.peerNegotiationTimers.has(address)) {
+      clearTimeout(this.peerNegotiationTimers.get(address));
+    }
+    // Start a timeout and set the reference in our timers map. This timeout
+    // will be cancelled if another peer negotiation is scheduled.
+    this.peerNegotiationTimers.set(address, setTimeout(
+      () => {
+        // Delete the timer from our map now that it has completed.
+        this.peerNegotiationTimers.delete(address);
+        // Get the peer from our peers map.
+        const peer = this.peersSubject.value.get(address);
+        // If the peer no longer exists do not continue. Otherwise we want to
+        // start negotiations with that peer.
+        if (peer !== undefined) {
+          this.startPeerNegotiations(address, peer)
+            .catch(error => console.error(error));
+        }
+      },
+      debounceNegotiationNeededMs,
+    ));
+  }
+
+  /**
    * Starts negotiations with a peer by creating an offer and then sending that
    * offer to the peer.
    */
@@ -233,6 +246,7 @@ export class PeersMesh {
     address: string,
     peer: Peer,
   ): Promise<void> {
+    debug(`Starting negotiations with peer ${address}`);
     // Create the offer that we will send to the peer.
     const offer = await peer.connection.createOffer();
     await peer.connection.setLocalDescription(offer);
@@ -327,28 +341,36 @@ export class PeersMesh {
   /**
    * Adds a stream that will be distributed to all of the peers in the mesh.
    */
-  public addStream(stream: MediaStream): void {
-    // Adds the stream to our local cache.
-    this.localStreamsSubject.next(this.localStreamsSubject.value.add(stream));
+  public addLocalStream(stream: MediaStream): void {
+    debug('Added a local media stream');
     // Add the stream to all of our peers.
-    this.peersSubject.value.forEach(peer => {
-      if (peer !== undefined) {
-        peer.addStream(stream);
+    this.peersSubject.value.forEach((peer, address) => {
+      if (peer !== undefined && address !== undefined) {
+        // Add the stream to the peer.
+        peer.addLocalStream(stream);
+        // Schedule negotiation with our peer.
+        this.schedulePeerNegotiations(address);
       }
     });
+    // Adds the stream to our local cache.
+    this.localStreamsSubject.next(this.localStreamsSubject.value.add(stream));
   }
 
   /**
    * Removes a stream that will be removed from all of the peers in the mesh.
    */
-  public removeStream(stream: MediaStream): void {
-    // Remove the stream from our local cache.
-    this.localStreamsSubject.next(this.localStreamsSubject.value.remove(stream));
+  public removeLocalStream(stream: MediaStream): void {
+    debug('Removed a local media stream');
     // Removes the stream from all our peers.
-    this.peersSubject.value.forEach(peer => {
-      if (peer !== undefined) {
-        peer.removeStream(stream);
+    this.peersSubject.value.forEach((peer, address) => {
+      if (peer !== undefined && address !== undefined) {
+        // Remove the stream from our peer.
+        peer.removeLocalStream(stream);
+        // Schedule negotiation with our peer.
+        this.schedulePeerNegotiations(address);
       }
     });
+    // Remove the stream from our local cache.
+    this.localStreamsSubject.next(this.localStreamsSubject.value.remove(stream));
   }
 }
