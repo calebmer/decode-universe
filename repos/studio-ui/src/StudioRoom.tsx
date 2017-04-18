@@ -98,7 +98,10 @@ export class StudioRoom extends React.Component<Props, State> {
                     {ReactObservable.render(
                       peer!.remoteState,
                       state => (
-                        <span>{state.name}</span>
+                        <span>
+                          {state.name}{' '}
+                          {state.isHost && '(host)'}
+                        </span>
                       ),
                     )}
                     {' '}
