@@ -18,19 +18,6 @@ export type PeerConfig = {
  */
 export type PeerState = {
   /**
-   * Whether or not the peer is a host of the room we are connected to. Hosts
-   * have elevated privaleges.
-   *
-   * Technically this value is not secure! If a malicious actor wanted to they
-   * could make themselves look like a host. Make sure nothing absolutely
-   * catastrophic to security is hidden behind this flag because it can be
-   * spoofed. Since the privaleges are relatively minor (hosts can start/stop
-   * recordings, mute guests, and a few more administrative behaviors) we aren’t
-   * currently too concerned with this attack vector.
-   */
-  readonly isHost: boolean,
-
-  /**
    * The name of the peer.
    */
   readonly name: string,

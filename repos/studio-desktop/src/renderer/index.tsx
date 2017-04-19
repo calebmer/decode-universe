@@ -7,7 +7,6 @@ import { App } from './App';
 const mesh = new PeersMesh({
   roomName: 'hello world',
   localState: {
-    isHost: true,
     name: '',
   },
 });

@@ -5,7 +5,6 @@ import { PeersMesh, StudioRoom } from '@decode/studio-ui';
 const mesh = new PeersMesh({
   roomName: 'hello world',
   localState: {
-    isHost: false,
     name: '',
   },
 });
