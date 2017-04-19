@@ -116,11 +116,11 @@ export class Peer {
   private disposables: Array<Disposable> = [];
 
   constructor({
-    isInitiator,
+    isLocalInitiator,
     localStreams,
     localState,
   }: {
-    isInitiator: boolean,
+    isLocalInitiator: boolean,
     localStreams: Set<MediaStream>,
     localState: PeerState,
   }) {
@@ -140,7 +140,7 @@ export class Peer {
     // If we are the initiator then we want to create some data channels. If we
     // are not the initiator then we want to set an event listener that waits
     // for the initiator to create new data channels.
-    if (isInitiator) {
+    if (isLocalInitiator) {
       this.stateChannel = this.connection.createDataChannel('state');
       this.initializeStateChannel(this.stateChannel);
     } else {
