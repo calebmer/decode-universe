@@ -151,9 +151,9 @@ export class Peer {
         if (channel.label === 'state') {
           this.stateChannel = channel;
           this.initializeStateChannel(this.stateChannel);
+          // Remove the data channel event listener. We don’t need it anymore!
+          this.connection.removeEventListener('datachannel', handleDataChannel);
         }
-        // Remove the data channel event listener. We don’t need it anymore!
-        this.connection.removeEventListener('datachannel', handleDataChannel);
       };
       // Add the data channel event listener. It will remove itself once its
       // mission is completed.
