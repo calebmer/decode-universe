@@ -1,0 +1,9 @@
+#!/bin/bash
+
+tsconfig_paths=$(find $(pwd) -name 'tsconfig.json' -not -path '*/node_modules/*')
+
+for tsconfig_path in $tsconfig_paths; do
+  cd $(dirname $tsconfig_path)
+  echo "🔦  Checking $(basename $(pwd))"
+  $(npm bin)/tsc
+done

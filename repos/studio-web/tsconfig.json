@@ -16,6 +16,7 @@
     "./src",
     "../typescript/typings/mixed.d.ts",
     "../typescript/typings/env.d.ts",
+    "../typescript/typings/disposable.d.ts",
     "../typescript/typings/webrtc.d.ts"
   ]
 }
