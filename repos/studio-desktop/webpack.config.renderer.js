@@ -15,9 +15,10 @@ module.exports = {
   target: 'electron-renderer',
   // We want to bail on error if this is a production build.
   bail: !DEV,
-  // Perhaps consider use `cheap-module-source-map` in development if
-  // `source-map` is too slow.
-  devtool: 'source-map',
+  // Use `eval` as the development tool instead of a source map because we want
+  // to see the compiled output in DevTools instead of the source. For
+  // production we want the full source maps.
+  devtool: DEV ? 'eval' : 'source-map',
   // If we are in development then we will be using a dev server which we want
   // to configure.
   devServer: !DEV ? undefined : {
@@ -118,18 +119,20 @@ module.exports = {
         },
       },
       // Tells Webpack about the TypeScript source maps so it can use them when
-      // Webpack is generating its own source maps.
-      {
+      // Webpack is generating its own source maps. We only want this for
+      // production builds because we don’t care about source maps in
+      // development.
+      !DEV && {
         enforce: 'pre',
         test: /\.js$/,
         include: [
-          path.join(__dirname, './src/renderer'),
+          path.join(__dirname, './src'),
           path.join(__dirname, '../studio-ui/src'),
           path.join(__dirname, '../studio-signal-exchange/src'),
         ],
         loader: 'source-map-loader',
       },
-    ],
+    ].filter(Boolean),
   },
   plugins: [
     // Add the appropriate TypeScript plugins.
