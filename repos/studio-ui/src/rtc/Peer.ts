@@ -2,6 +2,15 @@ import { Set, OrderedSet } from 'immutable';
 import { Observable, BehaviorSubject } from 'rxjs';
 
 /**
+ * The config used to initialize a `Peer` instance.
+ */
+export type PeerConfig = {
+  readonly isLocalInitiator: boolean,
+  readonly localStreams: Set<MediaStream>,
+  readonly localState: PeerState,
+};
+
+/**
  * Some basic state that is shared between the peers in a peer to peer
  * connection.
  *
@@ -113,17 +122,13 @@ export class Peer {
   /**
    * Anything that should be disposed of when we close the peer.
    */
-  private disposables: Array<Disposable> = [];
+  protected disposables: Array<Disposable> = [];
 
   constructor({
     isLocalInitiator,
     localStreams,
     localState,
-  }: {
-    isLocalInitiator: boolean,
-    localStreams: Set<MediaStream>,
-    localState: PeerState,
-  }) {
+  }: PeerConfig) {
     // Create a new connection using the pre-defined config.
     this.connection = new RTCPeerConnection(rtcConfig);
     // Add all of the local streams to our connection.
