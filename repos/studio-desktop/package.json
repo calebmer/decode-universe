@@ -12,13 +12,15 @@
     "immutable": "^3.8.1",
     "react": "^15.4.2",
     "react-dom": "^15.4.2",
-    "rxjs": "^5.3.0"
+    "rxjs": "^5.3.0",
+    "uuid": "^3.0.1"
   },
   "devDependencies": {
     "@types/debug": "^0.0.29",
     "@types/electron": "^1.4.35",
     "@types/node": "^7.0.12",
     "@types/react-dom": "^0.14.23",
+    "@types/uuid": "^2.0.29",
     "awesome-typescript-loader": "^3.1.2",
     "babili-webpack-plugin": "^0.0.11",
     "builtin-modules": "^1.1.1",

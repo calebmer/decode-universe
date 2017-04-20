@@ -20,6 +20,11 @@ const mesh = new PeersMesh({
   createPeerInstance: config => new GuestPeer(config),
 });
 
+// Expose the mesh instance for debugging in development.
+if (DEV) {
+  (window as any).mesh = mesh;
+}
+
 mesh.connect().catch(error => console.error(error));
 
 const recorder = new MediaStreamsRecorder();
