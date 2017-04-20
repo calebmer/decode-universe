@@ -13,6 +13,13 @@ import { Subscription } from 'rxjs';
  */
 export class MaybeHostPeer extends Peer {
   /**
+   * Whether or not we have been told to start recording. This will only be
+   * `true` if our peer is a host and they have sent us a message that we should
+   * be recording.
+   */
+  private isRecording = false;
+
+  /**
    * A recording data channel. If the peer is a host then this will not be null
    * after the connection initializes. If the peer is a fellow guest then this
    * channel will stay null for the duration of the connection.
@@ -43,40 +50,25 @@ export class MaybeHostPeer extends Peer {
     // provide our recordings to this channel if we get it.
     {
       const handleDataChannel = ({ channel }: RTCDataChannelEvent) => {
-        // If this the channel for the guest to send over its recorded
+        // If this is the channel for the guest to send over its recorded
         // information the let us set that channel to our instance and remove
         // this event listener.
         if (channel.label === 'recording') {
-          this.recordingChannel = channel;
           // Remove the data channel event listener. We don’t need it anymore!
           this.connection.removeEventListener('datachannel', handleDataChannel);
-          // The following code block is responsible for starting to record when
-          // the channel opens. If we got a local stream before we got the
-          // recording channel then we won’t be recording and so we need to
-          // start the recording in that case.
-          {
-            // The handler which starts recording when the channel opens and
-            // removes itself as an event listener when that happens.
-            const startRecording = () => {
-              // Remove self as an event listener.
-              channel.removeEventListener('open', startRecording);
-              // If we already have a local stream that we should be recording
-              // then start recording that stream and sending its data to the
-              // channel we just got.
-              if (
-                this.recordingLocalStream !== null &&
-                this.recordingSubscription === null
-              ) {
-                this.recordingSubscription = recordLocalStream(
-                  channel,
-                  this.recordingLocalStream,
-                );
-              }
-            };
-            // Add the event listener. Wait for the channel to open and then we
-            // can start recording.
-            channel.addEventListener('open', startRecording);
-          }
+          // Set the channel on our class instance.
+          this.recordingChannel = channel;
+          // Add an event listener to handle messages from our recording
+          // channel.
+          this.recordingChannel
+            .addEventListener('message', this.handleRecordingMessage);
+          // Add a disposable which will remove the recording message handler
+          // from the recording channel.
+          this.disposables.push({
+            dispose: () =>
+              this.recordingChannel && this.recordingChannel
+                .removeEventListener('message', this.handleRecordingMessage),
+          });
         }
       };
       // Add the data channel event listener.
@@ -89,6 +81,48 @@ export class MaybeHostPeer extends Peer {
       });
     }
   }
+
+  /**
+   * Handles a message from our host peer who wants to record our audio. This
+   * will never be used if our peer is not a host.
+   */
+  private handleRecordingMessage = (event: MessageEvent) => {
+    switch (event.data) {
+      // If we are not currently recording anything and we have a local stream
+      // which needs to be recorded then start recording!
+      case 'start': {
+        // We are recording now. Let the world know!
+        this.isRecording = true;
+        if (
+          this.recordingSubscription === null &&
+          this.recordingLocalStream !== null
+        ) {
+          this.recordingSubscription = recordLocalStream(
+            this.recordingChannel!,
+            this.recordingLocalStream,
+          );
+        }
+        break;
+      }
+      // If we were told to stop recording then cleanup our recording
+      // subscription.
+      case 'stop': {
+        // We have stopped recording...
+        this.isRecording = false;
+        if (this.recordingSubscription !== null) {
+          this.recordingSubscription.unsubscribe();
+          this.recordingSubscription = null;
+        }
+        break;
+      }
+      // Throw an error if we don’t recognize the data.
+      default: {
+        console.error(new Error(
+          'A recording message was provided that has an undefined behavior.'
+        ));
+      }
+    }
+  };
 
   /**
    * Closes our peer and any recordings we may have started.
@@ -118,9 +152,14 @@ export class MaybeHostPeer extends Peer {
     }
     // Add this stream to the instance because we are recording it now.
     this.recordingLocalStream = stream;
-    // If we have a recording channel the start recording the local stream and
-    // sending it to that channel.
-    if (this.recordingChannel !== null) {
+    // If our peer is a host (aka `recordingChannel` is not null), and we should
+    // be currently recording, but we have no subscription as evidence that we
+    // are recording then start actually recording!
+    if (
+      this.recordingChannel !== null &&
+      this.isRecording === true &&
+      this.recordingSubscription === null
+    ) {
       this.recordingSubscription = recordLocalStream(
         this.recordingChannel,
         this.recordingLocalStream,
@@ -154,14 +193,19 @@ export class MaybeHostPeer extends Peer {
 /**
  * Records the audio data from the stream passed in and sends the recorded data
  * to the `RTCDataChannel` instance provided.
+ *
+ * We will also send a string, “next second,” on the channel when the second
+ * time changes. This is so that the host can keep track of the time at a second
+ * level of granularity.
  */
 function recordLocalStream(
   channel: RTCDataChannel,
   localStream: MediaStream,
 ): Subscription {
   return WAVRecorder.record(localStream).subscribe({
-    // Send any data we get.
-    next: data => channel.send(data.buffer),
+    // Send any data we get and a “next second” event if it is indeed the next
+    // second.
+    next: chunk => channel.send(chunk.data.buffer),
     // Report errors.
     error: error => console.error(error),
   });

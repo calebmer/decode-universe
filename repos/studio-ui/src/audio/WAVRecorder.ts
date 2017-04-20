@@ -1,6 +1,21 @@
 import { Observable } from 'rxjs';
 
 /**
+ * A chunk of data that we got from recording the
+ */
+type WAVRecordingChunk = {
+  /**
+   * The time at which this is recorded in seconds. This value is relative to
+   * the `AudioContext` which was used to record the `MediaStream`.
+   */
+  readonly time: number,
+  /**
+   * The actual channel data for the chunk that was recorded.
+   */
+  readonly data: Float32Array,
+};
+
+/**
  * We currently use a single `AudioContext` instance for recording only with
  * other contexts for audio playback, for example. We may want to reconsider
  * this approach and just use one global `AudioContext` for all use cases since
@@ -32,8 +47,8 @@ const __context__ = new AudioContext();
 function record(
   stream: MediaStream,
   context: AudioContext = __context__,
-): Observable<Float32Array> {
-  return new Observable<Float32Array>(observer => {
+): Observable<WAVRecordingChunk> {
+  return new Observable<WAVRecordingChunk>(observer => {
     // Create the source audio node.
     const source = context.createMediaStreamSource(stream);
     // Create a script processor and let the implementation determine the buffer
@@ -44,9 +59,12 @@ function record(
     // Handles any data we get for processing. We basically just forward that
     // data to our observable.
     const handleAudioProcess = (event: AudioProcessingEvent) => {
-      const { inputBuffer } = event;
+      const { inputBuffer, playbackTime } = event;
       // Send the input channel data to our channel data observers.
-      observer.next(inputBuffer.getChannelData(0));
+      observer.next({
+        time: playbackTime,
+        data: inputBuffer.getChannelData(0),
+      });
     };
 
     // Add the processor event listener.

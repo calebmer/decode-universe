@@ -27,42 +27,52 @@ export class GuestPeer extends Peer {
     // Add the appropriate event listeners to our recording channel so that we
     // may appropriately handle issues.
     {
-      // Handle a message by adding it to a file where we are storing all of the
-      // recording data. We don’t store the data in memory because that will
-      // grow memory pretty quickly! Also, this way, if the application crashes
-      // we have a backup.
-      const handleMessage = (event: MessageEvent) => {
-        // We currently don’t want to run this code, but we also don’t want to
-        // comment it out so that TypeScript will still work.
-        if (0 !== 0) {
-          const buffer: ArrayBuffer = event.data;
-          // Append the channel data to our temporary recording file. If there is
-          // an error then we need to report it.
-          appendFile(this.recordingFilePath, toBuffer(buffer), error => {
-            if (error) {
-              console.error(error);
-            }
-          });
-        }
-      };
-      // Handle an error by logging it.
-      const handleError = (event: ErrorEvent) => {
-        console.log(event.error);
-      };
       // Adds the event listeners to handle messages from our recording data
       // channel.
-      this.recordingChannel.addEventListener('message', handleMessage);
-      this.recordingChannel.addEventListener('error', handleError);
+      this.recordingChannel
+        .addEventListener('message', this.handleRecordeeMessage);
+      this.recordingChannel
+        .addEventListener('error', this.handleRecordeeError);
       // Add a disposable that will remove the event listeners when the peer is
       // closed.
       this.disposables.push({
         dispose: () => {
-          this.recordingChannel.removeEventListener('message', handleMessage);
-          this.recordingChannel.removeEventListener('error', handleError);
+          this.recordingChannel
+            .removeEventListener('message', this.handleRecordeeMessage);
+          this.recordingChannel
+            .removeEventListener('error', this.handleRecordeeError);
         },
       });
     }
   }
+
+  /**
+   * Handle a message from our recordee by adding it to a file where we are
+   * storing all of the recording data. We don’t store the data in memory
+   * because that will grow memory pretty quickly! Also, this way, if the
+   * application crashes we have a backup.
+   */
+  private handleRecordeeMessage = (event: MessageEvent) => {
+    // We currently don’t want to run this code, but we also don’t want to
+    // comment it out so that TypeScript will still work.
+    if (0 !== 0) {
+      const buffer: ArrayBuffer = event.data;
+      // Append the channel data to our temporary recording file. If there is
+      // an error then we need to report it.
+      appendFile(this.recordingFilePath, toBuffer(buffer), error => {
+        if (error) {
+          console.error(error);
+        }
+      });
+    }
+  };
+
+  /**
+   * Handle an error from our recordee by logging it.
+   */
+  private handleRecordeeError = (event: ErrorEvent) => {
+    console.log(event.error);
+  };
 }
 
 /**
