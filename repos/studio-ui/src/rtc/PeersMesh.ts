@@ -2,7 +2,7 @@ import * as createDebugger from 'debug';
 import { Set, OrderedMap } from 'immutable';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { SignalClient, Signal } from '@decode/studio-signal-exchange';
-import { Peer, PeerState } from './Peer';
+import { Peer, PeerConfig, PeerState } from './Peer';
 
 const debug = createDebugger('@decode/studio-ui:PeersMesh');
 
@@ -81,6 +81,13 @@ export class PeersMesh {
   public readonly peers = this.peersSubject.asObservable();
 
   /**
+   * Used to create a peer instance. Different studio clients may want to
+   * communicate with their peers differently so this allows them to extend the
+   * `Peer` class and initiate their own custom peers.
+   */
+  private readonly createPeerInstance: (config: PeerConfig) => Peer;
+
+  /**
    * A signal client instance that can be used to send signals to our peers
    * outside of the standard RTC process. This is required to negotiate the
    * terms of real time communication with a peer.
@@ -89,11 +96,16 @@ export class PeersMesh {
 
   constructor({
     roomName,
+    createPeerInstance = config => new Peer(config),
     localState,
   }: {
     roomName: string,
+    createPeerInstance?: (config: PeerConfig) => Peer,
     localState: PeerState,
   }) {
+    // Set some properties on the class instance.
+    this.createPeerInstance = createPeerInstance;
+    // Create the signal client.
     this.signals = new SignalClient({
       roomName,
       onSignal: (address, signal) => {
@@ -151,8 +163,9 @@ export class PeersMesh {
    * instance that we need for signaling and negotiation.
    */
   private createPeer(address: string, isLocalInitiator: boolean): Peer {
-    // Create the peer.
-    const peer = new Peer({
+    // Create the peer using the `createPeerInstance()` function we were
+    // provided in the constructor.
+    const peer = this.createPeerInstance({
       isLocalInitiator,
       localState: this.localStateSubject.value,
       localStreams: this.localStreamsSubject.value,
