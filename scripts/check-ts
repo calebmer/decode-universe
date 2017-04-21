@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Get the path to the TypeScript binary we will use.
+tsc=$(npm bin)/tsc
+
 # Get the base directory. This is the current working directory most often.
 base_directory=$(pwd)
 
@@ -16,7 +19,7 @@ for tsconfig_path in $tsconfig_paths; do
   node -e "const path = require('path'); console.log('🔦  Checking', './' + path.relative('$base_directory', '$(pwd)'));"
   # Actually run TypeScript. We expect that there is an installed TypeScript
   # package in the node_modules for this directory.
-  $(npm bin)/tsc
+  $tsc
   # Go back to the base directory.
   cd $base_directory
 done

@@ -24,8 +24,7 @@
     "react-addons-test-utils": "15.4.2",
     "react-dom": "15.4.2",
     "ts-jest": "^19.0.8",
-    "tslib": "^1.6.0",
-    "typescript": "^2.2.2"
+    "tslib": "^1.6.0"
   },
   "jest": {
     "automock": true,
