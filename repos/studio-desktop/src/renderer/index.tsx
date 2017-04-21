@@ -1,7 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { PeersMesh } from '@decode/studio-ui';
-import { MediaStreamsRecorder } from './media/MediaStreamsRecorder';
 import { GuestPeer } from './rtc/GuestPeer';
 import { App } from './App';
 
@@ -27,28 +26,23 @@ if (DEV) {
 
 mesh.connect().catch(error => console.error(error));
 
-const recorder = new MediaStreamsRecorder();
-
 ReactDOM.render(
   <App
     mesh={mesh}
     onUserAudioStream={(stream, previousStream) => {
       if (previousStream !== null) {
         mesh.removeLocalStream(previousStream);
-        recorder.removeStream(previousStream);
       }
       mesh.addLocalStream(stream);
-      recorder.addStream(stream);
     }}
     onUserAudioError={(error, previousStream) => {
       console.error(error);
       if (previousStream !== null) {
         mesh.removeLocalStream(previousStream);
-        recorder.removeStream(previousStream);
       }
     }}
-    onStartRecording={() => recorder.start()}
-    onStopRecording={() => recorder.stop()}
+    onStartRecording={() => {}}
+    onStopRecording={() => {}}
   />,
   document.getElementById('root'),
 );
