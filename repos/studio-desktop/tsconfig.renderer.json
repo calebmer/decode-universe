@@ -6,7 +6,8 @@
     "baseUrl": ".",
     "paths": {
       "@decode/*": ["../*"],
-      "rxjs": ["./node_modules/rxjs"]
+      "immutable": ["../typescript/typings/modules/immutable"],
+      "rxjs": ["../typescript/typings/modules/rxjs"]
     }
   }
 }

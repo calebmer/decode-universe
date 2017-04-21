@@ -10,8 +10,6 @@
   },
   "include": [
     "./src/main",
-    "../typescript/typings/mixed.d.ts",
-    "../typescript/typings/env.d.ts",
-    "../typescript/typings/webrtc.d.ts"
+    "../typescript/typings/ambient/universal"
   ]
 }

@@ -83,7 +83,7 @@ export class StudioRoom extends React.Component<Props, State> {
             mesh.localStreams,
             localStreams => localStreams.size > 0 && (
               <AudioVisualization
-                node={getMediaStreamSource(localStreams.first())}
+                node={getMediaStreamSource(localStreams.first()!)}
               />
             ),
           )}
@@ -96,12 +96,12 @@ export class StudioRoom extends React.Component<Props, State> {
                 <li key={id}>
                   <p>
                     {ReactObservable.render(
-                      peer!.remoteState,
+                      peer.remoteState,
                       state => <span>{state.name}</span>,
                     )}
                     {' '}
                     {ReactObservable.render(
-                      peer!.connectionStatus,
+                      peer.connectionStatus,
                       connectionStatus => (
                         <span>({PeerConnectionStatus[connectionStatus]})</span>
                       ),
@@ -113,10 +113,10 @@ export class StudioRoom extends React.Component<Props, State> {
                     backgroundColor: 'tomato',
                   }}>
                     {ReactObservable.render(
-                      peer!.remoteStreams,
+                      peer.remoteStreams,
                       streams => streams.size > 0 && (
                         <AudioVisualization
-                          node={getMediaStreamSource(streams.first())}
+                          node={getMediaStreamSource(streams.first()!)}
                         />
                       ),
                     )}
