@@ -20,7 +20,7 @@ mesh.connect().catch(error => console.error(error));
 
 RawAudio.saveRecordingStreams(
   '/Users/calebmer/Desktop/recordings',
-  mesh.recordings,
+  mesh.recordingStreams,
 ).subscribe({
   error: error => console.error(error),
 });

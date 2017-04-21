@@ -1,12 +1,16 @@
 export type SubscriberFn<T> = (observer: Observer<T>) => Subscription | (() => void);
 
 export class Observable<T> {
+  static never(): Observable<never>;
+
   constructor(subscriberFn: SubscriberFn<T>)
 
   subscribe(subscriber: Subscriber<T>): Subscription;
 
   map<U>(mapper: (value: T) => U): Observable<U>;
   filter(predicate: (value: T) => boolean): Observable<T>;
+  switchMap<U>(mapper: (value: T) => Observable<U>): Observable<U>;
+  distinctUntilChanged(compare?: (a: T, b: T) => boolean): Observable<T>;
 }
 
 export interface Observer<T> {

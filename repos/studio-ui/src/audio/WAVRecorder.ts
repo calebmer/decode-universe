@@ -1,19 +1,21 @@
 import { Observable } from 'rxjs';
 
-/**
- * A chunk of data that we got from recording the
- */
-type WAVRecordingChunk = {
+export namespace WAVRecorder {
   /**
-   * The time at which this is recorded in seconds. This value is relative to
-   * the `AudioContext` which was used to record the `MediaStream`.
+   * A chunk of data that we got from recording the
    */
-  readonly time: number,
-  /**
-   * The actual channel data for the chunk that was recorded.
-   */
-  readonly data: Float32Array,
-};
+  export type Chunk = {
+    /**
+     * The time at which this is recorded in seconds. This value is relative to
+     * the `AudioContext` which was used to record the `MediaStream`.
+     */
+    readonly time: number,
+    /**
+     * The actual channel data for the chunk that was recorded.
+     */
+    readonly data: Float32Array,
+  };
+}
 
 /**
  * We currently use a single `AudioContext` instance for recording only with
@@ -47,8 +49,8 @@ const __context__ = new AudioContext();
 function record(
   stream: MediaStream,
   context: AudioContext = __context__,
-): Observable<WAVRecordingChunk> {
-  return new Observable<WAVRecordingChunk>(observer => {
+): Observable<WAVRecorder.Chunk> {
+  return new Observable<WAVRecorder.Chunk>(observer => {
     // Create the source audio node.
     const source = context.createMediaStreamSource(stream);
     // Create a script processor and let the implementation determine the buffer

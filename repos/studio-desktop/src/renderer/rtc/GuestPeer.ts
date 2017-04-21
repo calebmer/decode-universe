@@ -16,7 +16,11 @@ export class GuestPeer extends Peer {
    */
   private readonly recordingChannel: RTCDataChannel;
 
-  public readonly recordingData: Observable<ArrayBuffer>;
+  /**
+   * The stream of recording data that we are getting from our peer over the
+   * recording channel.
+   */
+  public readonly recordingStream: Observable<ArrayBuffer>;
 
   constructor(config: PeerConfig) {
     super(config);
@@ -24,7 +28,7 @@ export class GuestPeer extends Peer {
     this.recordingChannel = this.connection.createDataChannel('recording');
     // Create an observable which will forward all of the recording data coming
     // from our recording channel to any curious observers.
-    this.recordingData = new Observable<ArrayBuffer>(observer => {
+    this.recordingStream = new Observable<ArrayBuffer>(observer => {
       // Handle messages by forwarding them to the observer.
       const handleMessage = (event: MessageEvent) => {
         observer.next(event.data);

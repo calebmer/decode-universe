@@ -1,4 +1,5 @@
-import { PeersMesh, PeerState } from '@decode/studio-ui';
+import { Observable } from 'rxjs';
+import { PeersMesh, PeerState, WAVRecorder } from '@decode/studio-ui';
 import { GuestPeer } from './GuestPeer';
 
 /**
@@ -13,12 +14,46 @@ import { GuestPeer } from './GuestPeer';
  * orchestrate the recording of its peers tracks.
  */
 export class HostPeersMesh extends PeersMesh<GuestPeer> {
-  public readonly recordings =
+  /**
+   * Represents whether or not we are currently recording.
+   */
+  private isRecording = false;
+
+  /**
+   * Create an observable for the recording stream of our local audio.
+   */
+  private readonly localRecordingStream =
+    this.localStreams
+      // Get the first stream out of our set.
+      .map(streams => streams.first())
+      // We want to filter out streams that are exactly the same as the stream
+      // before it.
+      .distinctUntilChanged((a, b) => a === b)
+      // If we have a new stream then record it.
+      .switchMap<WAVRecorder.Chunk>(stream => stream !== undefined
+        ? WAVRecorder.record(stream)
+        : Observable.never())
+      // Only emit the recorded data if we are presently recording.
+      .filter(() => this.isRecording)
+      // Get the `ArrayBuffer` from the chunk.
+      .map(({ data }) => data.buffer);
+
+  /**
+   * A higher level observable of the recording streams of all our peers and our
+   * own local stream. New streams may be added and removed over the course of
+   * time.
+   *
+   * This represents the final output of all the audio data we need to record
+   * for this mesh.
+   */
+  public readonly recordingStreams =
     this.peers
       .map(peers => (
         peers
-          .map(peer => peer.recordingData)
-          // .set('local', x)
+          // Get the recording stream from our peer.
+          .map(peer => peer.recordingStream)
+          // Always add the local recording stream.
+          .set('local', this.localRecordingStream)
       ));
 
   constructor({
@@ -47,6 +82,8 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
    * Start recording audio from all of our peers.
    */
   public startRecording(): void {
+    // Update our instance so that it knows that we are recording.
+    this.isRecording = true;
     // Instruct all of our peers to start recording.
     for (const [, peer] of this.currentPeers) {
       peer.startRecording();
@@ -57,6 +94,8 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
    * Stop recording audio from all of our peers.
    */
   public stopRecording(): void {
+    // Update our instance so that it knows that we are not recording.
+    this.isRecording = false;
     // Instruct all of our peers to stop recording.
     for (const [, peer] of this.currentPeers) {
       peer.stopRecording();
