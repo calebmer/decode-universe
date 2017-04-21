@@ -1,7 +1,7 @@
 export function Set<V>(): Set<V>;
 export function Set<V>(iterable: Iterable<V>): Set<V>;
 
-export interface Set<V> {
+export interface Set<V> extends Iterable<V> {
   readonly size: number;
 
   add(value: V): this;
@@ -27,7 +27,7 @@ export interface OrderedSet<V> extends Set<V> {
 export function Map<K, V>(): Map<K, V>;
 export function Map<K, V>(iterable: Iterable<[K, V]>): Map<K, V>;
 
-export interface Map<K, V> {
+export interface Map<K, V> extends Iterable<[K, V]> {
   readonly size: number;
 
   set(key: K, value: V): this;

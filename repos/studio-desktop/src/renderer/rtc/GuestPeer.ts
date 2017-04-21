@@ -1,5 +1,4 @@
-import { v4 as uuid } from 'uuid';
-import { appendFile } from 'fs';
+import { Observable } from 'rxjs';
 import { Peer, PeerConfig } from '@decode/studio-ui';
 
 /**
@@ -17,67 +16,47 @@ export class GuestPeer extends Peer {
    */
   private readonly recordingChannel: RTCDataChannel;
 
-  private readonly recordingFilePath =
-    `/Users/calebmer/Desktop/${uuid()}`;
+  public readonly recordingData: Observable<ArrayBuffer>;
 
   constructor(config: PeerConfig) {
     super(config);
     // Create the data channel.
     this.recordingChannel = this.connection.createDataChannel('recording');
-    // Add the appropriate event listeners to our recording channel so that we
-    // may appropriately handle issues.
-    {
-      // Adds the event listeners to handle messages from our recording data
-      // channel.
-      this.recordingChannel
-        .addEventListener('message', this.handleRecordeeMessage);
-      this.recordingChannel
-        .addEventListener('error', this.handleRecordeeError);
-      // Add a disposable that will remove the event listeners when the peer is
-      // closed.
-      this.disposables.push({
-        dispose: () => {
-          this.recordingChannel
-            .removeEventListener('message', this.handleRecordeeMessage);
-          this.recordingChannel
-            .removeEventListener('error', this.handleRecordeeError);
-        },
-      });
-    }
+    // Create an observable which will forward all of the recording data coming
+    // from our recording channel to any curious observers.
+    this.recordingData = new Observable<ArrayBuffer>(observer => {
+      // Handle messages by forwarding them to the observer.
+      const handleMessage = (event: MessageEvent) => {
+        observer.next(event.data);
+      };
+      // Handle errors by forwarding them to the observer.
+      const handleError = (event: ErrorEvent) => {
+        observer.error(event.error);
+      };
+      // Add the event listeners.
+      this.recordingChannel.addEventListener('message', handleMessage);
+      this.recordingChannel.addEventListener('error', handleError);
+      return () => {
+        // Remove the event listeners.
+        this.recordingChannel.removeEventListener('message', handleMessage);
+        this.recordingChannel.removeEventListener('error', handleError);
+      };
+    });
   }
 
   /**
-   * Handle a message from our recordee by adding it to a file where we are
-   * storing all of the recording data. We don’t store the data in memory
-   * because that will grow memory pretty quickly! Also, this way, if the
-   * application crashes we have a backup.
+   * Tells the peer to start recording and the peer will begin to send all of
+   * its audio over the recording data channel.
    */
-  private handleRecordeeMessage = (event: MessageEvent) => {
-    // We currently don’t want to run this code, but we also don’t want to
-    // comment it out so that TypeScript will still work.
-    if (0 !== 0) {
-      const buffer: ArrayBuffer = event.data;
-      // Append the channel data to our temporary recording file. If there is
-      // an error then we need to report it.
-      appendFile(this.recordingFilePath, toBuffer(buffer), error => {
-        if (error) {
-          console.error(error);
-        }
-      });
-    }
-  };
+  public startRecording(): void {
+    this.recordingChannel.send('start');
+  }
 
   /**
-   * Handle an error from our recordee by logging it.
+   * Tells the peer to stop recording and the peer wil stop sending all of its
+   * audio over the recording data channel.
    */
-  private handleRecordeeError = (event: ErrorEvent) => {
-    console.log(event.error);
-  };
-}
-
-/**
- * Converts an `ArrayBuffer` into a Node.js `Buffer`.
- */
-function toBuffer(arrayBuffer: ArrayBuffer): Buffer {
-  return new Buffer(new Uint8Array(arrayBuffer));
+  public stopRecording(): void {
+    this.recordingChannel.send('stop');
+  }
 }

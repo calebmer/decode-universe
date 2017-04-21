@@ -50,7 +50,7 @@ const debounceNegotiationNeededMs = 200;
  * and we only connect to the mesh after `connect()` is called. To disconnect
  * from the mesh one needs to call `close()`.
  */
-export class PeersMesh {
+export class PeersMesh<TPeer extends Peer = Peer> {
   /**
    * The private subject observable that contains the immutable map of remote
    * peers we are connected to.
@@ -72,7 +72,8 @@ export class PeersMesh {
    * The map is keyed by the address we use to send messages to our peer through
    * the `SignalClient`.
    */
-  private readonly peersSubject = new BehaviorSubject(OrderedMap<string, Peer>());
+  private readonly peersSubject =
+    new BehaviorSubject(OrderedMap<string, TPeer>());
 
   /**
    * All of the peers that we are currently connected to keyed by their unique
@@ -81,11 +82,18 @@ export class PeersMesh {
   public readonly peers = this.peersSubject.asObservable();
 
   /**
+   * The current set of peers.
+   */
+  public get currentPeers(): OrderedMap<string, TPeer> {
+    return this.peersSubject.value;
+  }
+
+  /**
    * Used to create a peer instance. Different studio clients may want to
    * communicate with their peers differently so this allows them to extend the
    * `Peer` class and initiate their own custom peers.
    */
-  private readonly createPeerInstance: (config: PeerConfig) => Peer;
+  private readonly createPeerInstance: (config: PeerConfig) => TPeer;
 
   /**
    * A signal client instance that can be used to send signals to our peers
@@ -96,11 +104,11 @@ export class PeersMesh {
 
   constructor({
     roomName,
-    createPeerInstance = config => new Peer(config),
+    createPeerInstance,
     localState,
   }: {
     roomName: string,
-    createPeerInstance?: (config: PeerConfig) => Peer,
+    createPeerInstance: (config: PeerConfig) => TPeer,
     localState: PeerState,
   }) {
     // Set some properties on the class instance.
@@ -162,7 +170,7 @@ export class PeersMesh {
    * Creates a peer and adds some event listeners to the `RTCPeerConnection`
    * instance that we need for signaling and negotiation.
    */
-  private createPeer(address: string, isLocalInitiator: boolean): Peer {
+  private createPeer(address: string, isLocalInitiator: boolean): TPeer {
     // Create the peer using the `createPeerInstance()` function we were
     // provided in the constructor.
     const peer = this.createPeerInstance({
@@ -268,7 +276,7 @@ export class PeersMesh {
    */
   private async startPeerNegotiations(
     address: string,
-    peer: Peer,
+    peer: TPeer,
   ): Promise<void> {
     debug(`Starting negotiations with peer ${address}`);
     // Create the offer that we will send to the peer.
@@ -290,7 +298,7 @@ export class PeersMesh {
    */
   private async handleSignal(address: string, signal: Signal): Promise<void> {
     // Get the peer using the provided address.
-    let peer: Peer | undefined = this.peersSubject.value.get(address);
+    let peer: TPeer | undefined = this.peersSubject.value.get(address);
 
     // If we could find no peer and the signal is an offer signal then let us
     // create a new peer. If we could not find a peer and the signal was *not*
@@ -427,6 +435,6 @@ export class PeersMesh {
       }
     });
     // Remove the stream from our local cache.
-    this.localStreamsSubject.next(this.localStreamsSubject.value.remove(stream));
+    this.localStreamsSubject.next(this.localStreamsSubject.value.delete(stream));
   }
 }
