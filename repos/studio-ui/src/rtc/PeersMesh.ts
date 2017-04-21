@@ -1,7 +1,7 @@
 import * as createDebugger from 'debug';
 import { Set, OrderedMap } from 'immutable';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { SignalClient, Signal } from '@decode/studio-signal-exchange';
+import { SignalClient, Signal } from '@decode/studio-signal-client';
 import { Peer, PeerConfig, PeerState } from './Peer';
 
 const debug = createDebugger('@decode/studio-ui:PeersMesh');

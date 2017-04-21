@@ -3,7 +3,7 @@ import {
   JoinResponseMessage,
   SignalOutgoingMessage,
   SignalIncomingMessage,
-} from '../shared/MessageTypes';
+} from '@decode/studio-signal-client';
 
 /**
  * Sets up a socket with everything it needs to connect and communicate with

@@ -1,5 +1,5 @@
 {
-  "extends": "../typescript/config/base",
+  "extends": "../typescript/config/base.json",
   "compilerOptions": {
     "noEmit": true,
     "lib": ["dom", "es2015", "es2016", "es2017"],

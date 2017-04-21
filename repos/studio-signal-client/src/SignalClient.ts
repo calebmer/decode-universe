@@ -6,9 +6,9 @@ import {
   SignalOutgoingMessage,
   SignalIncomingMessage,
   Signal,
-} from '../shared/MessageTypes';
+} from './MessageTypes';
 
-const debug = createDebugger('@decode/studio-signal-exchange');
+const debug = createDebugger('@decode/studio-signal-client');
 
 export class SignalClient {
   /**

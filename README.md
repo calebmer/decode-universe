@@ -30,7 +30,7 @@ To pick port numbers we start at 1998 and then count up by one. Whenever you nee
     </tr>
     <tr>
       <td>2000</td>
-      <td>The WebRTC signaling server for the studio found in `./repos/studio-signal-exchange`.</td>
+      <td>The WebRTC signaling server for the studio found in `./repos/studio-signal-server`.</td>
     </tr>
   </tbody>
 </table>
