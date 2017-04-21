@@ -1,7 +1,6 @@
 const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const { CheckerPlugin, TsConfigPathsPlugin } = require('awesome-typescript-loader');
 const WatchMissingNodeModulesPlugin = require('react-dev-utils/WatchMissingNodeModulesPlugin');
 
 const { DefinePlugin, HotModuleReplacementPlugin } = webpack;
@@ -75,6 +74,13 @@ module.exports = {
           path.join(__dirname, '../studio-signal-exchange/src'),
         ],
         loader: 'awesome-typescript-loader',
+        options: {
+          // The default instance name, `at-loader`, is confusing.
+          instance: 'ts-loader',
+          // Only transpile in development. Do a full type check when building
+          // for production.
+          transpileOnly: DEV,
+        },
       },
       // Tells Webpack about the TypeScript source maps so it can use them when
       // Webpack is generating its own source maps. We only want this for
@@ -93,9 +99,6 @@ module.exports = {
     ].filter(Boolean),
   },
   plugins: [
-    // Add the appropriate TypeScript plugins.
-    new CheckerPlugin(),
-    new TsConfigPathsPlugin(),
     // Generates an `index.html` file with the <script> injected.
     new HtmlWebpackPlugin({
       inject: true,

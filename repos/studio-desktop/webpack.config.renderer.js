@@ -1,7 +1,6 @@
 const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const { CheckerPlugin, TsConfigPathsPlugin } = require('awesome-typescript-loader');
 const WatchMissingNodeModulesPlugin = require('react-dev-utils/WatchMissingNodeModulesPlugin');
 const BabiliPlugin = require('babili-webpack-plugin');
 const builtinModules = require('builtin-modules');
@@ -114,8 +113,13 @@ module.exports = {
         ],
         loader: 'awesome-typescript-loader',
         options: {
+          // The default instance name, `at-loader`, is confusing.
+          instance: 'ts-loader',
           // Use the tsconfig for the renderer and not our general tsconfig.
           configFileName: 'tsconfig.renderer.json',
+          // Only transpile in development. Do a full type check when building
+          // for production.
+          transpileOnly: DEV,
         },
       },
       // Tells Webpack about the TypeScript source maps so it can use them when
@@ -135,9 +139,6 @@ module.exports = {
     ].filter(Boolean),
   },
   plugins: [
-    // Add the appropriate TypeScript plugins.
-    new CheckerPlugin(),
-    new TsConfigPathsPlugin(),
     // Generates an `index.html` file with the <script> injected.
     new HtmlWebpackPlugin({
       inject: true,
