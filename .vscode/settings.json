@@ -1,7 +1,31 @@
 {
+  // Files to be excluded from the VSCode file tree.
   "files.exclude": {
     "**/.git": true,
     "**/.DS_Store": true,
+    // We ignore `node_modules` just because there are so many different
+    // `node_modules` directories in our project tree as a result of our
+    // monorepo. Also, when going to a TypeScript definition for an import found
+    // in `node_modules` VSCode will open up the `node_modules` folder in the
+    // file tree if we don’t exclude it. As you can imagine this leads to very
+    // difficult navigational challenges.
     "**/node_modules": true
+  },
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  // 2 spaces (not tabs) by default. If we want to use tabs in other languages
+  // we can configure that seperately.
+  "editor.insertSpaces": true,
+  "editor.tabSize": 2,
+  // We put one ruler at 80 characters. Code can go beyond that line, but
+  // comments generally should not go beyond 80 characters.
+  "editor.rulers": [
+    80
+  ],
+  // When writing markdown we want our words to wrap at the 80 character limit.
+  // This makes raw markdown files much easier to read.
+  "[markdown]": {
+    "editor.wordWrap": "wordWrapColumn",
+    "editor.wordWrapColumn": 80
   }
 }
