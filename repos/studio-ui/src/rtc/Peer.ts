@@ -60,6 +60,18 @@ const rtcConfig = {
  */
 export class Peer {
   /**
+   * The internal, writable, representation of `isClosed`.
+   */
+  private internalIsClosed = false;
+
+  /**
+   * Whether or not the peer has been closed.
+   */
+  public get isClosed(): boolean {
+    return this.internalIsClosed;
+  }
+
+  /**
    * The DOM API object for the connection that we make with our peer.
    */
   public readonly connection: RTCPeerConnection;
@@ -211,6 +223,12 @@ export class Peer {
    * created to communicate with the peer.
    */
   public close(): void {
+    // If the peer is already closed then throw an error.
+    if (this.isClosed === true) {
+      throw new Error('Already closed.');
+    }
+    // Flip the `isClosed` flag to true.
+    this.internalIsClosed = true;
     // Disposes all of our disposables.
     this.disposables.forEach(disposable => disposable.dispose());
     this.disposables = [];
@@ -227,6 +245,10 @@ export class Peer {
    * accordingly.
    */
   public setLocalState(state: PeerState): void {
+    // State check.
+    if (this.isClosed === true) {
+      throw new Error('Peer is closed.');
+    }
     if (this.stateChannel !== null && this.stateChannel.readyState === 'open') {
       this.stateChannel.send(JSON.stringify(state));
     } else {
@@ -239,6 +261,10 @@ export class Peer {
    * update accordingly.
    */
   public addLocalStream(stream: MediaStream): void {
+    // State check.
+    if (this.isClosed === true) {
+      throw new Error('Peer is closed.');
+    }
     this.connection.addStream(stream);
   }
 
@@ -247,6 +273,10 @@ export class Peer {
    * should update accordingly.
    */
   public removeLocalStream(stream: MediaStream): void {
+    // State check.
+    if (this.isClosed === true) {
+      throw new Error('Peer is closed.');
+    }
     this.connection.removeStream(stream);
   }
 }

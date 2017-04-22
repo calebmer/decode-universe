@@ -1,5 +1,5 @@
-import { Observable } from 'rxjs';
-import { Peer, PeerConfig } from '@decode/studio-ui';
+import { v4 as uuid } from 'uuid';
+import { Peer, PeerConfig, Recorder } from '@decode/studio-ui';
 
 /**
  * A peer that we know is a guest. We should be receiving that peer’s local
@@ -10,57 +10,54 @@ import { Peer, PeerConfig } from '@decode/studio-ui';
  * peers in the studio desktop client are thought of as guests.
  */
 export class GuestPeer extends Peer {
-  /**
-   * The channel on which we expect the guest peer to publish their recording
-   * channel data.
-   */
-  private readonly recordingChannel: RTCDataChannel;
-
-  /**
-   * The stream of recording data that we are getting from our peer over the
-   * recording channel.
-   */
-  public readonly recordingStream: Observable<ArrayBuffer>;
+  private recorder: Promise<Recorder>;
 
   constructor(config: PeerConfig) {
     super(config);
-    // Create the data channel.
-    this.recordingChannel = this.connection.createDataChannel('recording');
-    // Create an observable which will forward all of the recording data coming
-    // from our recording channel to any curious observers.
-    this.recordingStream = new Observable<ArrayBuffer>(observer => {
-      // Handle messages by forwarding them to the observer.
-      const handleMessage = (event: MessageEvent) => {
-        observer.next(event.data);
-      };
-      // Handle errors by forwarding them to the observer.
-      const handleError = (event: ErrorEvent) => {
-        observer.error(event.error);
-      };
-      // Add the event listeners.
-      this.recordingChannel.addEventListener('message', handleMessage);
-      this.recordingChannel.addEventListener('error', handleError);
-      return () => {
-        // Remove the event listeners.
-        this.recordingChannel.removeEventListener('message', handleMessage);
-        this.recordingChannel.removeEventListener('error', handleError);
-      };
-    });
+    // Create the recorder. Don’t wait for it to resolve.
+    this.recorder = this.createRecorder();
+  }
+
+  /**
+   * Creates a recorder wrapped in a promise. The promise will resolve once we
+   * receive a message from our recordee that they were sucessfully initialized.
+   */
+  private async createRecorder(): Promise<Recorder> {
+    // Create the channel with a random label. We use a random label to ensure
+    // that all the data channels we create are distinct.
+    const channel = this.connection.createDataChannel(`recording:${uuid()}`);
+    // Create a new recorder. Don’t wait for it to finish construction.
+    const recorder = await Recorder.create(channel);
+    // Add the recorder to the disposables array. If the peer closed before the
+    // recorder promise resolved then dispose of the recorder once we get it.
+    if (this.isClosed === true) {
+      recorder.dispose();
+    } else {
+      this.disposables.push(recorder);
+    }
+    // Return the promise.
+    return recorder;
   }
 
   /**
    * Tells the peer to start recording and the peer will begin to send all of
    * its audio over the recording data channel.
    */
-  public startRecording(): void {
-    this.recordingChannel.send('start');
+  public async startRecording(): Promise<void> {
+    // Await the recorder and start it.
+    const recorder = await this.recorder;
+    recorder.start();
   }
 
   /**
    * Tells the peer to stop recording and the peer wil stop sending all of its
    * audio over the recording data channel.
    */
-  public stopRecording(): void {
-    this.recordingChannel.send('stop');
+  public async stopRecording(): Promise<void> {
+    // Await the recorder and stop it.
+    const recorder = await this.recorder;
+    recorder.stop();
+    // Create a new recorder. Don’t wait for it to resolve.
+    this.recorder = this.createRecorder();
   }
 }

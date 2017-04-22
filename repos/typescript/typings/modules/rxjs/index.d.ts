@@ -15,7 +15,7 @@ export class Observable<T> {
 
 export interface Observer<T> {
   next(value: T): void,
-  error(error: {}): void,
+  error(error: mixed): void,
   complete(): void,
 }
 

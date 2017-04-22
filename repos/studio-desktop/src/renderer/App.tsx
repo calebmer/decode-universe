@@ -7,6 +7,7 @@ type Props = {
   onUserAudioError: (error: mixed, previousStream: MediaStream | null) => void,
   onStartRecording: () => void,
   onStopRecording: () => void,
+  onExport: () => void,
 };
 
 type State = {
@@ -18,14 +19,18 @@ export class App extends React.Component<Props, State> {
     isRecording: false,
   };
 
-  handleStartRecording = () => {
+  private handleStartRecording = () => {
     this.setState({ isRecording: true });
     this.props.onStartRecording();
   };
 
-  handleStopRecording = () => {
+  private handleStopRecording = () => {
     this.setState({ isRecording: false });
     this.props.onStopRecording();
+  };
+
+  private handleExport = () => {
+    this.props.onExport();
   };
 
   render() {
@@ -33,15 +38,23 @@ export class App extends React.Component<Props, State> {
     const { isRecording } = this.state;
     return (
       <div>
-        <button
-          onClick={
-            isRecording
-              ? this.handleStopRecording
-              : this.handleStartRecording
-          }
-        >
-          {isRecording ? 'Stop' : 'Start'} Recording
-        </button>
+        <div>
+          <button
+            onClick={
+              isRecording
+                ? this.handleStopRecording
+                : this.handleStartRecording
+            }
+          >
+            {isRecording ? 'Stop' : 'Start'} Recording
+          </button>
+          {' '}
+          {!isRecording && (
+            <button onClick={this.handleExport}>
+              Export WAV
+            </button>
+          )}
+        </div>
         <StudioRoom
           mesh={mesh}
           onUserAudioStream={onUserAudioStream}

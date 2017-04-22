@@ -216,8 +216,8 @@ export class PeersMesh<TPeer extends Peer = Peer> {
         // If the connection state is failed or closed then we want to destroy the
         // peer no questions asked.
         if (
-          iceConnectionState === 'failed' ||
-          iceConnectionState === 'closed'
+          (iceConnectionState === 'failed' || iceConnectionState === 'closed') &&
+          peer.isClosed === false
         ) {
           // Close the peer.
           peer.close();

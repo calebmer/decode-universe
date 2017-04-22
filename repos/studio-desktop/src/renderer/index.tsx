@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { RawAudio } from './audio/RawAudio';
+// import { RawAudio } from './audio/RawAudio';
 import { HostPeersMesh } from './rtc/HostPeersMesh';
 import { App } from './App';
 
@@ -18,21 +18,23 @@ if (DEV) {
 
 mesh.connect().catch(error => console.error(error));
 
-RawAudio.saveRecordingStreams(
-  '/Users/calebmer/Desktop/recordings',
-  mesh.recordingStreams,
-).subscribe({
-  error: error => console.error(error),
-});
+// const recordingsDirectory = '/Users/calebmer/Desktop/recordings';
+
+// RawAudio.saveRecordingStreams(
+//   recordingsDirectory,
+//   mesh.recordingStreams,
+// ).subscribe({
+//   error: error => console.error(error),
+// });
 
 ReactDOM.render(
   <App
     mesh={mesh}
     onUserAudioStream={(stream, previousStream) => {
+      mesh.addLocalStream(stream);
       if (previousStream !== null) {
         mesh.removeLocalStream(previousStream);
       }
-      mesh.addLocalStream(stream);
     }}
     onUserAudioError={(error, previousStream) => {
       console.error(error);
@@ -40,8 +42,13 @@ ReactDOM.render(
         mesh.removeLocalStream(previousStream);
       }
     }}
-    onStartRecording={() => mesh.startRecording()}
-    onStopRecording={() => mesh.stopRecording()}
+    onStartRecording={() => {
+      mesh.startRecording().catch(error => console.error(error));
+    }}
+    onStopRecording={() => {
+      mesh.stopRecording().catch(error => console.error(error));
+    }}
+    onExport={() => console.log('export!')}
   />,
   document.getElementById('root'),
 );

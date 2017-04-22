@@ -28,10 +28,10 @@ ReactDOM.render(
   <StudioRoom
     mesh={mesh}
     onUserAudioStream={(stream, previousStream) => {
+      mesh.addLocalStream(stream);
       if (previousStream !== null) {
         mesh.removeLocalStream(previousStream);
       }
-      mesh.addLocalStream(stream);
     }}
     onUserAudioError={(error, previousStream) => {
       console.error(error);

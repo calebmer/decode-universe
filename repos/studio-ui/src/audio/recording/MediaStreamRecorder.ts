@@ -1,29 +1,19 @@
 import { Observable } from 'rxjs';
 
-export namespace WAVRecorder {
-  /**
-   * A chunk of data that we got from recording the
-   */
-  export type Chunk = {
-    /**
-     * The time at which this is recorded in seconds. This value is relative to
-     * the `AudioContext` which was used to record the `MediaStream`.
-     */
-    readonly time: number,
-    /**
-     * The actual channel data for the chunk that was recorded.
-     */
-    readonly data: Float32Array,
-  };
-}
-
 /**
  * We currently use a single `AudioContext` instance for recording only with
  * other contexts for audio playback, for example. We may want to reconsider
  * this approach and just use one global `AudioContext` for all use cases since
  * the number of `AudioContext`s we can create is limited.
+ *
+ * This `AudioContext` is also special because it optimizes for playback over
+ * interactivity.
  */
-const __context__ = new AudioContext();
+// TypeScript doesn’t currently have types for `AudioContext` options so we have
+// to cast the constructor as `any`.
+const context: AudioContext = new (AudioContext as any)({
+  latencyHint: 'playback',
+});
 
 /**
  * Records the raw data from the audio of a `MediaStream` and pushes that data
@@ -46,35 +36,26 @@ const __context__ = new AudioContext();
  * [2]: https://theaudacitytopodcast.com/tap059-should-you-podcast-in-mono-or-stereo/
  * [3]: https://github.com/streamproc/MediaStreamRecorder/blob/bef0b2082853a6a68c45e3a9e0066d6757ca75c7/MediaStreamRecorder.js#L1151
  */
-function record(
-  stream: MediaStream,
-  context: AudioContext = __context__,
-): Observable<WAVRecorder.Chunk> {
-  return new Observable<WAVRecorder.Chunk>(observer => {
+function record(stream: MediaStream): Observable<Float32Array> {
+  return new Observable<Float32Array>(observer => {
     // Create the source audio node.
     const source = context.createMediaStreamSource(stream);
     // Create a script processor and let the implementation determine the buffer
     // size (that is why it is set to 0). We record in mono which is why we
     // have one input and output channel.
     const processor = context.createScriptProcessor(0, 1, 1);
-
     // Handles any data we get for processing. We basically just forward that
     // data to our observable.
     const handleAudioProcess = (event: AudioProcessingEvent) => {
-      const { inputBuffer, playbackTime } = event;
+      const { inputBuffer } = event;
       // Send the input channel data to our channel data observers.
-      observer.next({
-        time: playbackTime,
-        data: inputBuffer.getChannelData(0),
-      });
+      observer.next(inputBuffer.getChannelData(0));
     };
-
     // Add the processor event listener.
     processor.addEventListener('audioprocess', handleAudioProcess);
     // Connect up the audio nodes.
     source.connect(processor);
     processor.connect(context.destination);
-
     return () => {
       // Remove the processor event listener.
       processor.removeEventListener('audioprocess', handleAudioProcess);
@@ -85,6 +66,7 @@ function record(
   });
 }
 
-export const WAVRecorder = {
+export const MediaStreamRecorder = {
+  context,
   record,
 };
