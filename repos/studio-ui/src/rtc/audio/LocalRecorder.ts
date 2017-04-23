@@ -31,6 +31,11 @@ export class LocalRecorder implements Recorder {
   }
 
   /**
+   * The human readable name used to identify this recording.
+   */
+  public readonly name: string;
+
+  /**
    * The audio sample rate for the audio data emit from the `stream` observable.
    */
   public readonly sampleRate = MediaStreamRecorder.context.sampleRate;
@@ -54,13 +59,24 @@ export class LocalRecorder implements Recorder {
    * when the recording starts. `null` if we want to record silence instead of a
    * `MediaStream`.
    */
-  private mediaStream: MediaStream | null = null;
+  private mediaStream: MediaStream | null;
 
   /**
    * The subscription which represents anything that is currently recording. If
    * nothing is currently recording then it will be null.
    */
   private subscription: Subscription | null = null;
+
+  constructor({
+    name,
+    stream,
+  }: {
+    name: string,
+    stream: MediaStream | null,
+  }) {
+    this.name = name;
+    this.mediaStream = stream;
+  }
 
   /**
    * Starts recording our local audio and sending that audio to `stream`.
@@ -187,6 +203,6 @@ export class LocalRecorder implements Recorder {
       this.subscription.unsubscribe();
     }
     // TODO: Actually record silence instead of providing a noop subscription!
-    this.subscription = { unsubscribe: () => {} };
+    this.subscription = { closed: false, unsubscribe: () => {} };
   }
 }

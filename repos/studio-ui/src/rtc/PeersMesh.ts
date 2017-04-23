@@ -378,6 +378,13 @@ export class PeersMesh<TPeer extends Peer = Peer> {
   public readonly localState: Observable<PeerState>;
 
   /**
+   * The current local peer state.
+   */
+  public get currentLocalState(): PeerState {
+    return this.localStateSubject.value;
+  }
+
+  /**
    * Updates the local state with a partial state object. Anyone listening to
    * the local state will be updated, and any peers will also be updated.
    */

@@ -14,12 +14,19 @@ export class RemoteRecordee implements Disposable {
    * Creates a recordee and then sends the initial info message (step 1 of the
    * protocol) across the channel when it opens. The promise resolves when the
    * channel has opened and the message has been sent.
+   *
+   * A human readable should be passed into this function. This name will be
+   * used to identify the recordee in the host by humans.
    */
-  public static async create(channel: RTCDataChannel): Promise<RemoteRecordee> {
+  public static async create(
+    name: string,
+    channel: RTCDataChannel,
+  ): Promise<RemoteRecordee> {
     // Wait until the channel opens.
     await waitUntilOpen(channel);
     // Construct the info message for our channel.
     const message: RemoteRecorderProtocol.RecordeeInfoMessage = {
+      name,
       sampleRate: LocalRecorder.sampleRate,
     };
     // Send the info message.
@@ -34,7 +41,12 @@ export class RemoteRecordee implements Disposable {
    * The recorder which will record all of our stream’s data. We will subscribe
    * to this recorder’s `stream` and forward that data to our `channel`.
    */
-  private readonly recorder = new LocalRecorder();
+  private readonly recorder = new LocalRecorder({
+    // We don’t care about the name in a recordee.
+    name: '',
+    // We start the stream at null.
+    stream: null,
+  });
 
   /**
    * A state flag that switches to true when `stop()` is called.

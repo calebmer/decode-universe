@@ -103,6 +103,13 @@ export class Peer {
     this.remoteStateSubject.filter(state => state !== null);
 
   /**
+   * The current remote state for this peer.
+   */
+  public get currentRemoteState(): PeerState | null {
+    return this.remoteStateSubject.value;
+  }
+
+  /**
    * The internal data channel we use to communicate peer state. `null` if we
    * are not the initiator in the peer connection and are waiting to get the
    * data channel.

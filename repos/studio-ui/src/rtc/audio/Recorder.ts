@@ -22,6 +22,11 @@ export interface Recorder {
   readonly stopped: boolean;
 
   /**
+   * A human readable name for the recorder.
+   */
+  readonly name: string;
+
+  /**
    * The audio sample rate at which the audio in `stream` was recorded.
    */
   readonly sampleRate: number;

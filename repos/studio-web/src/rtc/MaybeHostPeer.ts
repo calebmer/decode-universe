@@ -1,4 +1,4 @@
-import { Peer, PeerConfig, RemoteRecordee } from '@decode/studio-ui';
+import { Peer, PeerConfig, PeerState, RemoteRecordee } from '@decode/studio-ui';
 
 /**
  * A peer that might be a host, but we don’t actually know. We will only know
@@ -25,11 +25,18 @@ export class MaybeHostPeer extends Peer {
    */
   private recordingStream: MediaStream | null;
 
+  /**
+   * The human readable name for the recording.
+   */
+  private recordingName: string;
+
   constructor(config: PeerConfig) {
     super(config);
     // Get the stream we want to record. This will be the first stream in the
     // local streams set.
     this.recordingStream = config.localStream;
+    // Set the name from our local state.
+    this.recordingName = config.localState.name;
     // Watch for the recording data channel and if we get such a channel then we
     // want to respond by creating a `RemoteRecordee` instance. We may get may
     // recording data channels over the course of our connection.
@@ -41,7 +48,7 @@ export class MaybeHostPeer extends Peer {
         // label.
         if (/^recording:/.test(channel.label)) {
           // Create a recordee from the channel.
-          RemoteRecordee.create(channel).then(
+          RemoteRecordee.create(this.recordingName, channel).then(
             // If we suceeded in creating a recordee then set the stream to the
             // current recording stream and add the stream to our recordee and
             // disposable arrays. We want to update the recording stream in case
@@ -72,6 +79,12 @@ export class MaybeHostPeer extends Peer {
           this.connection.removeEventListener('datachannel', handleDataChannel),
       });
     }
+  }
+
+  public setLocalState(state: PeerState): void {
+    super.setLocalState(state);
+    // Update the human-readable recording name from the state.
+    this.recordingName = state.name;
   }
 
   /**

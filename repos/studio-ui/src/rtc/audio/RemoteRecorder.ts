@@ -32,6 +32,7 @@ export class RemoteRecorder implements Recorder {
         // constructed.
         resolve(new RemoteRecorder({
           channel,
+          name,
           sampleRate: message.sampleRate,
         }));
       };
@@ -85,6 +86,11 @@ export class RemoteRecorder implements Recorder {
   private readonly channel: RTCDataChannel;
 
   /**
+   * The human readable name for this recorder.
+   */
+  public readonly name: string;
+
+  /**
    * The audio sample rate for the audio data emit from the `stream` observable.
    */
   public readonly sampleRate: number;
@@ -105,13 +111,16 @@ export class RemoteRecorder implements Recorder {
 
   private constructor({
     channel,
+    name,
     sampleRate,
   }: {
     channel: RTCDataChannel,
+    name: string,
     sampleRate: number,
   }) {
     // Update our instance.
     this.channel = channel;
+    this.name = name;
     this.sampleRate = sampleRate;
     // Add event listeners.
     this.channel.addEventListener('message', this.handleMessage);

@@ -30,9 +30,11 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
   /**
    * The recorder that we use to record our local audio stream. This may be used
    * accross any number of recordings. If calling `stop()` on the `recorder`
-   * stops the local recorder then we create a new one.
+   * stops the local recorder then we will set it to null.
+   *
+   * `null` if there is currently no initialized recorder.
    */
-  private localRecorder = new LocalRecorder();
+  private localRecorder: LocalRecorder | null = null;
 
   /**
    * A map of peers to the recorder ids provided by the `Recording` instance
@@ -95,6 +97,14 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
     // `this.recording` changed that means we were cancelled.
     this.recording = recording;
     try {
+      // If we don’t currently have a local recorder or the local recorder that
+      // we have was stopped then create a new one.
+      if (this.localRecorder === null || this.localRecorder.stopped === true) {
+        this.localRecorder = new LocalRecorder({
+          name: this.currentLocalState.name,
+          stream: this.currentLocalStream,
+        });
+      }
       // Add the local recorder to the recording.
       recording.addRecorder(this.localRecorder);
       // Add a recorder for all of the current peers to the recording. We will
@@ -144,17 +154,6 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
     // If the recording was started then stop it.
     if (this.recording.started === true) {
       this.recording.stop();
-    }
-    // If the local recorder was stopped then we want to create a new local
-    // recorder instance and set the current local stream.
-    if (this.localRecorder.stopped === true) {
-      this.localRecorder = new LocalRecorder();
-      // Set the current local stream.
-      if (this.currentLocalStream === null) {
-        this.localRecorder.unsetStream();
-      } else {
-        this.localRecorder.setStream(this.currentLocalStream);
-      }
     }
     // Set the recording instance to null.
     this.recording = null;
@@ -230,7 +229,9 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
    */
   public setLocalStream(stream: MediaStream): void {
     super.setLocalStream(stream);
-    this.localRecorder.setStream(stream);
+    if (this.localRecorder !== null) {
+      this.localRecorder.setStream(stream);
+    }
   }
 
   /**
@@ -238,6 +239,8 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
    */
   public unsetLocalStream(): void {
     super.unsetLocalStream();
-    this.localRecorder.unsetStream();
+    if (this.localRecorder !== null) {
+      this.localRecorder.unsetStream();
+    }
   }
 }

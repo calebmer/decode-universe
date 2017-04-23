@@ -69,11 +69,14 @@ export namespace RemoteRecorderProtocol {
    * The recordee gives its recording information to the recorder. This is step
    * 1 in the protocol.
    *
+   * The `name` is a human readable name for identifying the recorder.
+   *
    * The `sampleRate` is the sample rate of the audio that the recordee will be
    * sending over.
    */
   export type RecordeeInfoMessage = {
-    sampleRate: number,
+    readonly name: string,
+    readonly sampleRate: number,
   };
 
   /**
