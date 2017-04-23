@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import { v4 as uuid } from 'uuid';
-import { Subscription } from 'rxjs';
 import { Recorder } from '@decode/studio-ui';
 
 /**
@@ -53,11 +52,11 @@ export class PersistRecording {
   private readonly recorders = new Map<string, Recorder>();
 
   /**
-   * A map of subscriptions by the id to the `Subscription`. This map will have
-   * the same ids as `recorders`, and each subscription will correspond to the
+   * A map of disposables by the id to the `Disposable`. This map will have
+   * the same ids as `recorders`, and each disposable will correspond to the
    * `Recorder` with the same id in `recorders`.
    */
-  private readonly subscriptions = new Map<string, Subscription>();
+  private readonly disposables = new Map<string, Disposable>();
 
   /**
    * Sets up the file system by making the directories in which we will place
@@ -99,8 +98,8 @@ export class PersistRecording {
     this.internalStarted = true;
     // For all of our recorders.
     for (const [id, recorder] of this.recorders) {
-      // Start persisting the recorder and save the subscription for later.
-      this.subscriptions.set(
+      // Start persisting the recorder and save the disposable for later.
+      this.disposables.set(
         id,
         persistRecorder(`${this.recordersDirectory}/${id}`, recorder),
       );
@@ -131,14 +130,14 @@ export class PersistRecording {
         recorder.stop();
       }
     }
-    // Unsubscribe from all of our subscriptions that are currently persisting
-    // the recorder streams to disk.
-    for (const [, subscription] of this.subscriptions) {
-      subscription.unsubscribe();
+    // Dispose all of our disposables that are currently persisting the recorder
+    // streams to disk.
+    for (const [, disposable] of this.disposables) {
+      disposable.dispose();
     }
     // Clear our maps. We won’t be using them anymore.
     this.recorders.clear();
-    this.subscriptions.clear();
+    this.disposables.clear();
   }
 
   /**
@@ -162,8 +161,8 @@ export class PersistRecording {
     // If we have started then we need to start persisting the recorder
     // immeadiately!
     if (this.started === true) {
-      // Add a subscription for our persistance operation.
-      this.subscriptions.set(
+      // Add a disposable for our persistance operation.
+      this.disposables.set(
         id,
         persistRecorder(`${this.recordersDirectory}/${id}`, recorder),
       );
@@ -203,12 +202,12 @@ export class PersistRecording {
     const recorder = this.recorders.get(id)!;
     // Delete the recorder from our internal map.
     this.recorders.delete(id);
-    // If have started, but not yet stopped then we have a subscription to the
-    // persistance of this recorder that we need to unsubscribe and delete.
+    // If have started, but not yet stopped then we have a disposable for the
+    // persistance of this recorder that we need to dispose and delete.
     if (this.started === true && this.stopped === false) {
-      const subscription = this.subscriptions.get(id)!;
-      subscription.unsubscribe();
-      this.subscriptions.delete(id);
+      const disposable = this.disposables.get(id)!;
+      disposable.dispose();
+      this.disposables.delete(id);
     }
     // If the recorder has started, but not yet stopped, then we want to stop
     // the recorder ourselves.
@@ -225,23 +224,38 @@ export class PersistRecording {
 function persistRecorder(
   filePath: string,
   recorder: Recorder,
-): Subscription {
-  return recorder.stream.subscribe({
-    next: buffer => {
-      // Append the data to the provided file.
-      fs.appendFile(
-        filePath,
-        // Convert the stream buffer data to a Node.js `Buffer`.
-        Buffer.from(buffer),
-        error => {
-          if (error) {
-            // TODO: Better error handling?
-            console.error(error);
-          }
-        },
-      );
-    },
+): Disposable {
+  // Keep track of whether or not we have ended the writable stream.
+  let ended = false;
+  // Creates a write stream for the provided file path.
+  const writable = fs.createWriteStream(filePath);
+  // TODO: Better error reporting.
+  writable.on('error', (error: Error) => {
+    console.error(error);
+  });
+  // Subscribe to the recorder’s stream and whenever we get data then write it
+  // to the file writable stream.
+  const subscription = recorder.stream.subscribe({
+    // Convert our `ArrayBuffer` to a Node.js buffer and write it to the file’s
+    // write stream
+    next: buffer => writable.write(Buffer.from(buffer)),
     // TODO: Better error reporting.
     error: error => console.error(error),
+    // Once the stream finishes then we want to end the write stream.
+    complete: () => {
+      ended = true;
+      writable.end();
+    },
   });
+  return {
+    // Dispose by unsubscribing from the subscription and ending the writable
+    // stream if we have not already ended it.
+    dispose: () => {
+      subscription.unsubscribe();
+      // If we have not yet ended the stream then end it here.
+      if (ended === false) {
+        writable.end();
+      }
+    },
+  };
 }

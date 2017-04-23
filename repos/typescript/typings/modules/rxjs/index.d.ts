@@ -26,6 +26,7 @@ export interface Subscriber<T> {
 }
 
 export interface Subscription {
+  closed: boolean;
   unsubscribe(): void;
 }
 
