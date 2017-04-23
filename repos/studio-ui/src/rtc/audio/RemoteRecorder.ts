@@ -32,7 +32,7 @@ export class RemoteRecorder implements Recorder {
         // constructed.
         resolve(new RemoteRecorder({
           channel,
-          name,
+          name: message.name,
           sampleRate: message.sampleRate,
         }));
       };
