@@ -1,6 +1,5 @@
 import * as fs from 'fs';
-import { Transform } from 'stream';
-import { Observable } from 'rxjs';
+import * as stream from 'stream';
 import { RecordingManifest } from './RecordingManifest';
 
 async function exportWAV(recordingDirectory: string): Promise<void> {
@@ -40,17 +39,29 @@ export const ExportRecording = {
   exportWAV,
 };
 
+/**
+ * Exports a recorder’s raw data to a WAV file ready for editing in any audio
+ * editor app.
+ *
+ * The `rawFilePath` should point to the file which the recorder’s `stream` was
+ * saved without changes.
+ */
 async function exportRecorderToWAV(
   recorder: RecordingManifest.Recorder,
   rawFilePath: string,
   wavFilePath: string,
 ): Promise<void> {
+  // Get the stats for our raw file. We don’t want to read it because we are
+  // going to stream the file later on. However, we do need to know the size for
+  // the WAV file header.
   const stats = await new Promise<fs.Stats>((resolve, reject) => {
     fs.stat(
       rawFilePath,
       (error, stats) => error ? reject(error) : resolve(stats),
     );
   });
+  // Create a write stream which we will use to write out the WAV data as we get
+  // it.
   const writable = fs.createWriteStream(wavFilePath);
   // Create and write the header for our WAV file. As always, see
   // [`MediaStreamRecorder`][1] for the reference implementation.
@@ -87,17 +98,20 @@ async function exportRecorderToWAV(
     // Write the header to the write stream.
     writable.write(Buffer.from(header));
   }
+  // Create a stream that will read our raw file.
   const readable = fs.createReadStream(rawFilePath);
-
-  readable
-    .pipe(new WAVTransform())
-    .pipe(writable)
-    .on('finish', () => {
-      console.log('done!');
-    })
-    .on('error', (error: Error) => {
-      console.error(error);
-    });
+  // Construct a promise that will resolve or reject once our streams finish.
+  await new Promise<void>((resolve, reject) => {
+    readable
+      // Pipe the readable stream into a `WAVTransform` which will convert the
+      // raw data into data appropriate for WAV files.
+      .pipe(new WAVTransform())
+      // Write the result of the transformed data to our writable.
+      .pipe(writable)
+      // When we finish or get an error then resolve this promise.
+      .on('finish', () => resolve())
+      .on('error', (error: Error) => reject(error));
+  });
 }
 
 /**
@@ -109,19 +123,42 @@ function writeUTFBytes(view: DataView, offset: number, string: string): void {
   }
 }
 
-class WAVTransform extends Transform {
-  _transform(
+/**
+ * A Node.js transform stream that takes the [`MediaStreamRecorder`s data
+ * writing loop][1] and makes it so that it can run on small chunks of data at
+ * any given time. This allows us to stream the data instead of having one,
+ * giant, blocking `for` loop that iterates through all the data we loaded into
+ * memory.
+ *
+ * [1]: https://github.com/streamproc/MediaStreamRecorder/blob/bef0b2082853a6a68c45e3a9e0066d6757ca75c7/MediaStreamRecorder.js#L1228-L1235
+ */
+class WAVTransform extends stream.Transform {
+  protected _transform(
     data: Buffer,
     encoding: string,
     callback: (error: Error | null, data: Buffer) => void,
   ): void {
+    // Don’t know what this does. We should find out...
     let volume = 1;
+    // Convert the buffer into a `Float32Array`.
+    //
+    // TODO: Are there problems with this if `data.buffer.byteLength % 4 !== 0`?
     const array = new Float32Array(data.buffer);
+    // Create a new array buffer which is twice as large as the `Float32Array`.
+    // This would be half as large as `data.buffer.byteLength`.
     const buffer = new ArrayBuffer(array.length * 2);
+    // Create a data view for our buffer.
     const view = new DataView(buffer);
-    for (let i = 0; i < array.length * 2; i += 2) {
-      view.setInt16(i, array[i] * (0x7FFF * volume), true);
+    // For every item in the array we want to add it to our newly constructed
+    // array buffer.
+    for (let i = 0; i < array.length; i++) {
+      view.setInt16(
+        i * 2,
+        array[i] * (0x7FFF * volume),
+        true,
+      );
     }
+    // Send back the newly constructed buffer.
     callback(null, Buffer.from(buffer));
   }
 }
