@@ -1,6 +1,5 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-// import { RawAudio } from './audio/RawAudio';
 import { HostPeersMesh } from './rtc/HostPeersMesh';
 import { App } from './App';
 
@@ -17,15 +16,6 @@ if (DEV) {
 }
 
 mesh.connect().catch(error => console.error(error));
-
-// const recordingsDirectory = '/Users/calebmer/Desktop/recordings';
-
-// RawAudio.saveRecordingStreams(
-//   recordingsDirectory,
-//   mesh.recordingStreams,
-// ).subscribe({
-//   error: error => console.error(error),
-// });
 
 ReactDOM.render(
   <App
