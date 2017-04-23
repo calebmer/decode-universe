@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import { v4 as uuid } from 'uuid';
 import { Recorder } from '@decode/studio-ui';
+import { RecordingManifest } from './RecordingManifest';
 
 /**
  * The directory in which we store all of the source files for our recordings.
@@ -24,10 +25,16 @@ export class PersistRecording {
   private readonly recordingDirectory = `${recordingsDirectory}/${this.id}`;
 
   /**
+   * The path to the manifest JSON file.
+   */
+  private readonly manifestFilePath =
+    `${this.recordingDirectory}/manifest.json`;
+
+  /**
    * The directory in which we will place all of our raw files which are a
    * result of the `Recorder` stream.
    */
-  private readonly recordersDirectory = `${this.recordingDirectory}/raw`;
+  private readonly recordersRawDirectory = `${this.recordingDirectory}/raw`;
 
   private internalStarted = false;
   private internalStopped = false;
@@ -59,34 +66,12 @@ export class PersistRecording {
   private readonly disposables = new Map<string, Disposable>();
 
   /**
-   * Sets up the file system by making the directories in which we will place
-   * our recording.
-   */
-  public async setupFileSystem(): Promise<void> {
-    // Makes the root recording directory.
-    await new Promise<void>((resolve, reject) => {
-      fs.mkdir(
-        this.recordingDirectory,
-        error => error ? reject(error) : resolve(),
-      );
-    });
-    // Makes the directory where we will stream the results of all our
-    // recorders.
-    await new Promise<void>((resolve, reject) => {
-      fs.mkdir(
-        this.recordersDirectory,
-        error => error ? reject(error) : resolve(),
-      );
-    });
-  }
-
-  /**
    * Starts persisting all of our recorders. It also starts an recorders which
    * have not been started before.
    *
    * Throws an error if the recording has been started or stopped before.
    */
-  public start(): void {
+  public async start(): Promise<void> {
     // State check.
     if (
       this.started === true ||
@@ -94,6 +79,10 @@ export class PersistRecording {
     ) {
       throw new Error('Already started.');
     }
+    // Setup the file system.
+    await this.setupFileSystem();
+    // Write the manifest to disk.
+    await this.updateManifest();
     // Flip the `started` flag.
     this.internalStarted = true;
     // For all of our recorders.
@@ -101,7 +90,7 @@ export class PersistRecording {
       // Start persisting the recorder and save the disposable for later.
       this.disposables.set(
         id,
-        persistRecorder(`${this.recordersDirectory}/${id}`, recorder),
+        persistRecorder(`${this.recordersRawDirectory}/${id}`, recorder),
       );
       // If the recorder has not been started before then we want to start it.
       if (recorder.started === false) {
@@ -116,7 +105,7 @@ export class PersistRecording {
    *
    * Throws an error if the recording has already been stopped.
    */
-  public stop(): void {
+  public async stop(): Promise<void> {
     // State check.
     if (this.stopped === true) {
       throw new Error('Already stopped.');
@@ -156,21 +145,26 @@ export class PersistRecording {
     }
     // Generate the unique identifier for this recorder.
     const id = uuid();
-    // Add the recorder to our map.
-    this.recorders.set(id, recorder);
     // If we have started then we need to start persisting the recorder
     // immeadiately!
     if (this.started === true) {
       // Add a disposable for our persistance operation.
       this.disposables.set(
         id,
-        persistRecorder(`${this.recordersDirectory}/${id}`, recorder),
+        persistRecorder(`${this.recordersRawDirectory}/${id}`, recorder),
       );
       // If the recorder has not started then we want to start it.
       if (recorder.started === false) {
         recorder.start();
       }
+      // If we have started then we want to try and update the manifest now that
+      // we have added a recorder.
+      //
+      // If it fails then lets report the error.
+      this.updateManifest().catch(error => console.error(error));
     }
+    // Add the recorder to our map.
+    this.recorders.set(id, recorder);
     // Return the id we created.
     return id;
   }
@@ -214,6 +208,97 @@ export class PersistRecording {
     if (recorder.started === true && recorder.stopped === false) {
       recorder.stop();
     }
+  }
+
+  /**
+   * Sets up the file system by making the directories in which we will place
+   * our recording.
+   */
+  private async setupFileSystem(): Promise<void> {
+    // Makes the root recording directory.
+    await new Promise<void>((resolve, reject) => {
+      fs.mkdir(
+        this.recordingDirectory,
+        error => error ? reject(error) : resolve(),
+      );
+    });
+    // Makes the directory where we will stream the results of all our
+    // recorders.
+    await new Promise<void>((resolve, reject) => {
+      fs.mkdir(
+        this.recordersRawDirectory,
+        error => error ? reject(error) : resolve(),
+      );
+    });
+  }
+
+  /**
+   * Updates the manifest file for this recording on disk.
+   */
+  private async updateManifest(): Promise<void> {
+    // Create a new map of recorders.
+    const currentRecorders: RecordingManifest['recorders'] = {};
+    // For every recorder that we have add an entry to the `recorders` map we
+    // will use in our manifest.
+    for (const [id, recorder] of this.recorders) {
+      currentRecorders[id] = {
+        name: recorder.name,
+        sampleRate: recorder.sampleRate,
+      };
+    }
+    // Check to see if a manifest file already exists.
+    const manifestExists = await new Promise<boolean>(resolve => {
+      fs.exists(
+        this.manifestFilePath,
+        exists => resolve(exists),
+      );
+    });
+    // The manifest variable that we will fill in the following.
+    let nextManifest: RecordingManifest;
+    // If a manifest file already exists then we want to read that file and
+    // *update* it instead of replacing it. This allows us to retain metadata
+    // for recorders that have been removed. We will still want to keep their
+    // recordings, however.
+    if (manifestExists === true) {
+      // Read the file and into this string variable.
+      const previousManifestString =
+        await new Promise<string>((resolve, reject) => {
+          fs.readFile(
+            this.manifestFilePath,
+            'utf8',
+            (error, result) => error ? reject(error) : resolve(result),
+          );
+        });
+      // Parse the manifest which was serialized into JSON.
+      const previousManifest: RecordingManifest =
+        JSON.parse(previousManifestString);
+      // Create the next manifest object which is a clone of the previous
+      // manifest, but with the new recorders.
+      nextManifest = {
+        ...previousManifest,
+        recorders: {
+          ...previousManifest.recorders,
+          ...currentRecorders,
+        },
+      };
+    } else {
+      // Just create a fresh new manifest.
+      nextManifest = {
+        version: '1',
+        recorders: currentRecorders,
+      };
+    }
+    // Stringify the next manifest and pretty print the resulting JSON with two
+    // spaces.
+    const nextManifestString = JSON.stringify(nextManifest, null, 2);
+    // Write the manifest back to the file system.
+    await new Promise((resolve, reject) => {
+      fs.writeFile(
+        `${this.recordingDirectory}/manifest.json`,
+        nextManifestString,
+        error => error ? reject(error) : resolve(),
+      );
+    });
   }
 }
 

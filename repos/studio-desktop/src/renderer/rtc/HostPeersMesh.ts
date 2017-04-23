@@ -119,12 +119,6 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
         // Set the id in a peer recorders map.
         this.peerRecorderIDs.set(peer, id);
       }));
-      // Check to make sure we weren’t cancelled.
-      if (this.recording !== recording) {
-        return;
-      }
-      // Setup the files system for the recording.
-      await recording.setupFileSystem();
     } catch (error) {
       // If we were not cancelled then we want to update the `recording`
       // property to null.
@@ -138,7 +132,7 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
       return;
     }
     // Start recording!
-    recording.start();
+    await recording.start();
   }
 
   /**
@@ -147,13 +141,13 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
    * If `startRecording()` was called, but it has not resolved then calling
    * `stopRecording()` will silently cancel that `startRecording()` call.
    */
-  public stopRecording(): void {
+  public async stopRecording(): Promise<void> {
     if (this.recording === null) {
       throw new Error('Not already recording.');
     }
     // If the recording was started then stop it.
     if (this.recording.started === true) {
-      this.recording.stop();
+      await this.recording.stop();
     }
     // Set the recording instance to null.
     this.recording = null;
@@ -179,7 +173,8 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
   protected createPeer(address: string, isLocalInitiator: boolean): GuestPeer {
     // Create the peer using the implementation in our super class.
     const peer = super.createPeer(address, isLocalInitiator);
-    // If we have a recording...
+    // If we have a recording then we will want to create a recorder for this
+    // peer and add it to the recorder.
     if (this.recording !== null) {
       // Get the recording instance before we do async work.
       const recording = this.recording;
