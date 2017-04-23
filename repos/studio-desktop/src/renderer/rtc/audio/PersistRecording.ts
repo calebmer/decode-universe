@@ -66,6 +66,15 @@ export class PersistRecording {
   private readonly disposables = new Map<string, Disposable>();
 
   /**
+   * The manifest for this recording that we will be updating and saving
+   * throughout our recording.
+   */
+  private readonly manifest: RecordingManifest = {
+    version: '1',
+    recorders: {},
+  };
+
+  /**
    * Starts persisting all of our recorders. It also starts an recorders which
    * have not been started before.
    *
@@ -82,7 +91,7 @@ export class PersistRecording {
     // Setup the file system.
     await this.setupFileSystem();
     // Write the manifest to disk.
-    await this.updateManifest();
+    await this.saveManifest();
     // Flip the `started` flag.
     this.internalStarted = true;
     // For all of our recorders.
@@ -145,8 +154,17 @@ export class PersistRecording {
     }
     // Generate the unique identifier for this recorder.
     const id = uuid();
+    // Add the recorder to our map.
+    this.recorders.set(id, recorder);
+    // Update the manifest by adding an entry for this recorder.
+    this.manifest.recorders[id] = {
+      name: recorder.name,
+      sampleRate: recorder.sampleRate,
+    };
     // If we have started then we need to start persisting the recorder
     // immeadiately!
+    //
+    // We also want to re-save the manifest since we updated it.
     if (this.started === true) {
       // Add a disposable for our persistance operation.
       this.disposables.set(
@@ -157,14 +175,10 @@ export class PersistRecording {
       if (recorder.started === false) {
         recorder.start();
       }
-      // If we have started then we want to try and update the manifest now that
-      // we have added a recorder.
-      //
-      // If it fails then lets report the error.
-      this.updateManifest().catch(error => console.error(error));
+      // Save the manifest since we made an update above. If the save fails then
+      // lets report the error.
+      this.saveManifest().catch(error => console.error(error));
     }
-    // Add the recorder to our map.
-    this.recorders.set(id, recorder);
     // Return the id we created.
     return id;
   }
@@ -235,67 +249,13 @@ export class PersistRecording {
   /**
    * Updates the manifest file for this recording on disk.
    */
-  private async updateManifest(): Promise<void> {
-    // Create a new map of recorders.
-    const currentRecorders: RecordingManifest['recorders'] = {};
-    // For every recorder that we have add an entry to the `recorders` map we
-    // will use in our manifest.
-    for (const [id, recorder] of this.recorders) {
-      currentRecorders[id] = {
-        name: recorder.name,
-        sampleRate: recorder.sampleRate,
-      };
-    }
-    // Check to see if a manifest file already exists.
-    const manifestExists = await new Promise<boolean>(resolve => {
-      fs.exists(
-        this.manifestFilePath,
-        exists => resolve(exists),
-      );
-    });
-    // The manifest variable that we will fill in the following.
-    let nextManifest: RecordingManifest;
-    // If a manifest file already exists then we want to read that file and
-    // *update* it instead of replacing it. This allows us to retain metadata
-    // for recorders that have been removed. We will still want to keep their
-    // recordings, however.
-    if (manifestExists === true) {
-      // Read the file and into this string variable.
-      const previousManifestString =
-        await new Promise<string>((resolve, reject) => {
-          fs.readFile(
-            this.manifestFilePath,
-            'utf8',
-            (error, result) => error ? reject(error) : resolve(result),
-          );
-        });
-      // Parse the manifest which was serialized into JSON.
-      const previousManifest: RecordingManifest =
-        JSON.parse(previousManifestString);
-      // Create the next manifest object which is a clone of the previous
-      // manifest, but with the new recorders.
-      nextManifest = {
-        ...previousManifest,
-        recorders: {
-          ...previousManifest.recorders,
-          ...currentRecorders,
-        },
-      };
-    } else {
-      // Just create a fresh new manifest.
-      nextManifest = {
-        version: '1',
-        recorders: currentRecorders,
-      };
-    }
-    // Stringify the next manifest and pretty print the resulting JSON with two
-    // spaces.
-    const nextManifestString = JSON.stringify(nextManifest, null, 2);
-    // Write the manifest back to the file system.
+  private async saveManifest(): Promise<void> {
+    // Write the manifest to the file system in a JSON format pretty printed
+    // with 2 spaces.
     await new Promise((resolve, reject) => {
       fs.writeFile(
-        `${this.recordingDirectory}/manifest.json`,
-        nextManifestString,
+        this.manifestFilePath,
+        JSON.stringify(this.manifest, null, 2),
         error => error ? reject(error) : resolve(),
       );
     });
