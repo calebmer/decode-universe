@@ -415,6 +415,14 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     this.localStreamSubject.asObservable();
 
   /**
+   * The current local stream at this point in time. `null` if the local stream
+   * is currently unset.
+   */
+  public get currentLocalStream(): MediaStream | null {
+    return this.localStreamSubject.value;
+  }
+
+  /**
    * Sets the stream that we will send to all of our peers.
    */
   public setLocalStream(stream: MediaStream): void {

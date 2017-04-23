@@ -1,5 +1,11 @@
 import { v4 as uuid } from 'uuid';
-import { PeersMesh, Peer, PeerState, RemoteRecorder } from '@decode/studio-ui';
+import {
+  PeersMesh,
+  Peer,
+  PeerState,
+  LocalRecorder,
+  RemoteRecorder,
+} from '@decode/studio-ui';
 import { PersistRecording } from './audio/PersistRecording';
 import { GuestPeer } from './GuestPeer';
 
@@ -20,6 +26,13 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
    * that is doing all of the recording heavy work.
    */
   private recording: PersistRecording | null = null;
+
+  /**
+   * The recorder that we use to record our local audio stream. This may be used
+   * accross any number of recordings. If calling `stop()` on the `recorder`
+   * stops the local recorder then we create a new one.
+   */
+  private localRecorder = new LocalRecorder();
 
   /**
    * A map of peers to the recorder ids provided by the `Recording` instance
@@ -82,7 +95,8 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
     // `this.recording` changed that means we were cancelled.
     this.recording = recording;
     try {
-      // TODO: recording.setRecorder('local', );
+      // Add the local recorder to the recording.
+      recording.addRecorder(this.localRecorder);
       // Add a recorder for all of the current peers to the recording. We will
       // wait for all of the recorders of the current peers to be created, but
       // we will not wait for any other peers that get added after
@@ -130,6 +144,17 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
     // If the recording was started then stop it.
     if (this.recording.started === true) {
       this.recording.stop();
+    }
+    // If the local recorder was stopped then we want to create a new local
+    // recorder instance and set the current local stream.
+    if (this.localRecorder.stopped === true) {
+      this.localRecorder = new LocalRecorder();
+      // Set the current local stream.
+      if (this.currentLocalStream === null) {
+        this.localRecorder.unsetStream();
+      } else {
+        this.localRecorder.setStream(this.currentLocalStream);
+      }
     }
     // Set the recording instance to null.
     this.recording = null;
@@ -198,5 +223,21 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
       const id = this.peerRecorderIDs.get(peer)!;
       this.recording.removeRecorder(id);
     }
+  }
+
+  /**
+   * Sets the local stream and updates our recorder.
+   */
+  public setLocalStream(stream: MediaStream): void {
+    super.setLocalStream(stream);
+    this.localRecorder.setStream(stream);
+  }
+
+  /**
+   * Unsets the local stream and updates our recorder.
+   */
+  public unsetLocalStream(): void {
+    super.unsetLocalStream();
+    this.localRecorder.unsetStream();
   }
 }
