@@ -13,15 +13,22 @@ export type RecordingManifest = {
    * correspond to the file name of the recorder on disk.
    */
   readonly recorders: {
-    [id: string]: {
-      /**
-       * A human readable name for this recorder.
-       */
-      readonly name: string,
-      /**
-       * The sample rate at which the audio was recorded.
-       */
-      readonly sampleRate: number,
-    },
+    [id: string]: RecordingManifest.Recorder,
   },
 };
+
+export namespace RecordingManifest {
+  /**
+   * The type for a single entry that can be found in the recording manifest.
+   */
+  export type Recorder = {
+    /**
+     * A human readable name for this recorder.
+     */
+    readonly name: string,
+    /**
+     * The sample rate at which the audio was recorded.
+     */
+    readonly sampleRate: number,
+  };
+}

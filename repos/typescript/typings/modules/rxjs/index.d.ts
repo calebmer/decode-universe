@@ -11,6 +11,8 @@ export class Observable<T> {
   filter(predicate: (value: T) => boolean): Observable<T>;
   switchMap<U>(mapper: (value: T) => Observable<U>): Observable<U>;
   distinctUntilChanged(compare?: (a: T, b: T) => boolean): Observable<T>;
+
+  toPromise(): Promise<T>;
 }
 
 export interface Observer<T> {

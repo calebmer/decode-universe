@@ -7,6 +7,7 @@ import { RecordingManifest } from './RecordingManifest';
  * The directory in which we store all of the source files for our recordings.
  * For now its a constant, but in the future it may be configurable.
  */
+// TODO: Find some way to share these file paths.
 const recordingsDirectory = '/Users/calebmer/Desktop/recordings';
 
 /**

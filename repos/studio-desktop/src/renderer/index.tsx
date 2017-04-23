@@ -1,6 +1,8 @@
+import * as fs from 'fs';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { HostPeersMesh } from './rtc/HostPeersMesh';
+import { ExportRecording } from './rtc/audio/ExportRecording';
 import { App } from './App';
 
 const mesh = new HostPeersMesh({
@@ -31,7 +33,16 @@ ReactDOM.render(
     onStopRecording={() => {
       mesh.stopRecording().catch(error => console.error(error));
     }}
-    onExport={() => console.log('export!')}
+    onExport={() => {
+      const recordingsDirectory = '/Users/calebmer/Desktop/recordings';
+      for (const name of fs.readdirSync(recordingsDirectory)) {
+        if (name.startsWith('.')) {
+          continue;
+        }
+        ExportRecording.exportWAV(`${recordingsDirectory}/${name}`)
+          .catch(error => console.error(error));
+      }
+    }}
   />,
   document.getElementById('root'),
 );
