@@ -170,7 +170,7 @@ export class PeersMesh<TPeer extends Peer = Peer> {
    * Creates a peer and adds some event listeners to the `RTCPeerConnection`
    * instance that we need for signaling and negotiation.
    */
-  private createPeer(address: string, isLocalInitiator: boolean): TPeer {
+  protected createPeer(address: string, isLocalInitiator: boolean): TPeer {
     // Create the peer using the `createPeerInstance()` function we were
     // provided in the constructor.
     const peer = this.createPeerInstance({
@@ -219,15 +219,23 @@ export class PeersMesh<TPeer extends Peer = Peer> {
           (iceConnectionState === 'failed' || iceConnectionState === 'closed') &&
           peer.isClosed === false
         ) {
-          // Close the peer.
-          peer.close();
-          // Remove the peer from our internal map.
-          this.peersSubject.next(this.peersSubject.value.delete(address));
+          // Delete the peer.
+          this.deletePeer(address, peer);
         }
       });
     }
     // Return the peer.
     return peer;
+  }
+
+  /**
+   * Deletes and closes a peer that we don’t need anymore.
+   */
+  protected deletePeer(address: string, peer: TPeer): void {
+    // Close the peer.
+    peer.close();
+    // Remove the peer from our internal map.
+    this.peersSubject.next(this.peersSubject.value.delete(address));
   }
 
   /**

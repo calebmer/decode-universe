@@ -1,5 +1,5 @@
 import { Subscription } from 'rxjs';
-import { RecordingProtocol } from './RecordingProtocol';
+import { RemoteRecorderProtocol } from './RemoteRecorderProtocol';
 import { MediaStreamRecorder } from './MediaStreamRecorder';
 
 /**
@@ -7,23 +7,23 @@ import { MediaStreamRecorder } from './MediaStreamRecorder';
  * stuff.
  */
 // TODO: When we have no stream we still want to send data for silence.
-export class Recordee implements Disposable {
+export class RemoteRecordee implements Disposable {
   /**
    * Creates a recordee and then sends the initial info message (step 1 of the
    * protocol) across the channel when it opens. The promise resolves when the
    * channel has opened and the message has been sent.
    */
-  public static async create(channel: RTCDataChannel): Promise<Recordee> {
+  public static async create(channel: RTCDataChannel): Promise<RemoteRecordee> {
     // Wait until the channel opens.
     await waitUntilOpen(channel);
     // Construct the info message for our channel.
-    const message: RecordingProtocol.RecordeeInfoMessage = {
+    const message: RemoteRecorderProtocol.RecordeeInfoMessage = {
       sampleRate: MediaStreamRecorder.context.sampleRate,
     };
     // Send the info message.
     channel.send(JSON.stringify(message));
     // Construct the recordee and return it.
-    return new Recordee({
+    return new RemoteRecordee({
       channel,
     });
   }
@@ -151,9 +151,9 @@ export class Recordee implements Disposable {
   }
 
   /**
-   * This will stop the recording if the recording has not already been stopped.
+   * To dispose this recordee we call `stop()` if `stopped` is false.
    */
-  public dispose(): void {
+  public dispose() {
     if (this.stopped === false) {
       this.stop();
     }

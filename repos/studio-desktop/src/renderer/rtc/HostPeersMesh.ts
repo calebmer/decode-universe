@@ -1,5 +1,6 @@
-import { Observable, BehaviorSubject } from 'rxjs';
-import { PeersMesh, PeerState, WAVRecorder } from '@decode/studio-ui';
+import { v4 as uuid } from 'uuid';
+import { PeersMesh, Peer, PeerState, RemoteRecorder } from '@decode/studio-ui';
+import { PersistRecording } from './audio/PersistRecording';
 import { GuestPeer } from './GuestPeer';
 
 /**
@@ -14,42 +15,19 @@ import { GuestPeer } from './GuestPeer';
  * orchestrate the recording of its peers tracks.
  */
 export class HostPeersMesh extends PeersMesh<GuestPeer> {
-  // /**
-  //  * Create an observable for the recording stream of our local audio.
-  //  */
-  // private readonly localRecordingStream =
-  //   this.localStreams
-  //     // Get the first stream out of our set.
-  //     .map(streams => streams.first())
-  //     // We want to filter out streams that are exactly the same as the stream
-  //     // before it.
-  //     .distinctUntilChanged((a, b) => a === b)
-  //     // If we have a new stream then record it.
-  //     .switchMap<WAVRecorder.Chunk>(stream => stream !== undefined
-  //       ? WAVRecorder.record(stream)
-  //       : Observable.never())
-  //     // Only emit the recorded data if we are presently recording.
-  //     .filter(() => this.isRecording)
-  //     // Get the `ArrayBuffer` from the chunk.
-  //     .map(({ data }) => data.buffer);
+  /**
+   * If we are currently recording then this is the `PersistRecording` instance
+   * that is doing all of the recording heavy work.
+   */
+  private recording: PersistRecording | null = null;
 
-  // /**
-  //  * A higher level observable of the recording streams of all our peers and our
-  //  * own local stream. New streams may be added and removed over the course of
-  //  * time.
-  //  *
-  //  * This represents the final output of all the audio data we need to record
-  //  * for this mesh.
-  //  */
-  // public readonly recordingStreams =
-  //   this.peers
-  //     .map(peers => (
-  //       peers
-  //         // Get the recording stream from our peer.
-  //         .map(peer => peer.recordingStream)
-  //         // Always add the local recording stream.
-  //         .set('local', this.localRecordingStream)
-  //     ));
+  /**
+   * A map of peers to the recorder ids provided by the `Recording` instance
+   * when adding a recorder for the peer.
+   */
+  // TODO: Improve this implementation. Perhaps by moving `RemoteRecorder`s into
+  // the `GuestPeer` class.
+  private peerRecorderIDs = new WeakMap<Peer, string>();
 
   constructor({
     roomName,
@@ -75,47 +53,150 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
 
   /**
    * Start recording audio from all of our peers.
+   *
+   * If `stopRecording()` or `startRecording()` is called before this method
+   * resolves then we will silently discard the recording created by this method
+   * without ever starting it.
    */
   public async startRecording(): Promise<void> {
-    // We keep a map of all the peers that errored so that we don’t have to stop
-    // their recordings.
-    const peerErrors = new Map<GuestPeer, mixed>();
-    // Instruct all of our peers to start recording.
-    await Promise.all(this.currentPeers.map(async peer => {
-      // Try to start recording. If an error is thrown then add that to our
-      // `peerErrors` map.
-      try {
-        await peer.startRecording();
-      } catch (error) {
-        peerErrors.set(peer, error);
-      }
-    }));
-    // If some of our peers errored then we want to stop recording all of the
-    // peers who did not error.
-    if (peerErrors.size > 0) {
-      await Promise.all(this.currentPeers.map(async peer => {
-        // If the peer did not error then try to stop its recording. If an error
-        // is thrown when we try to stop the recording then we ignore it.
-        if (!peerErrors.has(peer)) {
-          try {
-            await peer.stopRecording();
-          } catch (error) {
-            // Noop...
-          }
-        }
-      }));
-      // Throw the first error we found.
-      throw peerErrors.values().next().value;
+    if (this.recording !== null) {
+      throw new Error('Already recording.');
     }
+    // Create the recording instance.
+    const recording = new PersistRecording();
+    // Store our new `Recording` instance on the class. Setting the recording to
+    // `this.recording` is critical not just because we will need to access
+    // `recording` later, but because it acts as a cancellation method. We want
+    // to allow calling `stopRecording()` or `startRecording()` to cancel any
+    // pending `startRecording()` calls. To implement this cancellation after
+    // every `await` we add the following code:
+    //
+    // ```
+    // if (this.recording !== recording) {
+    //   return;
+    // }
+    // ```
+    //
+    // If `startRecording()` or `stopRecording()` are called while one of our
+    // `await`s are resolving then `this.recording` will change. Therefore, if
+    // `this.recording` changed that means we were cancelled.
+    this.recording = recording;
+    try {
+      // TODO: recording.setRecorder('local', );
+      // Add a recorder for all of the current peers to the recording. We will
+      // wait for all of the recorders of the current peers to be created, but
+      // we will not wait for any other peers that get added after
+      // `startRecording()` is called.
+      await Promise.all(this.currentPeers.toArray().map(async peer => {
+        // Create the recorder.
+        const recorder = await this.createPeerRecorder(peer);
+        // Add the recorder and save the id we were given.
+        const id = recording.addRecorder(recorder);
+        // Set the id in a peer recorders map.
+        this.peerRecorderIDs.set(peer, id);
+      }));
+      // Check to make sure we weren’t cancelled.
+      if (this.recording !== recording) {
+        return;
+      }
+      // Setup the files system for the recording.
+      await recording.setupFileSystem();
+    } catch (error) {
+      // If we were not cancelled then we want to update the `recording`
+      // property to null.
+      if (this.recording === recording) {
+        this.recording = null;
+      }
+      throw error;
+    }
+    // Check to make sure we weren’t cancelled.
+    if (this.recording !== recording) {
+      return;
+    }
+    // Start recording!
+    recording.start();
   }
 
   /**
    * Stop recording audio from all of our peers.
+   *
+   * If `startRecording()` was called, but it has not resolved then calling
+   * `stopRecording()` will silently cancel that `startRecording()` call.
    */
-  public async stopRecording(): Promise<void> {
-    // Instruct all of our peers to stop recording.
-    await Promise.all(this.currentPeers.map(async peer => {
-      await peer.stopRecording();
-    }));
+  public stopRecording(): void {
+    if (this.recording === null) {
+      throw new Error('Not already recording.');
+    }
+    // If the recording was started then stop it.
+    if (this.recording.started === true) {
+      this.recording.stop();
+    }
+    // Set the recording instance to null.
+    this.recording = null;
+  }
+
+  /**
+   * Creates a recorder instance for the provided peer.
+   */
+  private async createPeerRecorder(peer: Peer): Promise<RemoteRecorder> {
+    // Create the channel with a random label. We use a random label to ensure
+    // that all the data channels we create are distinct.
+    const channel = peer.connection.createDataChannel(`recording:${uuid()}`);
+    // Create a new recorder. Don’t wait for it to finish construction.
+    const recorder = await RemoteRecorder.create(channel);
+    // Return the recorder.
+    return recorder;
+  }
+
+  /**
+   * Creates a peer and also tries to create a recorder for the peer and add it
+   * to the current `recording`.
+   */
+  protected createPeer(address: string, isLocalInitiator: boolean): GuestPeer {
+    // Create the peer using the implementation in our super class.
+    const peer = super.createPeer(address, isLocalInitiator);
+    // If we have a recording...
+    if (this.recording !== null) {
+      // Get the recording instance before we do async work.
+      const recording = this.recording;
+      // Then try to create a peer recorder.
+      this.createPeerRecorder(peer)
+        .then(
+          // If we got a recorder back then we want to add that recorder to
+          // the recording if the recording has not changed and our peer has not
+          // closed.
+          recorder => {
+            if (this.recording === recording && peer.isClosed === false) {
+              const id = recording.addRecorder(recorder);
+              this.peerRecorderIDs.set(peer, id);
+            }
+          },
+          // If we failed to get a recorder then we need to stop the recording.
+          // We also re-throw the error so it can be handled by the catch below.
+          error => {
+            if (this.recording === recording) {
+              this.stopRecording();
+              throw error;
+            }
+          },
+        )
+        // Finally, if we catch an error then report it.
+        .catch(error => {
+          console.error(error);
+        });
+    }
+    return peer;
+  }
+
+  /**
+   * Delete a peer and also delete its recorder from the recording.
+   */
+  protected deletePeer(address: string, peer: GuestPeer): void {
+    super.deletePeer(address, peer);
+    // If we have a recording then delete the recorder for this peer.
+    if (this.recording !== null && this.peerRecorderIDs.has(peer)) {
+      const id = this.peerRecorderIDs.get(peer)!;
+      this.recording.removeRecorder(id);
+    }
   }
 }

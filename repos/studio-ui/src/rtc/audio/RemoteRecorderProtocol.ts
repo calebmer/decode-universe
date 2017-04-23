@@ -64,7 +64,7 @@
  * If the recorder disconnects then the recordee will simply stop sending
  * messages.
  */
-export namespace RecordingProtocol {
+export namespace RemoteRecorderProtocol {
   /**
    * The recordee gives its recording information to the recorder. This is step
    * 1 in the protocol.

@@ -1,17 +1,18 @@
 import { Subject } from 'rxjs';
-import { RecordingProtocol } from './RecordingProtocol';
+import { Recorder } from './Recorder';
+import { RemoteRecorderProtocol } from './RemoteRecorderProtocol';
 
 /**
  * The recorder class for the recording protocol.
  */
-export class Recorder implements Disposable {
+export class RemoteRecorder implements Recorder {
   /**
    * Creates a new recorder instance using the provided `RTCDataChannel`.
    */
-  public static create(channel: RTCDataChannel): Promise<Recorder> {
+  public static create(channel: RTCDataChannel): Promise<RemoteRecorder> {
     // Create a new promise that will resolve once we can succesfully construct
     // the recorder.
-    return new Promise<Recorder>((resolve, reject) => {
+    return new Promise<RemoteRecorder>((resolve, reject) => {
       // Handles the first info message from the recordee. This is step 1 in our
       // recording protocol. Once a message is received this listener will be
       // removed. We assume that the first message is the info message. If it is
@@ -24,12 +25,12 @@ export class Recorder implements Disposable {
         // Remove all of the event listeners.
         removeEventListeners();
         // Parse out the message from the event’s data.
-        const message: RecordingProtocol.RecordeeInfoMessage =
+        const message: RemoteRecorderProtocol.RecordeeInfoMessage =
           JSON.parse(event.data);
         // Resolve the promise with a new recorder instance. The `Recorder`
         // constructor is private so this is the only place it can be
         // constructed.
-        resolve(new Recorder({
+        resolve(new RemoteRecorder({
           channel,
           sampleRate: message.sampleRate,
         }));
@@ -61,15 +62,22 @@ export class Recorder implements Disposable {
     });
   }
 
+  private internalStarted = false;
+  private internalStopped = false;
+
   /**
    * A state flag that switches to true when `start()` is called.
    */
-  private started = false;
+  public get started(): boolean {
+    return this.internalStarted;
+  }
 
   /**
    * A state flag that switches to true when `stop()` is called.
    */
-  private stopped = false;
+  public get stopped(): boolean {
+    return this.internalStopped;
+  }
 
   /**
    * The data channel which we will receive audio data from.
@@ -141,16 +149,6 @@ export class Recorder implements Disposable {
   };
 
   /**
-   * Dispose stops our recording if it has not already been stopped by calling
-   * `stop()`.
-   */
-  public dispose(): void {
-    if (this.stopped === false) {
-      this.stop();
-    }
-  }
-
-  /**
    * Tells our recordee to start recording. After this is called `stream` will
    * start to emit data from our recordee.
    *
@@ -166,9 +164,9 @@ export class Recorder implements Disposable {
       throw new Error('Cannot start recording if we are recording.');
     }
     // Flip our `started` flag to true.
-    this.started = true;
+    this.internalStarted = true;
     // Create the start message.
-    const message: RecordingProtocol.RecorderStartMessage = 'start';
+    const message: RemoteRecorderProtocol.RecorderStartMessage = 'start';
     // Send the start message across the channel. This is step 2 of the
     // protocol.
     this.channel.send(JSON.stringify(message));
@@ -185,7 +183,7 @@ export class Recorder implements Disposable {
       throw new Error('Cannot stop recording if we are not recording.');
     }
     // Flip our `stopped` flag to true.
-    this.stopped = true;
+    this.internalStopped = true;
     // Remove the event listeners. We will no longer need them.
     this.channel.removeEventListener('message', this.handleMessage);
     this.channel.removeEventListener('error', this.handleError);

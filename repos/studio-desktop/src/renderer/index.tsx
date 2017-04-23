@@ -45,9 +45,7 @@ ReactDOM.render(
     onStartRecording={() => {
       mesh.startRecording().catch(error => console.error(error));
     }}
-    onStopRecording={() => {
-      mesh.stopRecording().catch(error => console.error(error));
-    }}
+    onStopRecording={() => mesh.stopRecording()}
     onExport={() => console.log('export!')}
   />,
   document.getElementById('root'),
