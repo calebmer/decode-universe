@@ -48,8 +48,9 @@ function record(stream: MediaStream): Observable<Float32Array> {
     // data to our observable.
     const handleAudioProcess = (event: AudioProcessingEvent) => {
       const { inputBuffer } = event;
-      // Send the input channel data to our channel data observers.
-      observer.next(inputBuffer.getChannelData(0));
+      // Clone the channel data and send the input channel data to our channel
+      // data observers.
+      observer.next(new Float32Array(inputBuffer.getChannelData(0)));
     };
     // Add the processor event listener.
     processor.addEventListener('audioprocess', handleAudioProcess);
