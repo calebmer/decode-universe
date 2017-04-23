@@ -167,11 +167,7 @@ export class RemoteRecordee implements Disposable {
    *
    * If the recording has stopped this method will throw an error.
    */
-  public setStream(stream: MediaStream | null): void {
-    // If the stream is null then we actually want to call `unsetStream()`.
-    if (stream === null) {
-      return this.unsetStream();
-    }
+  public setStream(stream: MediaStream): void {
     // Enforce the correct state.
     if (this.stopped === true) {
       throw new Error('Recording has stopped.');

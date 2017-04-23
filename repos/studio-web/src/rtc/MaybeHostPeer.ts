@@ -1,5 +1,14 @@
 import { Peer, PeerConfig, RemoteRecordee } from '@decode/studio-ui';
 
+/**
+ * A peer that might be a host, but we don’t actually know. We will only know
+ * whether or not this peer is a host if they give us an `RTCDataChannel`
+ * instance the label of which starts with `recording:`.
+ *
+ * We only use this “class” of peer in the Decode Studio Web client, but all
+ * peers in the web client use this class. This is so that we aren’t required to
+ * negotiate whether or not this peer is a host in the signaling phase.
+ */
 export class MaybeHostPeer extends Peer {
   /**
    * The recordees for this peer connection. This will be an empty array if the
@@ -9,9 +18,6 @@ export class MaybeHostPeer extends Peer {
    * not be stopped.
    */
   private readonly recordees: Array<RemoteRecordee> = [];
-
-  // TODO: There must be a better way to handle this?
-  private readonly localStreams = new Set<MediaStream>();
 
   /**
    * The stream that is currently being recorded. `null` if we are not currently
@@ -23,7 +29,7 @@ export class MaybeHostPeer extends Peer {
     super(config);
     // Get the stream we want to record. This will be the first stream in the
     // local streams set.
-    this.recordingStream = config.localStreams.first() || null;
+    this.recordingStream = config.localStream;
     // Watch for the recording data channel and if we get such a channel then we
     // want to respond by creating a `RemoteRecordee` instance. We may get may
     // recording data channels over the course of our connection.
@@ -42,7 +48,14 @@ export class MaybeHostPeer extends Peer {
             // it changes, and we want to dispose the recordee when the peer
             // connection closes.
             recordee => {
-              recordee.setStream(this.recordingStream);
+              // Update the stream on the recordee.
+              if (this.recordingStream === null) {
+                recordee.unsetStream();
+              } else {
+                recordee.setStream(this.recordingStream);
+              }
+              // Store the recordee in some arrays where it can be accessed
+              // later.
               this.recordees.push(recordee);
               this.disposables.push(recordee);
             },
@@ -64,37 +77,32 @@ export class MaybeHostPeer extends Peer {
   /**
    * Adds a local stream and updates the recording stream on our recordees.
    */
-  public addLocalStream(stream: MediaStream): void {
-    super.addLocalStream(stream);
-    this.localStreams.add(stream);
-    this.updateRecordingStream();
+  public setLocalStream(stream: MediaStream): void {
+    // Call our super class’s implementation.
+    super.setLocalStream(stream);
+    // Update our instance with the new stream to be recorded.
+    this.recordingStream = stream;
+    // Update the stream for all of the recordees that have not stopped.
+    for (const recordee of this.recordees) {
+      if (recordee.stopped !== true) {
+        recordee.setStream(stream);
+      }
+    }
   }
 
   /**
    * Removes a local stream and updates the recording stream on our recordees.
    */
-  public removeLocalStream(stream: MediaStream): void {
-    super.removeLocalStream(stream);
-    this.localStreams.delete(stream);
-    this.updateRecordingStream();
-  }
-
-  /**
-   * Updates the recording stream on our recordees based on the current
-   * `localStreams` mutable set.
-   */
-  private updateRecordingStream(): void {
-    // Get the first stream from our local streams set.
-    const recordingStream: MediaStream | null =
-      this.localStreams.values().next().value || null;
-    // Update what the current recording stream is on the instance.
-    this.recordingStream = recordingStream;
-    // Update the recording stream for all of the recordees that have not
-    // stopped.
-    this.recordees.forEach(recordee => {
+  public unsetLocalStream(): void {
+    // Call our super class’s implementation.
+    super.unsetLocalStream();
+    // Update our instance with the new stream to be recorded.
+    this.recordingStream = null;
+    // Unset the stream for all of the recordees that have not stopped.
+    for (const recordee of this.recordees) {
       if (recordee.stopped !== true) {
-        recordee.setStream(recordingStream);
+        recordee.unsetStream();
       }
-    });
+    }
   }
 }

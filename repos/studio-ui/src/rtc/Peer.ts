@@ -1,4 +1,3 @@
-import { Set, OrderedSet } from 'immutable';
 import { Observable, BehaviorSubject } from 'rxjs';
 
 /**
@@ -6,7 +5,7 @@ import { Observable, BehaviorSubject } from 'rxjs';
  */
 export type PeerConfig = {
   readonly isLocalInitiator: boolean,
-  readonly localStreams: Set<MediaStream>,
+  readonly localStream: MediaStream | null,
   readonly localState: PeerState,
 };
 
@@ -80,7 +79,7 @@ export class Peer {
    * All of the remote media streams that our peer has given us access to. As
    * the peer may add and remove streams over time this is an observable.
    */
-  public readonly remoteStreams: Observable<OrderedSet<MediaStream>>;
+  public readonly remoteStream: Observable<MediaStream | null>;
 
   /**
    * Represents the status of the connection that we have with our peer.
@@ -125,22 +124,20 @@ export class Peer {
 
   constructor({
     isLocalInitiator,
-    localStreams,
+    localStream,
     localState,
   }: PeerConfig) {
     // Create a new connection using the pre-defined config.
     this.connection = new RTCPeerConnection(rtcConfig);
-    // Add all of the local streams to our connection.
-    localStreams.forEach(stream => {
-      if (stream !== undefined) {
-        this.connection.addStream(stream);
-      }
-    });
+    // If we have a local stream then we want to add it to our connection.
+    if (localStream !== null) {
+      this.connection.addStream(localStream);
+    }
     // Set the current local state to the initial state we were given.
     this.currentLocalState = localState;
     // Create some observables that watch the connection and emit events.
     this.connectionStatus = watchConnectionStatus(this.connection);
-    this.remoteStreams = watchRemoteStreams(this.connection);
+    this.remoteStream = watchRemoteStream(this.connection);
     // If we are the initiator then we want to create some data channels. If we
     // are not the initiator then we want to set an event listener that waits
     // for the initiator to create new data channels.
@@ -257,27 +254,38 @@ export class Peer {
   }
 
   /**
-   * Adds a stream to the peer connection. The peer will be notified and should
-   * update accordingly.
+   * Sets a new local audio stream. If there was no previous audio stream then
+   * this just adds one.
    */
-  public addLocalStream(stream: MediaStream): void {
+  public setLocalStream(stream: MediaStream): void {
     // State check.
     if (this.isClosed === true) {
       throw new Error('Peer is closed.');
     }
+    // Remove the first local stream if we have one.
+    const localStreams = this.connection.getLocalStreams();
+    if (localStreams.length > 0) {
+      this.connection.removeStream(localStreams[0]);
+    }
+    // Add the new stream.
     this.connection.addStream(stream);
   }
 
   /**
-   * Removes a stream from the peer connection. The peer will be notified and
-   * should update accordingly.
+   * Unsets the audio stream so that no local audio is being sent to the peer
+   * allowing us to effectively mute ourselves. If there was no local stream
+   * then this has no effect.
    */
-  public removeLocalStream(stream: MediaStream): void {
+  public unsetLocalStream(): void {
     // State check.
     if (this.isClosed === true) {
       throw new Error('Peer is closed.');
     }
-    this.connection.removeStream(stream);
+    // Remove the first local stream if we have one.
+    const localStreams = this.connection.getLocalStreams();
+    if (localStreams.length > 0) {
+      this.connection.removeStream(localStreams[0]);
+    }
   }
 }
 
@@ -358,14 +366,13 @@ function getConnectionStatus(iceConnectionState: string): PeerConnectionStatus {
  * Creates an observable that tracks the array of `MediaStream`s produced by an
  * `RTCPeerConnection` instance.
  */
-function watchRemoteStreams(
+function watchRemoteStream(
   connection: RTCPeerConnection,
-): Observable<OrderedSet<MediaStream>> {
-  return new Observable<OrderedSet<MediaStream>>(observer => {
-    // Get the initial array of streams from the connection.
-    let remoteStreams = OrderedSet(connection.getRemoteStreams());
-    // Notify any listeners about that set of streams.
-    observer.next(remoteStreams);
+): Observable<MediaStream | null> {
+  return new Observable<MediaStream | null>(observer => {
+    // Notify observer of the current remote stream, or null if there is no
+    // remote stream.
+    observer.next(connection.getRemoteStreams()[0] || null);
 
     /**
      * Handles the `addstream` event on `RTCPeerConnection`.
@@ -384,10 +391,8 @@ function watchRemoteStreams(
         const node = new Audio();
         node.srcObject = stream;
       }
-      // Add the stream to our array.
-      remoteStreams = remoteStreams.add(stream);
-      // Notify our subscribers about the new stream.
-      observer.next(remoteStreams);
+      // Update our observer with the first remote stream.
+      observer.next(connection.getRemoteStreams()[0] || null);
     };
 
     /**
@@ -398,10 +403,8 @@ function watchRemoteStreams(
       if (stream === null) {
         return;
       }
-      // Remove the stream in the event from our array.
-      remoteStreams = remoteStreams.delete(stream);
-      // Notify our subscribers about the removed stream.
-      observer.next(remoteStreams);
+      // Update our observer with the first remote stream.
+      observer.next(connection.getRemoteStreams()[0] || null);
     };
 
     // Add event listeners.

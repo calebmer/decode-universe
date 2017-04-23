@@ -1,5 +1,5 @@
 import * as createDebugger from 'debug';
-import { Set, OrderedMap } from 'immutable';
+import { OrderedMap } from 'immutable';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { SignalClient, Signal } from '@decode/studio-signal-client';
 import { Peer, PeerConfig, PeerState } from './Peer';
@@ -144,7 +144,7 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     // Complete our subjects. We are done with them.
     this.peersSubject.complete();
     this.localStateSubject.complete();
-    this.localStreamsSubject.complete();
+    this.localStreamSubject.complete();
   }
 
   /**
@@ -176,7 +176,7 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     const peer = this.createPeerInstance({
       isLocalInitiator,
       localState: this.localStateSubject.value,
-      localStreams: this.localStreamsSubject.value,
+      localStream: this.localStreamSubject.value,
     });
     // Update our peers map by adding this peer keyed by its address.
     this.peersSubject.next(this.peersSubject.value.set(address, peer));
@@ -399,50 +399,55 @@ export class PeersMesh<TPeer extends Peer = Peer> {
   }
 
   /**
-   * A private cache of streams that will be used to hydrate peers when they
-   * come online.
+   * The internal implementation of `localStream`. Allows us to manipulate
+   * `localStream` without exposing the `Subject` functions to the outside
+   * world.
    */
-  private readonly localStreamsSubject = new BehaviorSubject(Set<MediaStream>());
+  private readonly localStreamSubject =
+    new BehaviorSubject<MediaStream | null>(null);
 
   /**
-   * An observable that allows external consumers to see the internal state of
-   * the local streams being distributed to peers inside the mesh.
+   * An observable of the state of our local stream. `null` if we don’t
+   * currently have a local stream. This may happen before a media stream is
+   * loaded, or when the user is muted.
    */
-  public readonly localStreams = this.localStreamsSubject.asObservable();
+  public readonly localStream =
+    this.localStreamSubject.asObservable();
 
   /**
-   * Adds a stream that will be distributed to all of the peers in the mesh.
+   * Sets the stream that we will send to all of our peers.
    */
-  public addLocalStream(stream: MediaStream): void {
-    debug('Added a local media stream');
+  public setLocalStream(stream: MediaStream): void {
+    debug('Setting a new local media stream');
     // Add the stream to all of our peers.
     this.peersSubject.value.forEach((peer, address) => {
       if (peer !== undefined && address !== undefined) {
         // Add the stream to the peer.
-        peer.addLocalStream(stream);
+        peer.setLocalStream(stream);
         // Schedule negotiation with our peer.
         this.schedulePeerNegotiations(address);
       }
     });
-    // Adds the stream to our local cache.
-    this.localStreamsSubject.next(this.localStreamsSubject.value.add(stream));
+    // Send the next local audio stream.
+    this.localStreamSubject.next(stream);
   }
 
   /**
-   * Removes a stream that will be removed from all of the peers in the mesh.
+   * Unsets the local stream effectively muting ourselves. If there was no
+   * stream previously then the local stream will continue to be unset.
    */
-  public removeLocalStream(stream: MediaStream): void {
-    debug('Removed a local media stream');
-    // Removes the stream from all our peers.
+  public unsetLocalStream(): void {
+    debug('Unsetting the local media stream');
+    // Add the stream to all of our peers.
     this.peersSubject.value.forEach((peer, address) => {
       if (peer !== undefined && address !== undefined) {
-        // Remove the stream from our peer.
-        peer.removeLocalStream(stream);
+        // Unset the local stream.
+        peer.unsetLocalStream();
         // Schedule negotiation with our peer.
         this.schedulePeerNegotiations(address);
       }
     });
-    // Remove the stream from our local cache.
-    this.localStreamsSubject.next(this.localStreamsSubject.value.delete(stream));
+    // Send the next local audio stream.
+    this.localStreamSubject.next(null);
   }
 }

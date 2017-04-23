@@ -30,17 +30,10 @@ mesh.connect().catch(error => console.error(error));
 ReactDOM.render(
   <App
     mesh={mesh}
-    onUserAudioStream={(stream, previousStream) => {
-      mesh.addLocalStream(stream);
-      if (previousStream !== null) {
-        mesh.removeLocalStream(previousStream);
-      }
-    }}
-    onUserAudioError={(error, previousStream) => {
+    onUserAudioStream={stream => mesh.setLocalStream(stream)}
+    onUserAudioError={(error) => {
       console.error(error);
-      if (previousStream !== null) {
-        mesh.removeLocalStream(previousStream);
-      }
+      mesh.unsetLocalStream();
     }}
     onStartRecording={() => {
       mesh.startRecording().catch(error => console.error(error));
