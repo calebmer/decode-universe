@@ -1,12 +1,14 @@
 import { Subscription } from 'rxjs';
 import { RemoteRecorderProtocol } from './RemoteRecorderProtocol';
-import { MediaStreamRecorder } from './MediaStreamRecorder';
+import { LocalRecorder } from './LocalRecorder';
 
 /**
  * The recordee class for the recording protocol. This class actually records
  * stuff.
+ *
+ * Internally we use a `LocalRecorder` instance to record the audio and then
+ * send that audio data to our channel.
  */
-// TODO: When we have no stream we still want to send data for silence.
 export class RemoteRecordee implements Disposable {
   /**
    * Creates a recordee and then sends the initial info message (step 1 of the
@@ -18,7 +20,7 @@ export class RemoteRecordee implements Disposable {
     await waitUntilOpen(channel);
     // Construct the info message for our channel.
     const message: RemoteRecorderProtocol.RecordeeInfoMessage = {
-      sampleRate: MediaStreamRecorder.context.sampleRate,
+      sampleRate: LocalRecorder.sampleRate,
     };
     // Send the info message.
     channel.send(JSON.stringify(message));
@@ -29,33 +31,22 @@ export class RemoteRecordee implements Disposable {
   }
 
   /**
-   * A state flag that switches to true when `start()` is called.
+   * The recorder which will record all of our stream’s data. We will subscribe
+   * to this recorder’s `stream` and forward that data to our `channel`.
    */
-  private started = false;
+  private readonly recorder = new LocalRecorder();
 
   /**
    * A state flag that switches to true when `stop()` is called.
    */
-  private internalStopped = false;
-
-  /**
-   * Whether or not the recordee has stopped.
-   */
   public get stopped(): boolean {
-    return this.internalStopped;
+    return this.recorder.stopped;
   }
 
   /**
    * The channel which we will send our recording data to.
    */
   private readonly channel: RTCDataChannel;
-
-  /**
-   * The stream with which we are currently recording or which we should record
-   * when the recording starts. `null` if we want to record silence instead of a
-   * `MediaStream`.
-   */
-  private stream: MediaStream | null = null;
 
   /**
    * The subscription which represents anything that is currently recording. If
@@ -83,19 +74,23 @@ export class RemoteRecordee implements Disposable {
     // over the data.
     if (JSON.parse(event.data) === 'start') {
       // If we have already started report an error and don’t continue.
-      if (this.started === true) {
+      if (this.recorder.started === true) {
         console.error(new Error('Already started.'));
         return;
       }
-      // Flip our started flag to true.
-      this.started = true;
-      // Start recording either silence or the stream and send that data over
-      // the channel. This makes up step 3 of the protocol.
-      if (this.stream === null) {
-        this.recordSilence();
-      } else {
-        this.recordStream(this.stream);
-      }
+      // Subscribe to the recorder’s stream and send that data to our channel.
+      this.subscription = this.recorder.stream.subscribe({
+        // Send the data through our channel.
+        next: data => this.channel.send(data),
+        // If we got an error then report it.
+        // TODO: Better error handling. If we get an error should the `Recorder`
+        // know?
+        error: error => console.error(error),
+        // TODO: If we complete then we should probably record silence?
+        complete: () => {},
+      });
+      // Start our recorder.
+      this.recorder.start();
     }
   };
 
@@ -111,7 +106,7 @@ export class RemoteRecordee implements Disposable {
    * already.
    */
   private handleClose = () => {
-    if (this.stopped === false) {
+    if (this.recorder.stopped === false) {
       this.stop();
     }
   };
@@ -124,11 +119,16 @@ export class RemoteRecordee implements Disposable {
    */
   public stop(): void {
     // Enforce the correct state.
-    if (this.stopped === true) {
+    if (this.recorder.stopped === true) {
       throw new Error('Already stopped.');
     }
-    // Switch the stopped toggle.
-    this.internalStopped = true;
+    // Unsubscribe from the stream subscription.
+    if (this.subscription !== null) {
+      this.subscription.unsubscribe();
+      this.subscription = null;
+    }
+    // Stop the recorder.
+    this.recorder.stop();
     // Remove all the event listeners.
     this.channel.removeEventListener('message', this.handleMessage);
     this.channel.removeEventListener('error', this.handleError);
@@ -141,20 +141,13 @@ export class RemoteRecordee implements Disposable {
     ) {
       this.channel.close();
     }
-    // Set the stream to null since we no longer will need it.
-    this.stream = null;
-    // Unsubscribe the subscription if we still have one.
-    if (this.subscription !== null) {
-      this.subscription.unsubscribe();
-      this.subscription = null;
-    }
   }
 
   /**
    * To dispose this recordee we call `stop()` if `stopped` is false.
    */
   public dispose() {
-    if (this.stopped === false) {
+    if (this.recorder.stopped === false) {
       this.stop();
     }
   }
@@ -163,26 +156,10 @@ export class RemoteRecordee implements Disposable {
    * Sets the stream that should be recording. If we had another stream then
    * this will stop recording that stream and start recording this one.
    *
-   * If `null` was provided then we will seamlessly call `unsetStream()`.
-   *
    * If the recording has stopped this method will throw an error.
    */
   public setStream(stream: MediaStream): void {
-    // Enforce the correct state.
-    if (this.stopped === true) {
-      throw new Error('Recording has stopped.');
-    }
-    // If the stream did not change then do nothing.
-    if (this.stream === stream) {
-      return;
-    }
-    // Set the stream on our instance.
-    this.stream = stream;
-    // If we have started recording then the record stream. This will
-    // will unsubscribe any of the last recordings.
-    if (this.started === true) {
-      this.recordStream(stream);
-    }
+    this.recorder.setStream(stream);
   }
 
   /**
@@ -192,57 +169,7 @@ export class RemoteRecordee implements Disposable {
    * If the recording has stopped this method will throw an error.
    */
   public unsetStream(): void {
-    // Enforce the correct state.
-    if (this.stopped === true) {
-      throw new Error('Recording has stopped.');
-    }
-    // If we have already unset the stream then do nothing.
-    if (this.stream === null) {
-      return;
-    }
-    // Set the stream to null.
-    this.stream = null;
-    // If we have started recording then we want to record silence while there
-    // is no stream. This will unsubscribe any of the last recordings.
-    if (this.started === true) {
-      this.recordSilence();
-    }
-  }
-
-  /**
-   * Starts recording a `MediaStream`. If something was already recording then
-   * it will be stopped.
-   */
-  private recordStream(stream: MediaStream): void {
-    // If there is currently a subscription then we want to unsubscribe from it.
-    if (this.subscription !== null) {
-      this.subscription.unsubscribe();
-    }
-    // Start recording the stream and get a subscription that we can unsubscribe
-    // from at a later time.
-    this.subscription = MediaStreamRecorder.record(stream).subscribe({
-      // Send the data through our channel.
-      next: data => this.channel.send(data.buffer),
-      // If we got an error then report it.
-      // TODO: Better error handling. If we get an error should the `Recorder`
-      // know?
-      error: error => console.error(error),
-      // TODO: If we complete then we should probably record silence?
-      complete: () => {},
-    });
-  }
-
-  /**
-   * Starts recording silence. If something was already recording then it will
-   * be stopped.
-   */
-  private recordSilence(): void {
-    // If there is currently a subscription then we want to unsubscribe from it.
-    if (this.subscription !== null) {
-      this.subscription.unsubscribe();
-    }
-    // TODO: Actually record silence instead of providing a noop subscription!
-    this.subscription = { unsubscribe: () => {} };
+    this.recorder.unsetStream();
   }
 }
 
