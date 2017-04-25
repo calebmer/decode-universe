@@ -42,7 +42,13 @@ export function StudioPeer({
             height: '100px',
             backgroundColor: 'tomato',
           }}>
-            {source !== null && (
+            {/* Only play audio in production. Most of the time in development
+              * we will have multiple nodes open at once on one computer and the
+              * feedback will be deadly to the ears.
+              *
+              * TODO: Is there a better way to save our ears in development
+              * while still letting us test this feature? */}
+            {!DEV && source !== null && (
               <AudioDestination
                 context={audioContext}
                 node={source}
