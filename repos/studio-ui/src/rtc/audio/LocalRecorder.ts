@@ -1,4 +1,4 @@
-import { Subject, Subscription } from 'rxjs';
+import { Subject } from 'rxjs';
 import { Recorder } from './Recorder';
 import { MediaStreamRecorder } from './MediaStreamRecorder';
 
@@ -11,7 +11,7 @@ export class LocalRecorder implements Recorder {
   /**
    * The `sampleRate` with which the recorder will use to record audio.
    */
-  public static sampleRate = MediaStreamRecorder.context.sampleRate;
+  public static sampleRate = MediaStreamRecorder.sampleRate;
 
   private internalStarted = false;
   private internalStopped = false;
@@ -38,7 +38,7 @@ export class LocalRecorder implements Recorder {
   /**
    * The audio sample rate for the audio data emit from the `stream` observable.
    */
-  public readonly sampleRate = MediaStreamRecorder.context.sampleRate;
+  public readonly sampleRate = MediaStreamRecorder.sampleRate;
 
   /**
    * The internal subject for `stream` which we can use to emit events. We want
@@ -62,10 +62,10 @@ export class LocalRecorder implements Recorder {
   private mediaStream: MediaStream | null;
 
   /**
-   * The subscription which represents anything that is currently recording. If
+   * The disposable which will dispose the process currently recording audio. If
    * nothing is currently recording then it will be null.
    */
-  private subscription: Subscription | null = null;
+  private disposable: Disposable | null = null;
 
   constructor({
     name,
@@ -115,10 +115,10 @@ export class LocalRecorder implements Recorder {
     this.internalStopped = true;
     // Set the stream to null since we no longer will need it.
     this.mediaStream = null;
-    // Unsubscribe the subscription if we still have one.
-    if (this.subscription !== null) {
-      this.subscription.unsubscribe();
-      this.subscription = null;
+    // Dispose the disposable if we still have one.
+    if (this.disposable !== null) {
+      this.disposable.dispose();
+      this.disposable = null;
     }
   }
 
@@ -175,13 +175,13 @@ export class LocalRecorder implements Recorder {
    * it will be stopped.
    */
   private recordStream(stream: MediaStream): void {
-    // If there is currently a subscription then we want to unsubscribe from it.
-    if (this.subscription !== null) {
-      this.subscription.unsubscribe();
+    // If there is currently a disposable then we want to dispose it.
+    if (this.disposable !== null) {
+      this.disposable.dispose();
     }
     // Start recording the stream and get a subscription that we can unsubscribe
     // from at a later time.
-    this.subscription = MediaStreamRecorder.record(stream).subscribe({
+    const subscription = MediaStreamRecorder.record(stream).subscribe({
       // Send the data through our channel.
       next: data => this.streamSubject.next(data.buffer),
       // If we got an error then report it.
@@ -191,6 +191,12 @@ export class LocalRecorder implements Recorder {
       // TODO: If we complete then we should probably record silence?
       complete: () => {},
     });
+    // Add a disposable which will unsubscribe from our subscription.
+    this.disposable = {
+      // TODO: Wait for the next emission and then cut it so that we emit the
+      // *exact* amount of data instead of losing a chunk.
+      dispose: () => subscription.unsubscribe(),
+    };
   }
 
   /**
@@ -198,11 +204,27 @@ export class LocalRecorder implements Recorder {
    * be stopped.
    */
   private recordSilence(): void {
-    // If there is currently a subscription then we want to unsubscribe from it.
-    if (this.subscription !== null) {
-      this.subscription.unsubscribe();
+    // If there is currently a disposable then we want to dispose it.
+    if (this.disposable !== null) {
+      this.disposable.dispose();
     }
-    // TODO: Actually record silence instead of providing a noop subscription!
-    this.subscription = { closed: false, unsubscribe: () => {} };
+    // Start recording silence and get a subscription that we can unsubscribe
+    // from at a later time.
+    const subscription = MediaStreamRecorder.recordSilence().subscribe({
+      // Send the data through our channel.
+      next: data => this.streamSubject.next(data.buffer),
+      // If we got an error then report it.
+      // TODO: Better error handling. If we get an error should the `Recorder`
+      // know?
+      error: error => console.error(error),
+      // TODO: If we complete then we should probably record silence?
+      complete: () => {},
+    });
+    // Add a disposable which will unsubscribe from our subscription.
+    this.disposable = {
+      // TODO: Wait for the next emission and then cut it so that we emit the
+      // *exact* amount of data instead of losing a chunk.
+      dispose: () => subscription.unsubscribe(),
+    };
   }
 }
