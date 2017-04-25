@@ -385,10 +385,18 @@ export class PeersMesh<TPeer extends Peer = Peer> {
   }
 
   /**
+   * Sets the local name for our peer and notifies all of our peers about the
+   * update.
+   */
+  public setLocalName(name: string): void {
+    this.updateLocalState({ name });
+  }
+
+  /**
    * Updates the local state with a partial state object. Anyone listening to
    * the local state will be updated, and any peers will also be updated.
    */
-  public updateLocalState(partialState: Partial<PeerState>): void {
+  private updateLocalState(partialState: Partial<PeerState>): void {
     // Create the next state object.
     const nextState: PeerState = {
       ...this.localStateSubject.value,
@@ -431,8 +439,19 @@ export class PeersMesh<TPeer extends Peer = Peer> {
 
   /**
    * Sets the stream that we will send to all of our peers.
+   *
+   * If this is called while the local stream is muted then we will stay muted,
+   * but when the local stream is unmuted whatever the latest stream to be set
+   * with `setLocalStream()` or `unsetLocalStream()` will be restored.
    */
   public setLocalStream(stream: MediaStream): void {
+    // If we are not muted then we want to set the streaam. Otherwise we want to
+    // store the stream on our instance so that when we are unmuted we can
+    // pickup with that stream.
+    if (this.currentLocalState.isMuted === true) {
+      this.mutedLocalStream = stream;
+      return;
+    }
     debug('Setting a new local media stream');
     // Add the stream to all of our peers.
     this.peersSubject.value.forEach((peer, address) => {
@@ -450,8 +469,18 @@ export class PeersMesh<TPeer extends Peer = Peer> {
   /**
    * Unsets the local stream effectively muting ourselves. If there was no
    * stream previously then the local stream will continue to be unset.
+   *
+   * If this is called while the local stream is muted then we will stay muted,
+   * but when the local stream is unmuted whatever the latest stream to be set
+   * with `setLocalStream()` or `unsetLocalStream()` will be restored.
    */
   public unsetLocalStream(): void {
+    // If we are muted then we just want to unset our local media stream so that
+    // we can continue where we left off when the mesh is unmuted.
+    if (this.currentLocalState.isMuted === true) {
+      this.mutedLocalStream = null;
+      return;
+    }
     debug('Unsetting the local media stream');
     // Add the stream to all of our peers.
     this.peersSubject.value.forEach((peer, address) => {
@@ -464,5 +493,53 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     });
     // Send the next local audio stream.
     this.localStreamSubject.next(null);
+  }
+
+  /**
+   * The `MediaStream` which we intend to restore when the mesh is unmuted.
+   * `null` if we don’t intend to restore a stream or we are not muted.
+   *
+   * This will be updated when `setLocalStream()` is called while we are muted.
+   */
+  private mutedLocalStream: MediaStream | null = null;
+
+  /**
+   * Mutes the local stream. All streams will be removed from our peers. They
+   * shouldn’t be able to here us when we are muted!
+   */
+  public muteLocalStream(): void {
+    // Make sure that we are not already muted.
+    if (this.currentLocalState.isMuted === true) {
+      throw new Error('Stream is already muted.');
+    }
+    // Set the muted local stream to whatever is the current local stream.
+    this.mutedLocalStream = this.currentLocalStream;
+    // Unset the local stream before we switch muted to true.
+    this.unsetLocalStream();
+    // Update our local state to tell the world we are muted.
+    this.updateLocalState({ isMuted: true });
+  }
+
+  /**
+   * Unmutes the local stream. Whatever stream we had when we muted or whatever
+   * stream was set with `setLocalStream()` or `unsetLocalStream()` while we
+   * were muted will be restored.
+   */
+  public unmuteLocalStream(): void {
+    // Make sure that we are are not already unmuted.
+    if (this.currentLocalState.isMuted === false) {
+      throw new Error('Stream is not muted.');
+    }
+    // Update our local state to tell the world we are not muted.
+    this.updateLocalState({ isMuted: false });
+    // Update our stream based on the muted local stream we have been updating.
+    if (this.mutedLocalStream === null) {
+      this.unsetLocalStream();
+    } else {
+      this.setLocalStream(this.mutedLocalStream);
+    }
+    // “Delete” our muted local stream. We won’t need it again until we are
+    // muted.
+    this.mutedLocalStream = null;
   }
 }

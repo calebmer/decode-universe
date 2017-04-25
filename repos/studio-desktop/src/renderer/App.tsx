@@ -3,6 +3,7 @@ import { PeersMesh, StudioRoom } from '@decode/studio-ui';
 
 type Props = {
   mesh: PeersMesh,
+  onNameChange: (name: string) => void,
   onUserAudioStream: (stream: MediaStream, previousStream: MediaStream | null) => void,
   onUserAudioError: (error: mixed, previousStream: MediaStream | null) => void,
   onStartRecording: () => void,
@@ -34,7 +35,12 @@ export class App extends React.Component<Props, State> {
   };
 
   render() {
-    const { mesh, onUserAudioStream, onUserAudioError } = this.props;
+    const {
+      mesh,
+      onNameChange,
+      onUserAudioStream,
+      onUserAudioError,
+    } = this.props;
     const { isRecording } = this.state;
     return (
       <div>
@@ -57,6 +63,7 @@ export class App extends React.Component<Props, State> {
         </div>
         <StudioRoom
           mesh={mesh}
+          onNameChange={onNameChange}
           onUserAudioStream={onUserAudioStream}
           onUserAudioError={onUserAudioError}
         />

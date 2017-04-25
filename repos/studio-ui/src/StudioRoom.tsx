@@ -8,50 +8,47 @@ import { PeerConnectionStatus } from './rtc/Peer';
 
 type Props = {
   mesh: PeersMesh,
+  onNameChange: (name: string) => void,
   onUserAudioStream: (stream: MediaStream, previousStream: MediaStream | null) => void,
   onUserAudioError: (error: mixed, previousStream: MediaStream | null) => void,
 };
 
 type State = {
-  name: string,
   deviceID: string | null,
 };
 
 const audioContext = new AudioContext();
 
-const nameKey = '@decode/studio-ui/name';
 const deviceIDKey = '@decode/studio-ui/deviceID';
 
 export class StudioRoom extends React.Component<Props, State> {
   state: State = {
-    name: localStorage.getItem(nameKey) || 'Guest',
+    // name: localStorage.getItem(nameKey) || 'Guest',
     deviceID: localStorage.getItem(deviceIDKey),
   };
 
-  componentDidMount() {
-    this.props.mesh.updateLocalState({ name: this.state.name });
-  }
-
-  handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const name = event.target.value;
-    // Update the state with the new name.
-    this.setState({ name });
-    // Update the local state in the mesh with the new name.
-    this.props.mesh.updateLocalState({ name });
-    // Update local storage with the new information.
-    localStorage.setItem(nameKey, name);
+  private handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    this.props.onNameChange(event.target.value);
   };
 
-  handleSelectDeviceID = (deviceID: string) => {
+  private handleSelectDeviceID = (deviceID: string) => {
     // Update the state with the new device id.
     this.setState({ deviceID });
     // Update local storage with the new information.
     localStorage.setItem(deviceIDKey, deviceID);
   };
 
+  private handleMute = () => {
+    this.props.mesh.muteLocalStream();
+  };
+
+  private handleUnmute = () => {
+    this.props.mesh.unmuteLocalStream();
+  };
+
   render() {
     const { mesh, onUserAudioStream, onUserAudioError } = this.props;
-    const { name, deviceID } = this.state;
+    const { deviceID } = this.state;
     return (
       <div>
         <UserAudioController
@@ -61,10 +58,15 @@ export class StudioRoom extends React.Component<Props, State> {
         />
         <p>
           Name:{' '}
-          <input
-            value={name}
-            onChange={this.handleNameChange}
-          />
+          {ReactObservable.render(
+            mesh.localState.map(({ name }) => name).distinctUntilChanged(),
+            name => (
+              <input
+                value={name}
+                onChange={this.handleNameChange}
+              />
+            ),
+          )}
         </p>
         <p>
           Audio Input:{' '}
@@ -73,6 +75,18 @@ export class StudioRoom extends React.Component<Props, State> {
             deviceID={deviceID}
             onSelect={this.handleSelectDeviceID}
           />
+        </p>
+        <p>
+          {ReactObservable.render(
+            mesh.localState
+              .map(({ isMuted }) => isMuted)
+              .distinctUntilChanged(),
+            isMuted => (
+              <button onClick={isMuted ? this.handleUnmute : this.handleMute}>
+                {isMuted ? 'Unmute' : 'Mute'}
+              </button>
+            ),
+          )}
         </p>
         <div style={{
           width: '500px',
@@ -97,7 +111,12 @@ export class StudioRoom extends React.Component<Props, State> {
                   <p>
                     {ReactObservable.render(
                       peer.remoteState,
-                      state => <span>{state.name}</span>,
+                      state => (
+                        <span>
+                          {state.name}
+                          {state.isMuted === true && ' (muted)'}
+                        </span>
+                      ),
                     )}
                     {' '}
                     {ReactObservable.render(

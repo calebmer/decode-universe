@@ -5,10 +5,14 @@ import { HostPeersMesh } from './rtc/HostPeersMesh';
 import { ExportRecording } from './rtc/audio/ExportRecording';
 import { App } from './App';
 
+const nameKey = '@decode/studio-desktop/name';
+
 const mesh = new HostPeersMesh({
   roomName: 'hello world',
   localState: {
-    name: '',
+    // Read the name from local storage or use a default name of “Host.”
+    name: localStorage.getItem(nameKey) || 'Host',
+    isMuted: false,
   },
 });
 
@@ -22,6 +26,12 @@ mesh.connect().catch(error => console.error(error));
 ReactDOM.render(
   <App
     mesh={mesh}
+    onNameChange={name => {
+      // Update the local state in the mesh with the new name.
+      mesh.setLocalName(name);
+      // Update local storage with the new information.
+      localStorage.setItem(nameKey, name);
+    }}
     onUserAudioStream={stream => mesh.setLocalStream(stream)}
     onUserAudioError={(error) => {
       console.error(error);

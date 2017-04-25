@@ -224,7 +224,7 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
    */
   public setLocalStream(stream: MediaStream): void {
     super.setLocalStream(stream);
-    if (this.localRecorder !== null) {
+    if (this.localRecorder !== null && this.localRecorder.stopped === false) {
       this.localRecorder.setStream(stream);
     }
   }
@@ -234,7 +234,7 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
    */
   public unsetLocalStream(): void {
     super.unsetLocalStream();
-    if (this.localRecorder !== null) {
+    if (this.localRecorder !== null && this.localRecorder.stopped === false) {
       this.localRecorder.unsetStream();
     }
   }

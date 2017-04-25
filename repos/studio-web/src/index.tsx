@@ -3,10 +3,13 @@ import * as ReactDOM from 'react-dom';
 import { PeersMesh, StudioRoom } from '@decode/studio-ui';
 import { MaybeHostPeer } from './rtc/MaybeHostPeer';
 
+const nameKey = '@decode/studio-web/name';
+
 const mesh = new PeersMesh({
   roomName: 'hello world',
   localState: {
-    name: '',
+    name: localStorage.getItem(nameKey) || 'Guest',
+    isMuted: false,
   },
   // We don’t have any information to tell at this point whether or not the peer
   // we are instantiating is a guest or host. So instead we use a
@@ -27,6 +30,12 @@ mesh.connect().catch(error => console.error(error));
 ReactDOM.render(
   <StudioRoom
     mesh={mesh}
+    onNameChange={name => {
+      // Update the local state in the mesh with the new name.
+      mesh.setLocalName(name);
+      // Update local storage with the new information.
+      localStorage.setItem(nameKey, name);
+    }}
     onUserAudioStream={stream => mesh.setLocalStream(stream)}
     onUserAudioError={error => {
       console.error(error);

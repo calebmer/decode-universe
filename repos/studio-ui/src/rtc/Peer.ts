@@ -20,6 +20,10 @@ export type PeerState = {
    * The name of the peer.
    */
   readonly name: string,
+  /**
+   * Whether or not the peer has muted their audio.
+   */
+  readonly isMuted: boolean,
 };
 
 /**
@@ -225,6 +229,9 @@ export class Peer {
   /**
    * Closes the peer be closing the connection and disposing any other resources
    * created to communicate with the peer.
+   *
+   * **WARNING:** This should only be used in `PeersMesh` or else peers may get
+   * out of sync!
    */
   public close(): void {
     // If the peer is already closed then throw an error.
@@ -247,6 +254,9 @@ export class Peer {
   /**
    * Sets the new local state. The peer will be notified and should update
    * accordingly.
+   *
+   * **WARNING:** This should only be used in `PeersMesh` or else peers may get
+   * out of sync!
    */
   public setLocalState(state: PeerState): void {
     // State check.
@@ -263,6 +273,9 @@ export class Peer {
   /**
    * Sets a new local audio stream. If there was no previous audio stream then
    * this just adds one.
+   *
+   * **WARNING:** This should only be used in `PeersMesh` or else peers may get
+   * out of sync!
    */
   public setLocalStream(stream: MediaStream): void {
     // State check.
@@ -282,6 +295,9 @@ export class Peer {
    * Unsets the audio stream so that no local audio is being sent to the peer
    * allowing us to effectively mute ourselves. If there was no local stream
    * then this has no effect.
+   *
+   * **WARNING:** This should only be used in `PeersMesh` or else peers may get
+   * out of sync!
    */
   public unsetLocalStream(): void {
     // State check.
