@@ -1,10 +1,11 @@
 import * as React from 'react';
-import { ReactObservable } from './shared/observable/ReactObservable';
+import { ReactObservable } from './observable/ReactObservable';
 import { UserAudioDevicesSelect } from './audio/UserAudioDevicesSelect';
 import { UserAudioController } from './audio/UserAudioController';
 import { AudioVisualization } from './audio/AudioVisualization';
 import { PeersMesh } from './rtc/PeersMesh';
 import { PeerConnectionStatus } from './rtc/Peer';
+import { StudioPeer } from './StudioPeer';
 
 type Props = {
   mesh: PeersMesh,
@@ -23,7 +24,6 @@ const deviceIDKey = '@decode/studio-ui/deviceID';
 
 export class StudioRoom extends React.Component<Props, State> {
   state: State = {
-    // name: localStorage.getItem(nameKey) || 'Guest',
     deviceID: localStorage.getItem(deviceIDKey),
   };
 
@@ -94,10 +94,13 @@ export class StudioRoom extends React.Component<Props, State> {
           backgroundColor: 'tomato',
         }}>
           {ReactObservable.render(
-            mesh.localStream,
-            localStream => localStream !== null && (
+            mesh.localStream
+              .map(stream => stream !== null
+                ? audioContext.createMediaStreamSource(stream)
+                : null),
+            source => source !== null && (
               <AudioVisualization
-                node={getMediaStreamSource(localStream)}
+                node={source}
               />
             ),
           )}
@@ -108,38 +111,10 @@ export class StudioRoom extends React.Component<Props, State> {
             <ul>
               {peers.map((peer, id) => (
                 <li key={id}>
-                  <p>
-                    {ReactObservable.render(
-                      peer.remoteState,
-                      state => (
-                        <span>
-                          {state.name}
-                          {state.isMuted === true && ' (muted)'}
-                        </span>
-                      ),
-                    )}
-                    {' '}
-                    {ReactObservable.render(
-                      peer.connectionStatus,
-                      connectionStatus => (
-                        <span>({PeerConnectionStatus[connectionStatus]})</span>
-                      ),
-                    )}
-                  </p>
-                  <div style={{
-                    width: '500px',
-                    height: '100px',
-                    backgroundColor: 'tomato',
-                  }}>
-                    {ReactObservable.render(
-                      peer.remoteStream,
-                      remoteStream => remoteStream !== null && (
-                        <AudioVisualization
-                          node={getMediaStreamSource(remoteStream)}
-                        />
-                      ),
-                    )}
-                  </div>
+                  <StudioPeer
+                    peer={peer}
+                    audioContext={audioContext}
+                  />
                 </li>
               )).toArray()}
             </ul>
@@ -148,14 +123,4 @@ export class StudioRoom extends React.Component<Props, State> {
       </div>
     );
   }
-}
-
-// Temporary function to get caching some behaviors.
-const cache = new WeakMap<MediaStream, MediaStreamAudioSourceNode>();
-function getMediaStreamSource(stream: MediaStream): MediaStreamAudioSourceNode {
-  if (!cache.has(stream)) {
-    const source = audioContext.createMediaStreamSource(stream)
-    cache.set(stream, source);
-  }
-  return cache.get(stream)!;
 }

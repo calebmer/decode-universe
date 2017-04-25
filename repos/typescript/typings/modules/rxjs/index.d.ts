@@ -9,6 +9,7 @@ export class Observable<T> {
 
   map<U>(mapper: (value: T) => U): Observable<U>;
   filter(predicate: (value: T) => boolean): Observable<T>;
+  scan<U>(accumulator: (acc: U, value: T) => U, seed: U): Observable<U>;
   switchMap<U>(mapper: (value: T) => Observable<U>): Observable<U>;
   distinctUntilChanged(compare?: (a: T, b: T) => boolean): Observable<T>;
 
