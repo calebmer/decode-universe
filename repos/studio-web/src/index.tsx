@@ -9,7 +9,7 @@ const mesh = new PeersMesh({
   roomName: 'hello world',
   localState: {
     name: localStorage.getItem(nameKey) || 'Guest',
-    isMuted: DEV,
+    isMuted: false,
   },
   // We don’t have any information to tell at this point whether or not the peer
   // we are instantiating is a guest or host. So instead we use a

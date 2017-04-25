@@ -12,7 +12,7 @@ const mesh = new HostPeersMesh({
   localState: {
     // Read the name from local storage or use a default name of “Host.”
     name: localStorage.getItem(nameKey) || 'Host',
-    isMuted: DEV,
+    isMuted: false,
   },
 });
 
