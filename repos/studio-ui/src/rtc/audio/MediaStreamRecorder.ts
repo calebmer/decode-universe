@@ -40,10 +40,10 @@ function record(stream: MediaStream): Observable<Float32Array> {
   return new Observable<Float32Array>(observer => {
     // Create the source audio node.
     const source = context.createMediaStreamSource(stream);
-    // Create a script processor and let the implementation determine the buffer
-    // size (that is why it is set to 0). We record in mono which is why we
-    // have one input and output channel.
-    const processor = context.createScriptProcessor(0, 1, 1);
+    // Create a script processor. We record in mono which is why we have one
+    // input and output channel. We also use the largest buffer size. This means
+    // we will be sending the minimum number of messages over the network.
+    const processor = context.createScriptProcessor(16384, 1, 1);
     // Handles any data we get for processing. We basically just forward that
     // data to our observable.
     const handleAudioProcess = (event: AudioProcessingEvent) => {
