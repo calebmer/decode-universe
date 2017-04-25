@@ -4,7 +4,6 @@ import { UserAudioDevicesSelect } from './audio/UserAudioDevicesSelect';
 import { UserAudioController } from './audio/UserAudioController';
 import { AudioVisualization } from './audio/AudioVisualization';
 import { PeersMesh } from './rtc/PeersMesh';
-import { PeerConnectionStatus } from './rtc/Peer';
 import { StudioPeer } from './StudioPeer';
 
 type Props = {
@@ -16,6 +15,7 @@ type Props = {
 
 type State = {
   deviceID: string | null,
+  disableAudioOutput: boolean,
 };
 
 const audioContext = new AudioContext();
@@ -25,6 +25,7 @@ const deviceIDKey = '@decode/studio-ui/deviceID';
 export class StudioRoom extends React.Component<Props, State> {
   state: State = {
     deviceID: localStorage.getItem(deviceIDKey),
+    disableAudioOutput: DEV,
   };
 
   private handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,6 +39,12 @@ export class StudioRoom extends React.Component<Props, State> {
     localStorage.setItem(deviceIDKey, deviceID);
   };
 
+  private handleDisableAudioOutputToggle = () => {
+    this.setState(({ disableAudioOutput }: State): Partial<State> => ({
+      disableAudioOutput: !disableAudioOutput,
+    }));
+  };
+
   private handleMute = () => {
     this.props.mesh.muteLocalStream();
   };
@@ -48,7 +55,7 @@ export class StudioRoom extends React.Component<Props, State> {
 
   render() {
     const { mesh, onUserAudioStream, onUserAudioError } = this.props;
-    const { deviceID } = this.state;
+    const { deviceID, disableAudioOutput } = this.state;
     return (
       <div>
         <UserAudioController
@@ -75,6 +82,17 @@ export class StudioRoom extends React.Component<Props, State> {
             deviceID={deviceID}
             onSelect={this.handleSelectDeviceID}
           />
+        </p>
+        <p>
+          <label>
+            <input
+              type="checkbox"
+              checked={disableAudioOutput}
+              onChange={this.handleDisableAudioOutputToggle}
+            />
+            {' '}
+            Disable Audio
+          </label>
         </p>
         <p>
           {ReactObservable.render(
@@ -114,6 +132,7 @@ export class StudioRoom extends React.Component<Props, State> {
                   <StudioPeer
                     peer={peer}
                     audioContext={audioContext}
+                    disableAudioOutput={disableAudioOutput}
                   />
                 </li>
               )).toArray()}
