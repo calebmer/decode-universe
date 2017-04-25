@@ -1,0 +1,19 @@
+#!/bin/bash
+
+scripts/build
+
+cd build
+
+echo '{
+  "name": "decode-signal-server",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "socket.io": "^1.7.3"
+  }
+}' > package.json
+
+now
+
+rm package.json
