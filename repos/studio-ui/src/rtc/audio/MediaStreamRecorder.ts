@@ -11,9 +11,7 @@ import { Observable } from 'rxjs';
  */
 // TypeScript doesn’t currently have types for `AudioContext` options so we have
 // to cast the constructor as `any`.
-const context: AudioContext = new (AudioContext as any)({
-  latencyHint: 'playback',
-});
+const context = new AudioContext();
 
 /**
  * The sample rate at which we record. The sample rate represents the number of
