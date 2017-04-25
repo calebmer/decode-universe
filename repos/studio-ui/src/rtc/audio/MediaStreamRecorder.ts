@@ -40,6 +40,12 @@ function record(stream: MediaStream): Observable<Float32Array> {
   return new Observable<Float32Array>(observer => {
     // Create the source audio node.
     const source = context.createMediaStreamSource(stream);
+    // Create a compressor. This will lower the volume of the loudest audio and
+    // raise the volume of the softest audio resulting in a [“louder, richer,
+    // and fuller sound.”][1]
+    //
+    // [1]: https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createDynamicsCompressor
+    const compressor = context.createDynamicsCompressor();
     // Create a script processor. We record in mono which is why we have one
     // input and output channel. We also use the largest buffer size. This means
     // we will be sending the minimum number of messages over the network.
@@ -55,13 +61,15 @@ function record(stream: MediaStream): Observable<Float32Array> {
     // Add the processor event listener.
     processor.addEventListener('audioprocess', handleAudioProcess);
     // Connect up the audio nodes.
-    source.connect(processor);
+    source.connect(compressor);
+    compressor.connect(processor);
     processor.connect(context.destination);
     return () => {
       // Remove the processor event listener.
       processor.removeEventListener('audioprocess', handleAudioProcess);
       // Disconnect all of our audio nodes.
-      source.disconnect(processor);
+      source.disconnect(compressor);
+      compressor.disconnect(processor);
       processor.disconnect(context.destination);
     };
   });
