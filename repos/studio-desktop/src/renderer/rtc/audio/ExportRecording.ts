@@ -74,7 +74,11 @@ async function exportRecorderToWAV(
   // `stats.size === interleaved.length * 4`. If we divide both sides by 2 we
   // get: `stats.size / 2 === interleaved.length * 2`.
   //
+  // Another reference implementation is [`Recorder.js`]. `MediaStreamRecorder`
+  // is still maintained so we based our implementation primarily off of that.
+  //
   // [1]: https://github.com/streamproc/MediaStreamRecorder/blob/bef0b2082853a6a68c45e3a9e0066d6757ca75c7/MediaStreamRecorder.js#L1203-L1226
+  // [2]: https://github.com/mattdiamond/Recorderjs
   {
     const header = new ArrayBuffer(44);
     const view = new DataView(header);
