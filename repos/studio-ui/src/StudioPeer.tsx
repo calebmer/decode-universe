@@ -7,11 +7,11 @@ import { Peer, PeerConnectionStatus } from './rtc/Peer';
 export function StudioPeer({
   peer,
   audioContext,
-  disableAudioOutput = false,
+  disableAudio = false,
 }: {
   peer: Peer,
   audioContext: AudioContext,
-  disableAudioOutput?: boolean,
+  disableAudio?: boolean,
 }) {
   return (
     <div>
@@ -44,7 +44,7 @@ export function StudioPeer({
             height: '100px',
             backgroundColor: 'tomato',
           }}>
-            {disableAudioOutput !== true && source !== null && (
+            {disableAudio !== true && source !== null && (
               <AudioDestination
                 context={audioContext}
                 node={source}

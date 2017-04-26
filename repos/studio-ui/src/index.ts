@@ -1,4 +1,4 @@
-export { StudioRoom } from './StudioRoom';
+export { StudioRoomController } from './StudioRoomController';
 export { ReactObservable } from './observable/ReactObservable';
 export { PeersMesh } from './rtc/PeersMesh';
 export { Peer, PeerConfig, PeerState } from './rtc/Peer';

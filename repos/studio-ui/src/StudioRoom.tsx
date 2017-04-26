@@ -1,145 +1,111 @@
 import * as React from 'react';
 import { ReactObservable } from './observable/ReactObservable';
 import { UserAudioDevicesSelect } from './audio/UserAudioDevicesSelect';
-import { UserAudioController } from './audio/UserAudioController';
 import { AudioVisualization } from './audio/AudioVisualization';
 import { PeersMesh } from './rtc/PeersMesh';
 import { StudioPeer } from './StudioPeer';
 
-type Props = {
+export function StudioRoom({
+  mesh,
+  audioContext,
+  deviceID,
+  onSelectDeviceID,
+  disableAudio,
+  onDisableAudio,
+  onEnableAudio,
+}: {
   mesh: PeersMesh,
-  onNameChange: (name: string) => void,
-  onUserAudioStream: (stream: MediaStream, previousStream: MediaStream | null) => void,
-  onUserAudioError: (error: mixed, previousStream: MediaStream | null) => void,
-};
-
-type State = {
+  audioContext: AudioContext,
   deviceID: string | null,
-  disableAudioOutput: boolean,
-};
+  onSelectDeviceID: (deviceID: string) => void,
+  disableAudio: boolean,
+  onDisableAudio: () => void,
+  onEnableAudio: () => void,
+}) {
+  const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) =>
+    mesh.setLocalName(event.target.value);
 
-const audioContext = new AudioContext();
+  const handleMute = () => mesh.muteLocalStream();
+  const handleUnmute = () => mesh.unmuteLocalStream();
 
-const deviceIDKey = '@decode/studio-ui/deviceID';
-
-export class StudioRoom extends React.Component<Props, State> {
-  state: State = {
-    deviceID: localStorage.getItem(deviceIDKey),
-    disableAudioOutput: DEV,
-  };
-
-  private handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    this.props.onNameChange(event.target.value);
-  };
-
-  private handleSelectDeviceID = (deviceID: string) => {
-    // Update the state with the new device id.
-    this.setState({ deviceID });
-    // Update local storage with the new information.
-    localStorage.setItem(deviceIDKey, deviceID);
-  };
-
-  private handleDisableAudioOutputToggle = () => {
-    this.setState(({ disableAudioOutput }: State): Partial<State> => ({
-      disableAudioOutput: !disableAudioOutput,
-    }));
-  };
-
-  private handleMute = () => {
-    this.props.mesh.muteLocalStream();
-  };
-
-  private handleUnmute = () => {
-    this.props.mesh.unmuteLocalStream();
-  };
-
-  render() {
-    const { mesh, onUserAudioStream, onUserAudioError } = this.props;
-    const { deviceID, disableAudioOutput } = this.state;
-    return (
-      <div>
-        <UserAudioController
-          deviceID={deviceID}
-          onStream={onUserAudioStream}
-          onError={onUserAudioError}
-        />
-        <p>
-          Name:{' '}
-          {ReactObservable.render(
-            mesh.localState.map(({ name }) => name).distinctUntilChanged(),
-            name => (
-              <input
-                value={name}
-                onChange={this.handleNameChange}
-              />
-            ),
-          )}
-        </p>
-        <p>
-          Audio Input:{' '}
-          <UserAudioDevicesSelect
-            kind="input"
-            deviceID={deviceID}
-            onSelect={this.handleSelectDeviceID}
-          />
-        </p>
-        <p>
-          <label>
-            <input
-              type="checkbox"
-              checked={disableAudioOutput}
-              onChange={this.handleDisableAudioOutputToggle}
-            />
-            {' '}
-            Disable Audio
-          </label>
-        </p>
-        <p>
-          {ReactObservable.render(
-            mesh.localState
-              .map(({ isMuted }) => isMuted)
-              .distinctUntilChanged(),
-            isMuted => (
-              <button onClick={isMuted ? this.handleUnmute : this.handleMute}>
-                {isMuted ? 'Unmute' : 'Mute'}
-              </button>
-            ),
-          )}
-        </p>
-        <div style={{
-          width: '500px',
-          height: '100px',
-          backgroundColor: 'tomato',
-        }}>
-          {ReactObservable.render(
-            mesh.localStream
-              .map(stream => stream !== null
-                ? audioContext.createMediaStreamSource(stream)
-                : null),
-            source => source !== null && (
-              <AudioVisualization
-                node={source}
-              />
-            ),
-          )}
-        </div>
+  return (
+    <div>
+      <p>
+        Name:{' '}
         {ReactObservable.render(
-          mesh.peers,
-          peers => (
-            <ul>
-              {peers.map((peer, id) => (
-                <li key={id}>
-                  <StudioPeer
-                    peer={peer}
-                    audioContext={audioContext}
-                    disableAudioOutput={disableAudioOutput}
-                  />
-                </li>
-              )).toArray()}
-            </ul>
+          mesh.localState.map(({ name }) => name).distinctUntilChanged(),
+          name => (
+            <input
+              value={name}
+              onChange={handleNameChange}
+            />
+          ),
+        )}
+      </p>
+      <p>
+        Audio Input:{' '}
+        <UserAudioDevicesSelect
+          kind="input"
+          deviceID={deviceID}
+          onSelect={onSelectDeviceID}
+        />
+      </p>
+      <p>
+        <label>
+          <input
+            type="checkbox"
+            checked={disableAudio}
+            onChange={disableAudio ? onEnableAudio : onDisableAudio}
+          />
+          {' '}
+          Disable Audio
+        </label>
+      </p>
+      <p>
+        {ReactObservable.render(
+          mesh.localState
+            .map(({ isMuted }) => isMuted)
+            .distinctUntilChanged(),
+          isMuted => (
+            <button onClick={isMuted ? handleUnmute : handleMute}>
+              {isMuted ? 'Unmute' : 'Mute'}
+            </button>
+          ),
+        )}
+      </p>
+      <div style={{
+        width: '500px',
+        height: '100px',
+        backgroundColor: 'tomato',
+      }}>
+        {ReactObservable.render(
+          mesh.localStream
+            .map(stream => stream !== null
+              ? audioContext.createMediaStreamSource(stream)
+              : null),
+          source => source !== null && (
+            <AudioVisualization
+              node={source}
+            />
           ),
         )}
       </div>
-    );
-  }
+      {ReactObservable.render(
+        mesh.peers,
+        peers => (
+          <ul>
+            {peers.map((peer, id) => (
+              <li key={id}>
+                <StudioPeer
+                  peer={peer}
+                  audioContext={audioContext}
+                  disableAudio={disableAudio}
+                />
+              </li>
+            )).toArray()}
+          </ul>
+        ),
+      )}
+    </div>
+  )
 }
