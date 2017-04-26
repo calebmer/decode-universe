@@ -1,4 +1,5 @@
 import { v4 as uuid } from 'uuid';
+import { BehaviorSubject } from 'rxjs';
 import {
   PeersMesh,
   Peer,
@@ -21,6 +22,18 @@ import { GuestPeer } from './GuestPeer';
  * orchestrate the recording of its peers tracks.
  */
 export class HostPeersMesh extends PeersMesh<GuestPeer> {
+  /**
+   * The internal `BehaviorSubject` representing the mesh’s recording state.
+   */
+  private readonly recordingStateSubject =
+    new BehaviorSubject(HostPeersMesh.RecordingState.inactive);
+
+  /**
+   * The current recording state of our peer mesh. We start at `inactive` and
+   * then move through the different stages as actions are fired.
+   */
+  public readonly recordingState = this.recordingStateSubject.asObservable();
+
   /**
    * If we are currently recording then this is the `PersistRecording` instance
    * that is doing all of the recording heavy work.
@@ -96,6 +109,8 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
     // `await`s are resolving then `this.recording` will change. Therefore, if
     // `this.recording` changed that means we were cancelled.
     this.recording = recording;
+    // At this point we begin the loading phase of our mesh’s recording state.
+    this.recordingStateSubject.next(HostPeersMesh.RecordingState.starting);
     try {
       // If we don’t currently have a local recorder or the local recorder that
       // we have was stopped then create a new one.
@@ -121,6 +136,13 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
     }
     // Start recording!
     await recording.start();
+    // Add an artificial half second delay before we resolve. If users wait
+    // about half a second before things start then we can guarantee no audio
+    // will be accidently missed and we will hopefully have started getting
+    // audio from guests by 500ms.
+    await new Promise(resolve => setTimeout(() => resolve(), 500));
+    // We have sucesfully started recording!
+    this.recordingStateSubject.next(HostPeersMesh.RecordingState.recording);
   }
 
   /**
@@ -139,6 +161,8 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
     }
     // Set the recording instance to null.
     this.recording = null;
+    // We have stopped the recording. Our state is now inactive.
+    this.recordingStateSubject.next(HostPeersMesh.RecordingState.inactive);
   }
 
   /**
@@ -249,5 +273,26 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
     if (this.localRecorder !== null && this.localRecorder.stopped === false) {
       this.localRecorder.unsetStream();
     }
+  }
+}
+
+export namespace HostPeersMesh {
+  /**
+   * The recording state that our host peers mesh may be in.
+   */
+  export enum RecordingState {
+    /**
+     * No recording is currently happening.
+     */
+    inactive,
+    /**
+     * We are currently starting a recording, but the recording has not started
+     * just yet!
+     */
+    starting,
+    /**
+     * We are currently recording the guest peers.
+     */
+    recording,
   }
 }

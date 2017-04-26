@@ -1,8 +1,9 @@
 import * as React from 'react';
-import { PeersMesh, StudioRoom } from '@decode/studio-ui';
+import { StudioRoom, ReactObservable } from '@decode/studio-ui';
+import { HostPeersMesh } from './rtc/HostPeersMesh';
 
 type Props = {
-  mesh: PeersMesh,
+  mesh: HostPeersMesh,
   onNameChange: (name: string) => void,
   onUserAudioStream: (stream: MediaStream, previousStream: MediaStream | null) => void,
   onUserAudioError: (error: mixed, previousStream: MediaStream | null) => void,
@@ -11,22 +12,12 @@ type Props = {
   onExport: () => void,
 };
 
-type State = {
-  isRecording: boolean,
-};
-
-export class App extends React.Component<Props, State> {
-  state: State = {
-    isRecording: false,
-  };
-
+export class App extends React.PureComponent<Props, {}> {
   private handleStartRecording = () => {
-    this.setState({ isRecording: true });
     this.props.onStartRecording();
   };
 
   private handleStopRecording = () => {
-    this.setState({ isRecording: false });
     this.props.onStopRecording();
   };
 
@@ -41,26 +32,34 @@ export class App extends React.Component<Props, State> {
       onUserAudioStream,
       onUserAudioError,
     } = this.props;
-    const { isRecording } = this.state;
     return (
       <div>
-        <div>
-          <button
-            onClick={
-              isRecording
-                ? this.handleStopRecording
-                : this.handleStartRecording
-            }
-          >
-            {isRecording ? 'Stop' : 'Start'} Recording
-          </button>
-          {' '}
-          {!isRecording && (
-            <button onClick={this.handleExport}>
-              Export WAV
-            </button>
+        <p>
+          {ReactObservable.render(
+            mesh.recordingState,
+            recordingState => (
+              recordingState === HostPeersMesh.RecordingState.inactive ? (
+                <span>
+                  <button onClick={this.handleStartRecording}>
+                    Start Recording
+                  </button>
+                  {' '}
+                  <button onClick={this.handleExport}>
+                    Export WAV
+                  </button>
+                </span>
+              ) :
+              recordingState === HostPeersMesh.RecordingState.starting ? (
+                <span>Starting...</span>
+              ) :
+              recordingState === HostPeersMesh.RecordingState.recording ? (
+                <button onClick={this.handleStopRecording}>
+                  Stop Recording
+                </button>
+              ) : null
+            )
           )}
-        </div>
+        </p>
         <StudioRoom
           mesh={mesh}
           onNameChange={onNameChange}
