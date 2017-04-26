@@ -39,6 +39,10 @@ export interface Map<K, V> extends Iterable<[K, V]> {
   map<U>(mapper: (value: V, key: K) => U): Map<K, U>;
   filter(predicate: (value: V, key: K) => boolean): Map<K, V>;
 
+  keys(): Iterable<K>;
+  values(): Iterable<V>;
+  entries(): Iterable<[K, V]>;
+
   toArray(): Array<V>;
 
   forEach(mapper: (value: V, key: K) => void | false): number;
