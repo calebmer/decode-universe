@@ -34,7 +34,7 @@ export class UserAudioController extends React.PureComponent<Props, {}> {
       video: false,
       audio: {
         // Always try to cancel any echos on the line.
-        echoCancelation: true,
+        echoCancelation: false,
         // If the device id is null then we want to use `undefined` (as if the
         // option were never set). Otherwise we want to use the device id we
         // were provided in props.
