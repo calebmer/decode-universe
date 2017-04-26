@@ -1,0 +1,13 @@
+#!/bin/bash
+
+scripts/build
+
+cd build
+
+echo '{
+  "name": "decode-studio-web"
+}' > now.json
+
+now
+
+rm now.json

@@ -5,7 +5,7 @@ scripts/build
 cd build
 
 echo '{
-  "name": "decode-signal-server",
+  "name": "decode-studio-signal-server",
   "scripts": {
     "start": "node index.js"
   },
