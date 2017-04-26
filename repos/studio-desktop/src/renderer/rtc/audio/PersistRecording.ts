@@ -37,14 +37,13 @@ export class PersistRecording {
    */
   private readonly recordersRawDirectory = `${this.recordingDirectory}/raw`;
 
-  private internalStarted = false;
   private internalStopped = false;
 
   /**
    * A state flag that switches to true when `start()` is called.
    */
   public get started(): boolean {
-    return this.internalStarted;
+    return this.manifest !== null;
   }
 
   /**
@@ -69,11 +68,10 @@ export class PersistRecording {
   /**
    * The manifest for this recording that we will be updating and saving
    * throughout our recording.
+   *
+   * The manifest will be `null` if the recording has not yet started.
    */
-  private readonly manifest: RecordingManifest = {
-    version: '1',
-    recorders: {},
-  };
+  private manifest: RecordingManifest | null = null;
 
   /**
    * Starts persisting all of our recorders. It also starts an recorders which
@@ -89,12 +87,25 @@ export class PersistRecording {
     ) {
       throw new Error('Already started.');
     }
+    // Create the manifest now that we are starting the recording. Creating a
+    // manifest will also have the effect if switching `started` to true.
+    this.manifest = {
+      version: '1',
+      startedAt: Date.now(),
+      recorders: {},
+    };
+    // For all of our recorders add an entry to the manifest’s `recorders` map.
+    for (const [id, recorder] of this.recorders) {
+      this.manifest.recorders[id] = {
+        name: recorder.name,
+        sampleRate: recorder.sampleRate,
+        startedAt: 0,
+      };
+    }
     // Setup the file system.
     await this.setupFileSystem();
-    // Write the manifest to disk.
+    // Write the manifest to disk now that it has been initialized.
     await this.saveManifest();
-    // Flip the `started` flag.
-    this.internalStarted = true;
     // For all of our recorders.
     for (const [id, recorder] of this.recorders) {
       // Start persisting the recorder and save the disposable for later.
@@ -157,11 +168,18 @@ export class PersistRecording {
     const id = uuid();
     // Add the recorder to our map.
     this.recorders.set(id, recorder);
-    // Update the manifest by adding an entry for this recorder.
-    this.manifest.recorders[id] = {
-      name: recorder.name,
-      sampleRate: recorder.sampleRate,
-    };
+    // Update the manifest by adding an entry for this recorder if we have a
+    // manifest. We know that the recording has started if we have a manifest.
+    if (this.manifest !== null) {
+      this.manifest.recorders[id] = {
+        name: recorder.name,
+        sampleRate: recorder.sampleRate,
+        // Compute the started at time using the manifest started at time.
+        startedAt: Date.now() - this.manifest.startedAt,
+      };
+      // Save the new manifest with our new recorder addition.
+      this.saveManifest().catch(error => console.error(error));
+    }
     // If we have started then we need to start persisting the recorder
     // immeadiately!
     //
@@ -176,9 +194,6 @@ export class PersistRecording {
       if (recorder.started === false) {
         recorder.start();
       }
-      // Save the manifest since we made an update above. If the save fails then
-      // lets report the error.
-      this.saveManifest().catch(error => console.error(error));
     }
     // Return the id we created.
     return id;
@@ -251,6 +266,9 @@ export class PersistRecording {
    * Updates the manifest file for this recording on disk.
    */
   private async saveManifest(): Promise<void> {
+    if (this.manifest === null) {
+      throw new Error('No manifest to be saved.');
+    }
     // Write the manifest to the file system in a JSON format pretty printed
     // with 2 spaces.
     await new Promise((resolve, reject) => {

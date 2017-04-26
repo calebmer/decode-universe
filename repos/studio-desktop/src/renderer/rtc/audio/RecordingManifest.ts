@@ -9,6 +9,11 @@
 export type RecordingManifest = {
   readonly version: '1',
   /**
+   * The time in millseconds since the Unix epoch at which the recording was
+   * started.
+   */
+  readonly startedAt: number,
+  /**
    * A map of recorder ids to metadata about that recorder. The `id` key will
    * correspond to the file name of the recorder on disk.
    */
@@ -30,5 +35,15 @@ export namespace RecordingManifest {
      * The sample rate at which the audio was recorded.
      */
     readonly sampleRate: number,
+    /**
+     * The time in milliseconds at which the recorder started *after* the
+     * recording started. So if the recorder started at the same time as the
+     * recording this value would be 0. If the recorder started 5 seconds after
+     * the recording started this value would be 5000.
+     *
+     * Add this nomber to `recordedAt` to get the milliseconds since the Unix
+     * epoch at which this recorder started.
+     */
+    readonly startedAt: number,
   };
 }
