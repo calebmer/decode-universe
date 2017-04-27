@@ -74,6 +74,14 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
       disableAudio: DEV,
     };
 
+    /**
+     * We want to subscribe to our mesh’s local state so that whenever the name
+     * changes we can store the new name in local storage. This is the
+     * subscription for that operation. `null` if we have no such operation
+     * running.
+     */
+    private nameSubscription: Subscription | null = null;
+
     componentWillReceiveProps(nextProps: Props) {
       const previousProps = this.props;
       // If the room name changed and we have a mesh in state then we need to
@@ -85,8 +93,6 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
         this.setState({ mesh: createPeersMesh(nextProps) });
       }
     }
-
-    private nameSubscription: Subscription | null = null;
 
     componentDidUpdate(previousProps: Props, previousState: State) {
       const nextState = this.state;
@@ -153,6 +159,8 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
       // Update the state with the stream that we got.
       this.setState((state: State, props: Props): Partial<State> => ({
         userAudio: { state: 'success', stream },
+        // Use the mesh from the previous state. If there is no mesh in the
+        // previous state then we want to create a new mesh.
         mesh: state.mesh || createPeersMesh(props),
       }));
     };
@@ -223,9 +231,10 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
                 />
               </div>
             ) :
-            // This should really be unreachable. However, in the case that we
-            // reach it then just render nothing.
-            null
+            // This should really be unreachable because we create a mesh
+            // whenever we set `userAudio` to a success state. However, in the
+            // case that we reach it then just render nothing.
+            null as never
           )}
         </div>
       );
