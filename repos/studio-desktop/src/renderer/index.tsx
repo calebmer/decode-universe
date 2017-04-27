@@ -7,10 +7,12 @@ import { StudioButtons } from './StudioButtons';
 const StudioRoom = StudioRoomController.createComponent<HostPeersMesh>({
   createPeersMesh: ({
     roomName,
+    localAudioContext,
     previousLocalName,
   }) => (
     new HostPeersMesh({
       roomName,
+      localAudioContext,
       localState: {
         name: previousLocalName || 'Host',
         isMuted: false,

@@ -41,7 +41,7 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
   private recording: PersistRecording | null = null;
 
   /**
-   * The recorder that we use to record our local audio stream. This may be used
+   * The recorder that we use to record our local audio. This may be used
    * accross any number of recordings. If calling `stop()` on the `recorder`
    * stops the local recorder then we will set it to null.
    *
@@ -59,13 +59,16 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
 
   constructor({
     roomName,
+    localAudioContext,
     localState,
   }: {
     roomName: string,
+    localAudioContext: AudioContext,
     localState: PeerState,
   }) {
     super({
       roomName,
+      localAudioContext,
       localState,
       // We assume that all of the peers we connect to as the studio desktop
       // client are guests and not hosts! It is fairly safe to make this
@@ -117,7 +120,8 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
       if (this.localRecorder === null || this.localRecorder.stopped === true) {
         this.localRecorder = new LocalRecorder({
           name: this.currentLocalState.name,
-          stream: this.currentLocalStream,
+          context: this.localAudioContext,
+          audio: this.currentLocalAudio,
         });
       }
       // Add the local recorder to the recording.
@@ -256,22 +260,22 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
   }
 
   /**
-   * Sets the local stream and updates our recorder.
+   * Sets the local audio and updates our recorder.
    */
-  public setLocalStream(stream: MediaStream): void {
-    super.setLocalStream(stream);
+  public setLocalAudio(audio: AudioNode): void {
+    super.setLocalAudio(audio);
     if (this.localRecorder !== null && this.localRecorder.stopped === false) {
-      this.localRecorder.setStream(stream);
+      this.localRecorder.setAudio(audio);
     }
   }
 
   /**
-   * Unsets the local stream and updates our recorder.
+   * Unsets the local audio and updates our recorder.
    */
-  public unsetLocalStream(): void {
-    super.unsetLocalStream();
+  public unsetLocalAudio(): void {
+    super.unsetLocalAudio();
     if (this.localRecorder !== null && this.localRecorder.stopped === false) {
-      this.localRecorder.unsetStream();
+      this.localRecorder.unsetAudio();
     }
   }
 }

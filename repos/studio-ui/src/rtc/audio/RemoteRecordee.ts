@@ -21,32 +21,29 @@ export class RemoteRecordee implements Disposable {
   public static async create(
     name: string,
     channel: RTCDataChannel,
+    context: AudioContext,
   ): Promise<RemoteRecordee> {
     // Wait until the channel opens.
     await waitUntilOpen(channel);
     // Construct the info message for our channel.
     const message: RemoteRecorderProtocol.RecordeeInfoMessage = {
       name,
-      sampleRate: LocalRecorder.sampleRate,
+      sampleRate: context.sampleRate,
     };
     // Send the info message.
     channel.send(JSON.stringify(message));
     // Construct the recordee and return it.
     return new RemoteRecordee({
       channel,
+      context,
     });
   }
 
   /**
-   * The recorder which will record all of our stream’s data. We will subscribe
+   * The recorder which will record all of our audio data. We will subscribe
    * to this recorder’s `stream` and forward that data to our `channel`.
    */
-  private readonly recorder = new LocalRecorder({
-    // We don’t care about the name in a recordee.
-    name: '',
-    // We start the stream at null.
-    stream: null,
-  });
+  private readonly recorder: LocalRecorder;
 
   /**
    * A state flag that switches to true when `stop()` is called.
@@ -68,14 +65,25 @@ export class RemoteRecordee implements Disposable {
 
   private constructor({
     channel,
+    context,
   }: {
     channel: RTCDataChannel,
+    context: AudioContext,
   }) {
     this.channel = channel;
     // Add all the event listeners.
     this.channel.addEventListener('message', this.handleMessage);
     this.channel.addEventListener('error', this.handleError);
     this.channel.addEventListener('close', this.handleClose);
+    // Initialize the local recorder.
+    this.recorder = new LocalRecorder({
+      // We don’t care about the name in a recordee.
+      name: '',
+      // Use the context we were provided.
+      context,
+      // We start the audio at null.
+      audio: null,
+    });
   }
 
   /**
@@ -165,23 +173,23 @@ export class RemoteRecordee implements Disposable {
   }
 
   /**
-   * Sets the stream that should be recording. If we had another stream then
-   * this will stop recording that stream and start recording this one.
+   * Sets the audio that should be recording. If we had another audio then
+   * this will stop recording that audio and start recording this one.
    *
    * If the recording has stopped this method will throw an error.
    */
-  public setStream(stream: MediaStream): void {
-    this.recorder.setStream(stream);
+  public setAudio(audio: AudioNode): void {
+    this.recorder.setAudio(audio);
   }
 
   /**
-   * This will unset any stream that we are recording. Instead of any stream we
+   * This will unset any audio that we are recording. Instead of any audio we
    * will be sending silence to our recorder.
    *
    * If the recording has stopped this method will throw an error.
    */
-  public unsetStream(): void {
-    this.recorder.unsetStream();
+  public unsetAudio(): void {
+    this.recorder.unsetAudio();
   }
 }
 

@@ -1,18 +1,13 @@
 import { Subject } from 'rxjs';
 import { Recorder } from './Recorder';
-import { MediaStreamRecorder } from './MediaStreamRecorder';
+import { AudioNodeRecorder } from './AudioNodeRecorder';
 
 /**
  * A `Recorder` that when `start()` is called records all of the audio from the
- * local stream managed by `setStream()` and `unsetStream()`. There are no fancy
+ * local audio managed by `setAudio()` and `unsetAudio()`. There are no fancy
  * network shenanigans with this class.
  */
 export class LocalRecorder implements Recorder {
-  /**
-   * The `sampleRate` with which the recorder will use to record audio.
-   */
-  public static sampleRate = MediaStreamRecorder.sampleRate;
-
   private internalStarted = false;
   private internalStopped = false;
 
@@ -36,9 +31,16 @@ export class LocalRecorder implements Recorder {
   public readonly name: string;
 
   /**
+   * The audio context we use to record all of our audio nodes.
+   */
+  private readonly context: AudioContext;
+
+  /**
    * The audio sample rate for the audio data emit from the `stream` observable.
    */
-  public readonly sampleRate = MediaStreamRecorder.sampleRate;
+  public get sampleRate(): number {
+    return this.context.sampleRate;
+  }
 
   /**
    * The internal subject for `stream` which we can use to emit events. We want
@@ -55,11 +57,11 @@ export class LocalRecorder implements Recorder {
   public readonly stream = this.streamSubject.asObservable();
 
   /**
-   * The stream with which we are currently recording or which we should record
-   * when the recording starts. `null` if we want to record silence instead of a
-   * `MediaStream`.
+   * The audio with which we are currently recording or which we should record
+   * when the recording starts. `null` if we want to record silence instead of
+   * an `AudioNode`.
    */
-  private mediaStream: MediaStream | null;
+  private audio: AudioNode | null;
 
   /**
    * The disposable which will dispose the process currently recording audio. If
@@ -69,13 +71,16 @@ export class LocalRecorder implements Recorder {
 
   constructor({
     name,
-    stream,
+    context,
+    audio,
   }: {
     name: string,
-    stream: MediaStream | null,
+    context: AudioContext,
+    audio: AudioNode | null,
   }) {
     this.name = name;
-    this.mediaStream = stream;
+    this.context = context;
+    this.audio = audio;
   }
 
   /**
@@ -92,11 +97,11 @@ export class LocalRecorder implements Recorder {
     }
     // Flip our `started` flag to true.
     this.internalStarted = true;
-    // Start recording either silence or the stream and stream that data.
-    if (this.mediaStream === null) {
+    // Start recording either silence or audio and stream that data.
+    if (this.audio === null) {
       this.recordSilence();
     } else {
-      this.recordStream(this.mediaStream);
+      this.recordAudio(this.audio);
     }
   }
 
@@ -113,8 +118,8 @@ export class LocalRecorder implements Recorder {
     }
     // Switch the stopped toggle.
     this.internalStopped = true;
-    // Set the stream to null since we no longer will need it.
-    this.mediaStream = null;
+    // Set the audio to null since we no longer will need it.
+    this.audio = null;
     // Dispose the disposable if we still have one.
     if (this.disposable !== null) {
       this.disposable.dispose();
@@ -123,74 +128,69 @@ export class LocalRecorder implements Recorder {
   }
 
   /**
-   * Sets the stream that should be recording. If we had another stream then
-   * this will stop recording that stream and start recording this one.
+   * Sets the audio that should be recording. If we had another audio node then
+   * this will stop recording that audio node and start recording this one.
    *
    * If the recording has stopped this method will throw an error.
    */
-  public setStream(stream: MediaStream): void {
+  public setAudio(audio: AudioNode): void {
     // Enforce the correct state.
     if (this.stopped === true) {
       throw new Error('Recording has stopped.');
     }
-    // If the stream did not change then do nothing.
-    if (this.mediaStream === stream) {
+    // If the audio did not change then do nothing.
+    if (this.audio === audio) {
       return;
     }
-    // Set the stream on our instance.
-    this.mediaStream = stream;
-    // If we have started recording then the record stream. This will
+    // Set the audio on our instance.
+    this.audio = audio;
+    // If we have started recording then record the audio. This will
     // will unsubscribe any of the last recordings.
     if (this.started === true) {
-      this.recordStream(stream);
+      this.recordAudio(audio);
     }
   }
 
   /**
-   * This will unset any stream that we are recording. Instead of any stream we
+   * This will unset any audio that we are recording. Instead of any audio we
    * will be sending silence to our recorder.
    *
    * If the recording has stopped this method will throw an error.
    */
-  public unsetStream(): void {
+  public unsetAudio(): void {
     // Enforce the correct state.
     if (this.stopped === true) {
       throw new Error('Recording has stopped.');
     }
-    // If we have already unset the stream then do nothing.
-    if (this.stream === null) {
+    // If we have already unset the audio then do nothing.
+    if (this.audio === null) {
       return;
     }
-    // Set the stream to null.
-    this.mediaStream = null;
+    // Set the audio to null.
+    this.audio = null;
     // If we have started recording then we want to record silence while there
-    // is no stream. This will unsubscribe any of the last recordings.
+    // is no audio. This will unsubscribe any of the last recordings.
     if (this.started === true) {
       this.recordSilence();
     }
   }
 
   /**
-   * Starts recording a `MediaStream`. If something was already recording then
+   * Starts recording an `AudioNode`. If something was already recording then
    * it will be stopped.
    */
-  private recordStream(stream: MediaStream): void {
+  private recordAudio(audio: AudioNode): void {
     // If there is currently a disposable then we want to dispose it.
     if (this.disposable !== null) {
       this.disposable.dispose();
     }
-    // Start recording the stream and get a subscription that we can unsubscribe
+    // Start recording the audio and get a subscription that we can unsubscribe
     // from at a later time.
-    const subscription = MediaStreamRecorder.record(stream).subscribe({
-      // Send the data through our channel.
-      next: data => this.streamSubject.next(data.buffer),
-      // If we got an error then report it.
-      // TODO: Better error handling. If we get an error should the `Recorder`
-      // know?
-      error: error => console.error(error),
-      // TODO: If we complete then we should probably record silence?
-      complete: () => {},
-    });
+    const subscription =
+      AudioNodeRecorder.record(this.context, audio).subscribe({
+        // Send the data through our channel.
+        next: data => this.streamSubject.next(data.buffer),
+      });
     // Add a disposable which will unsubscribe from our subscription.
     this.disposable = {
       // TODO: Wait for the next emission and then cut it so that we emit the
@@ -210,16 +210,11 @@ export class LocalRecorder implements Recorder {
     }
     // Start recording silence and get a subscription that we can unsubscribe
     // from at a later time.
-    const subscription = MediaStreamRecorder.recordSilence().subscribe({
-      // Send the data through our channel.
-      next: data => this.streamSubject.next(data.buffer),
-      // If we got an error then report it.
-      // TODO: Better error handling. If we get an error should the `Recorder`
-      // know?
-      error: error => console.error(error),
-      // TODO: If we complete then we should probably record silence?
-      complete: () => {},
-    });
+    const subscription =
+      AudioNodeRecorder.recordSilence(this.context).subscribe({
+        // Send the data through our channel.
+        next: data => this.streamSubject.next(data.buffer),
+      });
     // Add a disposable which will unsubscribe from our subscription.
     this.disposable = {
       // TODO: Wait for the next emission and then cut it so that we emit the

@@ -29,6 +29,7 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
   // Called when the component wants to create a new `PeersMesh` instance.
   createPeersMesh: (options: {
     roomName: string,
+    localAudioContext: AudioContext,
     previousLocalName: string | null,
   }) => TPeersMesh,
 
@@ -56,27 +57,30 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
     error: any,
   } | {
     state: 'success',
-    // The source of our audio from a `MediaStream` received from
-    // `getUserMedia()`.
-    source: MediaStreamAudioSourceNode,
-    // A dynamics compressor which will improve the quality of our audio in
-    // general.
-    compressor: DynamicsCompressorNode,
-    // A node which will allow us to adjust the volume of the output audio.
-    //
-    // **NOTE:** If the user wants to mute their audio they unset any local
-    // streams instead of setting the volume to 0 on this gain node. This
-    // ensures security as there is no chance any audio will be streamed to the
-    // other peers. It also allows us to render a muted state for our peers.
-    volume: GainNode,
-    // The final destination audio node which will provide a `MediaStream` that
-    // we can use with the WebRTC APIs.
-    destination: MediaStreamAudioDestinationNode,
+    // A tuple of the audio nodes we use in the order which they are connected.
+    // We will send the last node to our mesh.
+    nodes: [
+      // The source of our audio from a `MediaStream` received from
+      // `getUserMedia()`.
+      MediaStreamAudioSourceNode,
+      // A dynamics compressor which will improve the quality of our audio in
+      // general.
+      DynamicsCompressorNode,
+      // A node which will allow us to adjust the volume of the output audio.
+      //
+      // **NOTE:** If the user wants to mute their audio they unset any local
+      // streams instead of setting the volume to 0 on this gain node. This
+      // ensures security as there is no chance any audio will be streamed to
+      // the other peers. It also allows us to render a muted state for our
+      // peers.
+      GainNode
+    ],
   };
 
   function createPeersMesh({ roomName }: Props): TPeersMesh {
     return userCreatePeersMesh({
       roomName,
+      localAudioContext: audioContext,
       previousLocalName: localStorage.getItem(nameKey),
     });
   }
@@ -117,22 +121,23 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
         // If we had a successful audio state previously then we need to
         // disconnect all of those nodes.
         if (previousState.userAudio.state === 'success') {
-          const { source, compressor, volume, destination } =
-            previousState.userAudio;
-          // Disconnect everything from each other.
-          source.disconnect(compressor);
-          compressor.disconnect(volume);
-          volume.disconnect(destination);
+          const { nodes } = previousState.userAudio;
+          // Disconnect all the nodes from each other.
+          for (let i = 0; i < nodes.length - 1; i++) {
+            nodes[i].disconnect(nodes[i + 1]);
+          }
         }
         // If we now have a successful audio state then we need to connect all
         // of the nodes together.
         if (nextState.userAudio.state === 'success') {
-          const { source, compressor, volume, destination } =
-            nextState.userAudio;
-          // Connect everything together.
-          source.connect(compressor);
-          compressor.connect(volume);
-          volume.connect(destination);
+          const { nodes } = nextState.userAudio;
+          // Connect all the nodes to each other.
+          for (let i = 0; i < nodes.length - 1; i++) {
+            nodes[i].connect(nodes[i + 1]);
+          }
+          // Set the volume to maximum on our volume node.
+          const volume = nodes[2];
+          volume.gain.value = 1;
         }
       }
       // **NOTE:** It is important that this runs before the block that runs
@@ -148,9 +153,11 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
         previousState.userAudio !== nextState.userAudio)
       ) {
         if (nextState.userAudio.state === 'success') {
-          nextState.mesh.setLocalStream(nextState.userAudio.destination.stream);
+          // Set the last node in our array of user audio nodes to our mesh.
+          const { nodes } = nextState.userAudio;
+          nextState.mesh.setLocalAudio(nodes[nodes.length - 1]);
         } else {
-          nextState.mesh.unsetLocalStream();
+          nextState.mesh.unsetLocalAudio();
         }
       }
       // If our mesh changed then we need to connect the new mesh and/or close
@@ -201,10 +208,11 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
           state: 'success',
           // Create all of the audio nodes for the user audio state. They will
           // be `connect()`ed and `disconnect()`ed in `componentDidUpdate()`.
-          source: audioContext.createMediaStreamSource(stream),
-          compressor: audioContext.createDynamicsCompressor(),
-          volume: audioContext.createGain(),
-          destination: audioContext.createMediaStreamDestination(),
+          nodes: [
+            audioContext.createMediaStreamSource(stream),
+            audioContext.createDynamicsCompressor(),
+            audioContext.createGain(),
+          ],
         },
         // Use the mesh from the previous state. If there is no mesh in the
         // previous state then we want to create a new mesh.

@@ -142,7 +142,7 @@ export class PersistRecording {
     }
     // Dispose all of our disposables that are currently persisting the recorder
     // streams to disk.
-    for (const [, disposable] of this.disposables) {
+    for (const disposable of this.disposables.values()) {
       disposable.dispose();
     }
     // Clear our maps. We won’t be using them anymore.

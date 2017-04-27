@@ -25,8 +25,8 @@ export function StudioRoom({
   const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) =>
     mesh.setLocalName(event.target.value);
 
-  const handleMute = () => mesh.muteLocalStream();
-  const handleUnmute = () => mesh.unmuteLocalStream();
+  const handleMute = () => mesh.muteLocalAudio();
+  const handleUnmute = () => mesh.unmuteLocalAudio();
 
   return (
     <div>
@@ -58,7 +58,7 @@ export function StudioRoom({
             onChange={disableAudio ? onEnableAudio : onDisableAudio}
           />
           {' '}
-          Disable Audio
+          Disable Audio Output
         </label>
       </p>
       <p>
@@ -79,13 +79,10 @@ export function StudioRoom({
         backgroundColor: 'tomato',
       }}>
         {ReactObservable.render(
-          mesh.localStream
-            .map(stream => stream !== null
-              ? audioContext.createMediaStreamSource(stream)
-              : null),
-          source => source !== null && (
+          mesh.localAudio,
+          node => node !== null && (
             <AudioVisualization
-              node={source}
+              node={node}
             />
           ),
         )}

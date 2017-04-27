@@ -1,25 +1,6 @@
 import { Observable } from 'rxjs';
 
 /**
- * We currently use a single `AudioContext` instance for recording only with
- * other contexts for audio playback, for example. We may want to reconsider
- * this approach and just use one global `AudioContext` for all use cases since
- * the number of `AudioContext`s we can create is limited.
- *
- * This `AudioContext` is also special because it optimizes for playback over
- * interactivity.
- */
-// TypeScript doesn’t currently have types for `AudioContext` options so we have
-// to cast the constructor as `any`.
-const context = new AudioContext();
-
-/**
- * The sample rate at which we record. The sample rate represents the number of
- * samples per second which are emit from our record functions.
- */
-const sampleRate = context.sampleRate;
-
-/**
  * The buffer size we use when creating script processors. We use the highest
  * value which means we will be sending the minimum number of messages over the
  * network at all times.
@@ -27,7 +8,7 @@ const sampleRate = context.sampleRate;
 const bufferSize = 16384;
 
 /**
- * Records the raw data from the audio of a `MediaStream` and pushes that data
+ * Records the raw data from the audio of an `AudioNode` and pushes that data
  * in chunks to observers. To assemble the full audio data just add together
  * the channel data chunks.
  *
@@ -47,16 +28,11 @@ const bufferSize = 16384;
  * [2]: https://theaudacitytopodcast.com/tap059-should-you-podcast-in-mono-or-stereo/
  * [3]: https://github.com/streamproc/MediaStreamRecorder/blob/bef0b2082853a6a68c45e3a9e0066d6757ca75c7/MediaStreamRecorder.js#L1151
  */
-function record(stream: MediaStream): Observable<Float32Array> {
+function record(
+  context: AudioContext,
+  audio: AudioNode,
+): Observable<Float32Array> {
   return new Observable<Float32Array>(observer => {
-    // Create the source audio node.
-    const source = context.createMediaStreamSource(stream);
-    // Create a compressor. This will lower the volume of the loudest audio and
-    // raise the volume of the softest audio resulting in a [“louder, richer,
-    // and fuller sound.”][1]
-    //
-    // [1]: https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createDynamicsCompressor
-    const compressor = context.createDynamicsCompressor();
     // Create a script processor. We record in mono which is why we have one
     // input and output channel. We also use the largest buffer size. This means
     // we will be sending the minimum number of messages over the network.
@@ -72,15 +48,13 @@ function record(stream: MediaStream): Observable<Float32Array> {
     // Add the processor event listener.
     processor.addEventListener('audioprocess', handleAudioProcess);
     // Connect up the audio nodes.
-    source.connect(compressor);
-    compressor.connect(processor);
+    audio.connect(processor);
     processor.connect(context.destination);
     return () => {
       // Remove the processor event listener.
       processor.removeEventListener('audioprocess', handleAudioProcess);
       // Disconnect all of our audio nodes.
-      source.disconnect(compressor);
-      compressor.disconnect(processor);
+      audio.disconnect(processor);
       processor.disconnect(context.destination);
     };
   });
@@ -88,15 +62,15 @@ function record(stream: MediaStream): Observable<Float32Array> {
 
 /**
  * Creates an observable that will record silence at the same rate as `record()`
- * will record audio from a `MediaStream`.
+ * will record audio from an `AudioNode`.
  *
  * This is useful when someone is muted, but you still need some audio data to
  * fill in the space where they weren’t talking.
  */
-function recordSilence(): Observable<Float32Array> {
+function recordSilence(context: AudioContext): Observable<Float32Array> {
   return new Observable<Float32Array>(observer => {
     // Get the silence rate in milliseconds.
-    const silenceRateInMS = (bufferSize / sampleRate) * 1000;
+    const silenceRateInMS = (bufferSize / context.sampleRate) * 1000;
     // Create an interval which will emit silence data of `bufferSize` whenever
     // the interval ellapses.
     const intervalID = setInterval(
@@ -117,8 +91,7 @@ function recordSilence(): Observable<Float32Array> {
   });
 }
 
-export const MediaStreamRecorder = {
-  sampleRate,
+export const AudioNodeRecorder = {
   record,
   recordSilence,
 };

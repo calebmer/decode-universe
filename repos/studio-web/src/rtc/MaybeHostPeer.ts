@@ -20,10 +20,10 @@ export class MaybeHostPeer extends Peer {
   private readonly recordees: Array<RemoteRecordee> = [];
 
   /**
-   * The stream that is currently being recorded. `null` if we are not currently
-   * recording a stream.
+   * The audio that is currently being recorded. `null` if we are not currently
+   * recording audio.
    */
-  private recordingStream: MediaStream | null;
+  private recordingAudio: AudioNode | null;
 
   /**
    * The human readable name for the recording.
@@ -32,9 +32,8 @@ export class MaybeHostPeer extends Peer {
 
   constructor(config: PeerConfig) {
     super(config);
-    // Get the stream we want to record. This will be the first stream in the
-    // local streams set.
-    this.recordingStream = config.localStream;
+    // Get the audio we want to record.
+    this.recordingAudio = config.localAudio;
     // Set the name from our local state.
     this.recordingName = config.localState.name;
     // Watch for the recording data channel and if we get such a channel then we
@@ -48,7 +47,11 @@ export class MaybeHostPeer extends Peer {
         // label.
         if (/^recording:/.test(channel.label)) {
           // Create a recordee from the channel.
-          RemoteRecordee.create(this.recordingName, channel).then(
+          RemoteRecordee.create(
+            this.recordingName,
+            channel,
+            this.localAudioContext,
+          ).then(
             // If we suceeded in creating a recordee then set the stream to the
             // current recording stream and add the stream to our recordee and
             // disposable arrays. We want to update the recording stream in case
@@ -56,10 +59,10 @@ export class MaybeHostPeer extends Peer {
             // connection closes.
             recordee => {
               // Update the stream on the recordee.
-              if (this.recordingStream === null) {
-                recordee.unsetStream();
+              if (this.recordingAudio === null) {
+                recordee.unsetAudio();
               } else {
-                recordee.setStream(this.recordingStream);
+                recordee.setAudio(this.recordingAudio);
               }
               // Store the recordee in some arrays where it can be accessed
               // later.
@@ -88,33 +91,33 @@ export class MaybeHostPeer extends Peer {
   }
 
   /**
-   * Adds a local stream and updates the recording stream on our recordees.
+   * Adds a local audio and updates the recording audio on our recordees.
    */
-  public setLocalStream(stream: MediaStream): void {
+  public setLocalAudio(audio: AudioNode): void {
     // Call our super class’s implementation.
-    super.setLocalStream(stream);
-    // Update our instance with the new stream to be recorded.
-    this.recordingStream = stream;
-    // Update the stream for all of the recordees that have not stopped.
+    super.setLocalAudio(audio);
+    // Update our instance with the new audio to be recorded.
+    this.recordingAudio = audio;
+    // Update the audio for all of the recordees that have not stopped.
     for (const recordee of this.recordees) {
       if (recordee.stopped !== true) {
-        recordee.setStream(stream);
+        recordee.setAudio(audio);
       }
     }
   }
 
   /**
-   * Removes a local stream and updates the recording stream on our recordees.
+   * Removes the local audio node and updates all of our non-stopped recordees.
    */
-  public unsetLocalStream(): void {
+  public unsetLocalAudio(): void {
     // Call our super class’s implementation.
-    super.unsetLocalStream();
+    super.unsetLocalAudio();
     // Update our instance with the new stream to be recorded.
-    this.recordingStream = null;
+    this.recordingAudio = null;
     // Unset the stream for all of the recordees that have not stopped.
     for (const recordee of this.recordees) {
       if (recordee.stopped !== true) {
-        recordee.unsetStream();
+        recordee.unsetAudio();
       }
     }
   }

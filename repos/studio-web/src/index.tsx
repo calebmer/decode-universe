@@ -6,10 +6,12 @@ import { MaybeHostPeer } from './rtc/MaybeHostPeer';
 const StudioRoom = StudioRoomController.createComponent({
   createPeersMesh: ({
     roomName,
+    localAudioContext,
     previousLocalName,
   }) => (
     new PeersMesh({
       roomName,
+      localAudioContext,
       localState: {
         name: previousLocalName || 'Guest',
         isMuted: false,

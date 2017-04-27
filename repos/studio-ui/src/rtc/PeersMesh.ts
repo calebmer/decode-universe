@@ -89,6 +89,11 @@ export class PeersMesh<TPeer extends Peer = Peer> {
   }
 
   /**
+   * The local audio context we use for our audio.
+   */
+  protected readonly localAudioContext: AudioContext;
+
+  /**
    * Used to create a peer instance. Different studio clients may want to
    * communicate with their peers differently so this allows them to extend the
    * `Peer` class and initiate their own custom peers.
@@ -104,14 +109,17 @@ export class PeersMesh<TPeer extends Peer = Peer> {
 
   constructor({
     roomName,
-    createPeerInstance,
+    localAudioContext,
     localState,
+    createPeerInstance,
   }: {
     roomName: string,
-    createPeerInstance: (config: PeerConfig) => TPeer,
+    localAudioContext: AudioContext,
     localState: PeerState,
+    createPeerInstance: (config: PeerConfig) => TPeer,
   }) {
     // Set some properties on the class instance.
+    this.localAudioContext = localAudioContext;
     this.createPeerInstance = createPeerInstance;
     // Create the signal client.
     this.signals = new SignalClient({
@@ -144,7 +152,7 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     // Complete our subjects. We are done with them.
     this.peersSubject.complete();
     this.localStateSubject.complete();
-    this.localStreamSubject.complete();
+    this.localAudioSubject.complete();
   }
 
   /**
@@ -175,8 +183,9 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     // provided in the constructor.
     const peer = this.createPeerInstance({
       isLocalInitiator,
+      localAudioContext: this.localAudioContext,
       localState: this.localStateSubject.value,
-      localStream: this.localStreamSubject.value,
+      localAudio: this.localAudioSubject.value,
     });
     // Update our peers map by adding this peer keyed by its address.
     this.peersSubject.next(this.peersSubject.value.set(address, peer));
@@ -414,42 +423,42 @@ export class PeersMesh<TPeer extends Peer = Peer> {
   }
 
   /**
-   * The internal implementation of `localStream`. Allows us to manipulate
-   * `localStream` without exposing the `Subject` functions to the outside
+   * The internal implementation of `localAudio`. Allows us to manipulate
+   * `localAudio` without exposing the `Subject` functions to the outside
    * world.
    */
-  private readonly localStreamSubject =
-    new BehaviorSubject<MediaStream | null>(null);
+  private readonly localAudioSubject =
+    new BehaviorSubject<AudioNode | null>(null);
 
   /**
-   * An observable of the state of our local stream. `null` if we don’t
-   * currently have a local stream. This may happen before a media stream is
+   * An observable of the state of our local audio. `null` if we don’t
+   * currently have local audio. This may happen before any audio is
    * loaded, or when the user is muted.
    */
-  public readonly localStream =
-    this.localStreamSubject.asObservable();
+  public readonly localAudio =
+    this.localAudioSubject.asObservable();
 
   /**
-   * The current local stream at this point in time. `null` if the local stream
+   * The current local audio at this point in time. `null` if the local audio
    * is currently unset.
    */
-  public get currentLocalStream(): MediaStream | null {
-    return this.localStreamSubject.value;
+  public get currentLocalAudio(): AudioNode | null {
+    return this.localAudioSubject.value;
   }
 
   /**
-   * Sets the stream that we will send to all of our peers.
+   * Sets the audio that we will send to all of our peers.
    *
-   * If this is called while the local stream is muted then we will stay muted,
-   * but when the local stream is unmuted whatever the latest stream to be set
-   * with `setLocalStream()` or `unsetLocalStream()` will be restored.
+   * If this is called while the local audio is muted then we will stay muted,
+   * but when the local audio is unmuted whatever the latest audio to be set
+   * with `setLocalAudio()` or `unsetLocalAudio()` will be restored.
    */
-  public setLocalStream(stream: MediaStream): void {
+  public setLocalAudio(audio: AudioNode): void {
     // If we are not muted then we want to set the streaam. Otherwise we want to
     // store the stream on our instance so that when we are unmuted we can
     // pickup with that stream.
     if (this.currentLocalState.isMuted === true) {
-      this.mutedLocalStream = stream;
+      this.mutedLocalAudio = audio;
       return;
     }
     debug('Setting a new local media stream');
@@ -457,28 +466,32 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     this.peersSubject.value.forEach((peer, address) => {
       if (peer !== undefined && address !== undefined) {
         // Add the stream to the peer.
-        peer.setLocalStream(stream);
-        // Schedule negotiation with our peer.
-        this.schedulePeerNegotiations(address);
+        const needsRenegotiation = peer.setLocalAudio(audio);
+        // Schedule negotiation with our peer if needed.
+        if (needsRenegotiation === true) {
+          this.schedulePeerNegotiations(address);
+        } else {
+          debug(`Re-negotiation not needed for ${address}`);
+        }
       }
     });
     // Send the next local audio stream.
-    this.localStreamSubject.next(stream);
+    this.localAudioSubject.next(audio);
   }
 
   /**
-   * Unsets the local stream effectively muting ourselves. If there was no
-   * stream previously then the local stream will continue to be unset.
+   * Unsets the local audio effectively muting ourselves. If there was no
+   * audio previously then the local audio will continue to be unset.
    *
-   * If this is called while the local stream is muted then we will stay muted,
-   * but when the local stream is unmuted whatever the latest stream to be set
-   * with `setLocalStream()` or `unsetLocalStream()` will be restored.
+   * If this is called while the local audio is muted then we will stay muted,
+   * but when the local audio is unmuted whatever the latest stream to be set
+   * with `setLocalAudio()` or `unsetLocalAudio()` will be restored.
    */
-  public unsetLocalStream(): void {
+  public unsetLocalAudio(): void {
     // If we are muted then we just want to unset our local media stream so that
     // we can continue where we left off when the mesh is unmuted.
     if (this.currentLocalState.isMuted === true) {
-      this.mutedLocalStream = null;
+      this.mutedLocalAudio = null;
       return;
     }
     debug('Unsetting the local media stream');
@@ -486,46 +499,50 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     this.peersSubject.value.forEach((peer, address) => {
       if (peer !== undefined && address !== undefined) {
         // Unset the local stream.
-        peer.unsetLocalStream();
-        // Schedule negotiation with our peer.
-        this.schedulePeerNegotiations(address);
+        const needsRenegotiation = peer.unsetLocalAudio();
+        // Schedule negotiation with our peer if needed.
+        if (needsRenegotiation === true) {
+          this.schedulePeerNegotiations(address);
+        } else {
+          debug(`Re-negotiation not needed for ${address}`);
+        }
       }
     });
     // Send the next local audio stream.
-    this.localStreamSubject.next(null);
+    this.localAudioSubject.next(null);
   }
 
   /**
-   * The `MediaStream` which we intend to restore when the mesh is unmuted.
+   * The `AudioNode` which we intend to restore when the mesh is unmuted.
    * `null` if we don’t intend to restore a stream or we are not muted.
    *
-   * This will be updated when `setLocalStream()` is called while we are muted.
+   * This will be updated when `setLocalAudio()` is called while we are muted.
    */
-  private mutedLocalStream: MediaStream | null = null;
+  private mutedLocalAudio: AudioNode | null = null;
 
   /**
-   * Mutes the local stream. All streams will be removed from our peers. They
+   * Mutes the local audio. All audio will be removed from our peers. They
    * shouldn’t be able to here us when we are muted!
    */
-  public muteLocalStream(): void {
+  public muteLocalAudio(): void {
     // Make sure that we are not already muted.
     if (this.currentLocalState.isMuted === true) {
       throw new Error('Stream is already muted.');
     }
     // Set the muted local stream to whatever is the current local stream.
-    this.mutedLocalStream = this.currentLocalStream;
+    this.mutedLocalAudio = this.currentLocalAudio;
     // Unset the local stream before we switch muted to true.
-    this.unsetLocalStream();
+    this.unsetLocalAudio();
     // Update our local state to tell the world we are muted.
     this.updateLocalState({ isMuted: true });
   }
 
   /**
-   * Unmutes the local stream. Whatever stream we had when we muted or whatever
-   * stream was set with `setLocalStream()` or `unsetLocalStream()` while we
+   * Unmutes the local audio. Whatever audio we had when we muted or whatever
+   * audio was set with `setLocalAudio()` or `unsetLocalAudio()` while we
    * were muted will be restored.
    */
-  public unmuteLocalStream(): void {
+  public unmuteLocalAudio(): void {
     // Make sure that we are are not already unmuted.
     if (this.currentLocalState.isMuted === false) {
       throw new Error('Stream is not muted.');
@@ -533,13 +550,13 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     // Update our local state to tell the world we are not muted.
     this.updateLocalState({ isMuted: false });
     // Update our stream based on the muted local stream we have been updating.
-    if (this.mutedLocalStream === null) {
-      this.unsetLocalStream();
+    if (this.mutedLocalAudio === null) {
+      this.unsetLocalAudio();
     } else {
-      this.setLocalStream(this.mutedLocalStream);
+      this.setLocalAudio(this.mutedLocalAudio);
     }
     // “Delete” our muted local stream. We won’t need it again until we are
     // muted.
-    this.mutedLocalStream = null;
+    this.mutedLocalAudio = null;
   }
 }
