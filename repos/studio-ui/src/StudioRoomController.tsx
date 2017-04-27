@@ -97,7 +97,7 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
     private readonly deviceID =
       new BehaviorSubject(localStorage.getItem(deviceIDKey));
     private readonly disableAudio = new BehaviorSubject(DEV);
-    private readonly localVolume = new BehaviorSubject(1);
+    private readonly localVolume = new BehaviorSubject(0.4);
 
     /**
      * We want to subscribe to our mesh’s local state so that whenever the name
@@ -216,7 +216,21 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
           // be `connect()`ed and `disconnect()`ed in `componentDidUpdate()`.
           nodes: [
             audioContext.createMediaStreamSource(stream),
-            audioContext.createDynamicsCompressor(),
+            // Create and configure a compressor. The settings we choose for the
+            // compressor comes from this article on [audio compression for
+            // voice overs][1]. We are likely misssing some of the crucial
+            // points of the article by copying its numbers. Talk to a
+            // professional!
+            //
+            // [1]: https://gist.github.com/scottburton11/3222152
+            (() => {
+              const compressor = audioContext.createDynamicsCompressor();
+              compressor.threshold.value = -26;
+              compressor.ratio.value = 3 / 1;
+              compressor.attack.value = 1 / 1000;
+              compressor.release.value = 10 / 1000;
+              return compressor;
+            })(),
             audioContext.createGain(),
           ],
         },
