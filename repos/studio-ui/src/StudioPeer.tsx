@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Observable } from 'rxjs';
 import { ReactObservable } from './observable/ReactObservable';
 import { AudioVisualization } from './audio/AudioVisualization';
 import { AudioDestination } from './audio/AudioDestination';
@@ -7,11 +8,11 @@ import { Peer, PeerConnectionStatus } from './rtc/Peer';
 export function StudioPeer({
   peer,
   audioContext,
-  disableAudio = false,
+  disableAudio,
 }: {
   peer: Peer,
   audioContext: AudioContext,
-  disableAudio?: boolean,
+  disableAudio: Observable<boolean>,
 }) {
   return (
     <div>
@@ -44,11 +45,14 @@ export function StudioPeer({
             height: '100px',
             backgroundColor: 'tomato',
           }}>
-            {disableAudio !== true && source !== null && (
-              <AudioDestination
-                context={audioContext}
-                node={source}
-              />
+            {source !== null && ReactObservable.render(
+              disableAudio,
+              disableAudio => disableAudio === false && (
+                <AudioDestination
+                  context={audioContext}
+                  node={source}
+                />
+              )
             )}
             {source !== null && (
               <AudioVisualization

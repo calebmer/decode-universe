@@ -1,6 +1,7 @@
 export type SubscriberFn<T> = (observer: Observer<T>) => Subscription | (() => void);
 
 export class Observable<T> {
+  static of<T>(...values: Array<T>): Observable<T>;
   static never(): Observable<never>;
 
   constructor(subscriberFn: SubscriberFn<T>)

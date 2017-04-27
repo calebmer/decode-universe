@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { Subscription } from 'rxjs';
+import { Subscription, BehaviorSubject } from 'rxjs';
+import { ReactObservable } from './observable/ReactObservable';
 import { UserAudioController } from './audio/UserAudioController';
 import { PeersMesh } from './rtc/PeersMesh';
 import { Peer } from './rtc/Peer';
@@ -46,8 +47,6 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
   type State = {
     userAudio: UserAudioState,
     mesh: TPeersMesh | null,
-    deviceID: string | null,
-    disableAudio: boolean,
   };
 
   type UserAudioState = {
@@ -89,9 +88,16 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
     state: State = {
       userAudio: { state: 'loading' },
       mesh: null,
-      deviceID: localStorage.getItem(deviceIDKey),
-      disableAudio: DEV,
     };
+
+    // Create some behavior subjects which we will push updates to. Putting
+    // these values in observables instead of state means we don’t need to
+    // update the entire component tree whenever one value changes. We can
+    // pinpoint the update to exactly the places which need it.
+    private readonly deviceID =
+      new BehaviorSubject(localStorage.getItem(deviceIDKey));
+    private readonly disableAudio = new BehaviorSubject(DEV);
+    private readonly localVolume = new BehaviorSubject(1);
 
     /**
      * We want to subscribe to our mesh’s local state so that whenever the name
@@ -135,9 +141,9 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
           for (let i = 0; i < nodes.length - 1; i++) {
             nodes[i].connect(nodes[i + 1]);
           }
-          // Set the volume to maximum on our volume node.
+          // Set the volume to whatever value is currently in state.
           const volume = nodes[2];
-          volume.gain.value = 1;
+          volume.gain.value = this.localVolume.value;
         }
       }
       // **NOTE:** It is important that this runs before the block that runs
@@ -230,24 +236,41 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
 
     private handleSelectDeviceID = (deviceID: string) => {
       // Update the state with the new device id.
-      this.setState({ deviceID });
+      this.deviceID.next(deviceID);
       // Update local storage with the new information.
       localStorage.setItem(deviceIDKey, deviceID);
     };
 
-    private handleDisableAudio = () => this.setState({ disableAudio: true });
-    private handleEnableAudio = () => this.setState({ disableAudio: false });
+    private handleDisableAudio = () => this.disableAudio.next(true);
+    private handleEnableAudio = () => this.disableAudio.next(false);
+
+    private handleLocalVolumeChange = (localVolume: number) => {
+      const { userAudio } = this.state;
+      // If we have some audio state then we want to update the gain value on
+      // the volume with our new local volume.
+      if (userAudio.state === 'success') {
+        const volume = userAudio.nodes[2];
+        volume.gain.value = localVolume;
+      }
+      // Update our local volume state.
+      this.localVolume.next(localVolume);
+    };
 
     render() {
-      const { userAudio, mesh, deviceID, disableAudio } = this.state;
+      const { userAudio, mesh } = this.state;
       return (
         <div>
-          <UserAudioController
-            deviceID={deviceID}
-            errorRetryMS={500}
-            onStream={this.handleUserAudioStream}
-            onError={this.handleUserAudioError}
-          />
+          {ReactObservable.render(
+            this.deviceID,
+            deviceID => (
+              <UserAudioController
+                deviceID={deviceID}
+                errorRetryMS={500}
+                onStream={this.handleUserAudioStream}
+                onError={this.handleUserAudioError}
+              />
+            ),
+          )}
           {(
             // Who’s ready for a monster ternary expression?? ;)
             //
@@ -278,11 +301,13 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
                 <StudioRoom
                   mesh={mesh}
                   audioContext={audioContext}
-                  deviceID={deviceID}
+                  deviceID={this.deviceID}
                   onSelectDeviceID={this.handleSelectDeviceID}
-                  disableAudio={disableAudio}
+                  disableAudio={this.disableAudio}
                   onDisableAudio={this.handleDisableAudio}
                   onEnableAudio={this.handleEnableAudio}
+                  localVolume={this.localVolume}
+                  onLocalVolumeChange={this.handleLocalVolumeChange}
                 />
               </div>
             ) :

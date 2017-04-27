@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Observable } from 'rxjs';
 import { ReactObservable } from './observable/ReactObservable';
 import { UserAudioDevicesSelect } from './audio/UserAudioDevicesSelect';
 import { AudioVisualization } from './audio/AudioVisualization';
@@ -13,20 +14,28 @@ export function StudioRoom({
   disableAudio,
   onDisableAudio,
   onEnableAudio,
+  localVolume,
+  onLocalVolumeChange,
 }: {
   mesh: PeersMesh,
   audioContext: AudioContext,
-  deviceID: string | null,
+  deviceID: Observable<string | null>,
   onSelectDeviceID: (deviceID: string) => void,
-  disableAudio: boolean,
+  disableAudio: Observable<boolean>,
   onDisableAudio: () => void,
   onEnableAudio: () => void,
+  localVolume: Observable<number>,
+  onLocalVolumeChange: (localVolume: number) => void,
 }) {
   const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) =>
     mesh.setLocalName(event.target.value);
 
   const handleMute = () => mesh.muteLocalAudio();
   const handleUnmute = () => mesh.unmuteLocalAudio();
+
+  const handleLocalVolumeChange =
+    (event: React.ChangeEvent<HTMLInputElement>) =>
+      onLocalVolumeChange((parseInt(event.target.value, 10) || 0) / 100);
 
   return (
     <div>
@@ -44,19 +53,45 @@ export function StudioRoom({
       </p>
       <p>
         Audio Input:{' '}
-        <UserAudioDevicesSelect
-          kind="input"
-          deviceID={deviceID}
-          onSelect={onSelectDeviceID}
-        />
+        {ReactObservable.render(
+          deviceID,
+          deviceID => (
+            <UserAudioDevicesSelect
+              kind="input"
+              deviceID={deviceID}
+              onSelect={onSelectDeviceID}
+            />
+          ),
+        )}
+      </p>
+      <p>
+        Volume:{' '}
+        {ReactObservable.render(
+          localVolume,
+          localVolume => (
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={localVolume * 100}
+              onChange={handleLocalVolumeChange}
+            />
+          ),
+        )}
       </p>
       <p>
         <label>
-          <input
-            type="checkbox"
-            checked={disableAudio}
-            onChange={disableAudio ? onEnableAudio : onDisableAudio}
-          />
+          {ReactObservable.render(
+            disableAudio,
+            disableAudio => (
+              <input
+                type="checkbox"
+                checked={disableAudio}
+                onChange={disableAudio ? onEnableAudio : onDisableAudio}
+              />
+            ),
+          )}
           {' '}
           Disable Audio Output
         </label>
