@@ -14,15 +14,15 @@ To pick port numbers we start at 1998 and then count up by one. Whenever you nee
   <tbody>
     <tr>
       <td>1998</td>
-      <td>The webpack development server for the Electron renderer process in `./repos/studio-desktop`.</td>
+      <td>The webpack development server for the Electron renderer process in <code>./repos/studio-desktop</code>.</td>
     </tr>
     <tr>
       <td>1999</td>
-      <td>The webpack development server for the web app in `./repos/studio-web`.</td>
+      <td>The webpack development server for the web app in <code>./repos/studio-web</code>.</td>
     </tr>
     <tr>
       <td>2000</td>
-      <td>The WebRTC signaling server for the studio found in `./repos/studio-signal-server`.</td>
+      <td>The WebRTC signaling server for the studio found in <code>./repos/studio-signal-server</code>.</td>
     </tr>
   </tbody>
 </table>
