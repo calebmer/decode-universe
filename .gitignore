@@ -1,9 +1,6 @@
 # System Files
 .DS_Store
 
-# Notes
-TODO.md
-
 # Build Artifacts
 build/
 coverage/
