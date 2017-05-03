@@ -1,6 +1,6 @@
 # Decode Universe
 
-The monorepo for all the digital assets used building, maintaining, and distributing Decode products.
+The universe of all digital assets used in building, maintaining, and distributing Decode products.
 
 ## Setup
 
@@ -13,6 +13,10 @@ We try to make it very easy to get started working in universe. Just run the fol
 …and you should be good to go to start working in any of the projects in universe.
 
 ## Projects
+
+Instead of using many smaller version controlled repositories we use one big repository called universe. This is so that we can have one unified version control history, easily provide common infrastructure for all projects, and allow for fast context switching between projects.
+
+Universe is split into projects. The following is a list of all the projects in universe along with a short description. Visit their directory to read more about each project.
 
 - **`studio-desktop`:** The Decode Studio desktop application. The desktop application runs using Electron and so there are two “platforms” this project builds for. The Electron main process and the Electron renderer process. Depends on `studio-core` for all of the networking and UI resources that is shared with `studio-web`.
 - **`studio-web`:** The Desktop Studio web application that guests will connect to. This application will be deployed and distributed on the web. Depends on `studio-core` for all of the networking and UI resources that is shared with `studio-desktop`.
@@ -53,15 +57,11 @@ To pick port numbers we start at 1998 and then count up by one. Whenever you nee
   </tbody>
 </table>
 
-## Architecture
-
-Instead of using many smaller version controlled repositories we use one repository. This is so that we can have one unified version control history, easily provide common infrastructure for all projects, and allow for fast context switching between projects.
-
-### TypeScript
+## TypeScript
 
 Currently every project is written in TypeScript (including backend projects), however this is not a hard and fast rule. If a different language is more suitable for a project then we should use that. The advantage of TypeScript is that we can easily share code between platforms (i.e. Electron, Node.js, and Web) in addition to getting high quality productivity tools like VS Code.
 
-#### Configuration
+### Configuration
 
 Each project has its own TypeScript “project” marked by a `tsconfig.json` file. Some projects need to build for multiple platforms like `studio-desktop` (Electron main process and Electron renderer process). For these projects there will be multiple `tsconfig.{platform}.json` files which will extend from the common `tsconfig.json` file which exists for tools like VS Code.
 
@@ -69,7 +69,7 @@ All TypeScript configs extend from the base config in `./projects/typescript/con
 
 When projects share code then the `tsconfig.json` of the consuming code will be used to transform code which has a different `tsconfig.json`. For example, `studio-web` depends on `studio-core`. Therefore `studio-web`’s `tsconfig.json` must be able to build the code in `studio-web`. This helps tooling when we type check.
 
-#### Typings
+### Typings
 
 All of our custom typings are in `./projects/typescript/typings`. We have some ambient typings (in the `ambient` folder) and some typings that are specific to modules that we use (in the `modules` folder).
 
