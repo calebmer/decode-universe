@@ -130,6 +130,11 @@ export class Peer {
   private currentLocalState: PeerState | null;
 
   /**
+   * The local audio context for this peer.
+   */
+  protected readonly localAudioContext: AudioContext;
+
+  /**
    * The current local audio node. `null` if the local audio node is unset.
    */
   private localAudio: AudioNode | null = null;
@@ -150,6 +155,8 @@ export class Peer {
     localState,
     localAudio,
   }: PeerConfig) {
+    // Set some properties on the class.
+    this.localAudioContext = localAudioContext;
     // Create a new connection using the pre-defined config.
     this.connection = new RTCPeerConnection(rtcConfig);
     // Create the media stream destination object from the provided audio
