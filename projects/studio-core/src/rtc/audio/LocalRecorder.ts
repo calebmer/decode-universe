@@ -1,6 +1,12 @@
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { Recorder } from './Recorder';
-import { AudioNodeRecorder } from './AudioNodeRecorder';
+
+/**
+ * The buffer size we use when creating script processors. We use the highest
+ * value which means we will be sending the minimum number of messages over the
+ * network at all times.
+ */
+const bufferSize = 16384;
 
 /**
  * A `Recorder` that when `start()` is called records all of the audio from the
@@ -43,18 +49,27 @@ export class LocalRecorder implements Recorder {
   }
 
   /**
-   * The internal subject for `stream` which we can use to emit events. We want
-   * to expose an `Observable` and not the powerful `Subject` methods so this is
-   * private whereas `stream` is just an observable version of this.
+   * The internal stream subject. It will be made public through the `subject`
+   * variable. Takes `Float32Array`s directly.
    */
-  private readonly streamSubject = new Subject<ArrayBuffer>();
+  private readonly streamSubject = new Subject<Float32Array>();
 
   /**
    * A hot observable that emits all of the recording data as we receive it from
    * our data channel. If you don’t subscribe before calling `start()` then you
    * may miss some data!
    */
-  public readonly stream = this.streamSubject.asObservable();
+  public readonly stream: Observable<ArrayBuffer> =
+    this.streamSubject.map(array => array.buffer);
+
+  /**
+   * The processor for our audio node which will report our audio data. We
+   * connect any audio we may have to this node and then the audio will be
+   * reported.
+   *
+   * `null` if the recording has not yet started.
+   */
+  private processor: ScriptProcessorNode | null = null;
 
   /**
    * The audio with which we are currently recording or which we should record
@@ -62,12 +77,6 @@ export class LocalRecorder implements Recorder {
    * an `AudioNode`.
    */
   private audio: AudioNode | null;
-
-  /**
-   * The disposable which will dispose the process currently recording audio. If
-   * nothing is currently recording then it will be null.
-   */
-  private disposable: Disposable | null = null;
 
   constructor({
     name,
@@ -84,6 +93,17 @@ export class LocalRecorder implements Recorder {
   }
 
   /**
+   * Handles any data we get for processing. We basically just forward that
+   * data to our observable.
+   */
+  private readonly handleAudioProcess = (event: AudioProcessingEvent) => {
+    const { inputBuffer } = event;
+    // Clone the channel data and send the input channel data to our channel
+    // data observers.
+    this.streamSubject.next(new Float32Array(inputBuffer.getChannelData(0)));
+  };
+
+  /**
    * Starts recording our local audio and sending that audio to `stream`.
    */
   public start(): void {
@@ -97,12 +117,21 @@ export class LocalRecorder implements Recorder {
     }
     // Flip our `started` flag to true.
     this.internalStarted = true;
-    // Start recording either silence or audio and stream that data.
-    if (this.audio === null) {
-      this.recordSilence();
-    } else {
-      this.recordAudio(this.audio);
+    // Create a script processor. We record in mono which is why we have one
+    // input and output channel. We also use the largest buffer size. This means
+    // we will be sending the minimum number of messages over the network.
+    this.processor = this.context.createScriptProcessor(bufferSize, 1, 1);
+    // If we have some audio then we will want to connect that audio to our
+    // audio processor.
+    if (this.audio !== null) {
+      this.audio.connect(this.processor);
     }
+    // Connect the processor to our context’s destination. Since the processor
+    // does not actually process the audio data (it just reports it) nothing
+    // will be played to the context’s destination.
+    this.processor.connect(this.context.destination);
+    // Add the processor event listener.
+    this.processor.addEventListener('audioprocess', this.handleAudioProcess);
   }
 
   /**
@@ -118,13 +147,25 @@ export class LocalRecorder implements Recorder {
     }
     // Switch the stopped toggle.
     this.internalStopped = true;
+    // If we had no processor.
+    if (this.processor === null) {
+      // Set the audio to null since we no longer will need it.
+      this.audio = null;
+      // End early.
+      return;
+    }
+    // If we had some audio previously then we need to disconnect it.
+    if (this.audio !== null) {
+      this.audio.disconnect(this.processor);
+    }
     // Set the audio to null since we no longer will need it.
     this.audio = null;
-    // Dispose the disposable if we still have one.
-    if (this.disposable !== null) {
-      this.disposable.dispose();
-      this.disposable = null;
-    }
+    // Remove our event listener.
+    this.processor.removeEventListener('audioprocess', this.handleAudioProcess);
+    // Disconnect our processor from the destination.
+    this.processor.disconnect(this.context.destination);
+    // Complete our stream. It is done!
+    this.streamSubject.complete();
   }
 
   /**
@@ -142,12 +183,15 @@ export class LocalRecorder implements Recorder {
     if (this.audio === audio) {
       return;
     }
+    // If we had some audio previously then we need to disconnect it.
+    if (this.processor !== null && this.audio !== null) {
+      this.audio.disconnect(this.processor);
+    }
     // Set the audio on our instance.
     this.audio = audio;
-    // If we have started recording then record the audio. This will
-    // will unsubscribe any of the last recordings.
-    if (this.started === true) {
-      this.recordAudio(audio);
+    // Connect our new audio.
+    if (this.processor !== null) {
+      this.audio.connect(this.processor);
     }
   }
 
@@ -166,60 +210,11 @@ export class LocalRecorder implements Recorder {
     if (this.audio === null) {
       return;
     }
+    // If we had some audio previously then we need to disconnect it.
+    if (this.processor !== null && this.audio !== null) {
+      this.audio.disconnect(this.processor);
+    }
     // Set the audio to null.
     this.audio = null;
-    // If we have started recording then we want to record silence while there
-    // is no audio. This will unsubscribe any of the last recordings.
-    if (this.started === true) {
-      this.recordSilence();
-    }
-  }
-
-  /**
-   * Starts recording an `AudioNode`. If something was already recording then
-   * it will be stopped.
-   */
-  private recordAudio(audio: AudioNode): void {
-    // If there is currently a disposable then we want to dispose it.
-    if (this.disposable !== null) {
-      this.disposable.dispose();
-    }
-    // Start recording the audio and get a subscription that we can unsubscribe
-    // from at a later time.
-    const subscription =
-      AudioNodeRecorder.record(this.context, audio).subscribe({
-        // Send the data through our channel.
-        next: data => this.streamSubject.next(data.buffer),
-      });
-    // Add a disposable which will unsubscribe from our subscription.
-    this.disposable = {
-      // TODO: Wait for the next emission and then cut it so that we emit the
-      // *exact* amount of data instead of losing a chunk.
-      dispose: () => subscription.unsubscribe(),
-    };
-  }
-
-  /**
-   * Starts recording silence. If something was already recording then it will
-   * be stopped.
-   */
-  private recordSilence(): void {
-    // If there is currently a disposable then we want to dispose it.
-    if (this.disposable !== null) {
-      this.disposable.dispose();
-    }
-    // Start recording silence and get a subscription that we can unsubscribe
-    // from at a later time.
-    const subscription =
-      AudioNodeRecorder.recordSilence(this.context).subscribe({
-        // Send the data through our channel.
-        next: data => this.streamSubject.next(data.buffer),
-      });
-    // Add a disposable which will unsubscribe from our subscription.
-    this.disposable = {
-      // TODO: Wait for the next emission and then cut it so that we emit the
-      // *exact* amount of data instead of losing a chunk.
-      dispose: () => subscription.unsubscribe(),
-    };
   }
 }
