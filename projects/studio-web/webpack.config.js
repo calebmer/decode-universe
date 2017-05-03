@@ -2,8 +2,6 @@ const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const WatchMissingNodeModulesPlugin = require('react-dev-utils/WatchMissingNodeModulesPlugin');
-const BabiliPlugin = require('babili-webpack-plugin');
-const builtinModules = require('builtin-modules');
 
 const { DefinePlugin, HotModuleReplacementPlugin } = webpack;
 const { UglifyJsPlugin } = webpack.optimize;
@@ -11,7 +9,7 @@ const { UglifyJsPlugin } = webpack.optimize;
 const DEV = process.env.NODE_ENV === 'development';
 
 module.exports = {
-  target: 'electron-renderer',
+  target: 'web',
   // We want to bail on error if this is a production build.
   bail: !DEV,
   // Use `eval` as the development tool instead of a source map because we want
@@ -39,62 +37,26 @@ module.exports = {
     // Include some extra scripts in development for a better DX.
     DEV && 'react-dev-utils/webpackHotDevClient',
     // TODO: DEV && 'react-dev-utils/crashOverlay',
+    // Include the WebRTC adapter because WebRTC implementations vary so wildly
+    // that we really need this compatibility layer for consistency.
+    'webrtc-adapter',
     // Include the main script for our app.
-    path.join(__dirname, './src/renderer/index.tsx'),
+    path.join(__dirname, './src/index.tsx'),
   ].filter(Boolean),
   output: {
-    path: path.join(__dirname, './build/renderer'),
+    path: path.join(__dirname, './build'),
     pathinfo: true,
     // There will be one main bundle with other smaller bundles when code
     // splitting.
-    filename: DEV ? 'static/js/bundle.js' : 'static/js/[name].[hash:8].js',
-    chunkFilename: DEV ? undefined : 'static/js/[name].[chunkhash:8].chunk.js',
+    filename: DEV ? 'static/js/bundle.js' : 'static/js/bundle.[hash:8].js',
+    chunkFilename: 'static/js/chunk.[chunkhash:8].chunk.js',
   },
-  externals: [
-    // Externalize all of the modules in `node_modules`. We don’t want them
-    // bundled! If someone is trying to require a module that does not start
-    // with a `.` then we can assume that the dependency is not relative and can
-    // be found in `node_modules`.
-    (context, request, callback) => {
-      if (
-        // If the file starts with a letter then it is not a relative import and
-        // we should externalize the module instead of bundling it.
-        /^[a-zA-Z]/.test(request) &&
-        // However, we do want to bundle certain Webpack utilities related to
-        // hot reloading.
-        !/^webpack\/hot\/dev-server/.test(request) &&
-        // We also want to bundle some packages that have special browser builds
-        // that won’t activate if we require them as node modules.
-        !['debug'].includes(request)
-      ) {
-        // If we are in development then we want to use the absolute path of
-        // the module because our bundle is hosted from `webpack-dev-server`.
-        //
-        // Do this for all modules except those modules that are builtin. They
-        // should be required in the standard way.
-        if (DEV && !builtinModules.includes(request)) {
-          const moduleAbsolutePath =
-            path.resolve(__dirname, 'node_modules', request);
-
-          callback(null, `commonjs ${moduleAbsolutePath}`);
-        } else {
-          // In production our bundle is loaded from the file system and so we
-          // require the default module name.
-          callback(null, `commonjs ${request}`);
-        }
-      } else {
-        callback();
-      }
-    },
-  ],
   resolve: {
     // Make sure to add `.ts` to module resolution.
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+    // Allow our code to import from other Decode projects.
     alias: {
-      // Allow our code to import from other Decode repos.
       '@decode': path.resolve(__dirname, '..'),
-      // Use the browser build for debug and not the Node.js build.
-      'debug': path.resolve(__dirname, './node_modules/debug/src/browser.js'),
     },
     // We only want to lookup modules in our own `node_modules` folder. We do
     // *not* want to lookup modules in relative `node_modules` folders. All
@@ -107,7 +69,7 @@ module.exports = {
       {
         test: /\.(js|jsx|ts|tsx)$/,
         include: [
-          path.join(__dirname, './src/renderer'),
+          path.join(__dirname, './src'),
           path.join(__dirname, '../studio-ui/src'),
           path.join(__dirname, '../studio-signal-client/src'),
         ],
@@ -115,8 +77,6 @@ module.exports = {
         options: {
           // The default instance name, `at-loader`, is confusing.
           instance: 'ts-loader',
-          // Use the tsconfig for the renderer and not our general tsconfig.
-          configFileName: 'tsconfig.renderer.json',
           // Only transpile in development. Do a full type check when building
           // for production.
           transpileOnly: DEV,
@@ -142,7 +102,7 @@ module.exports = {
     // Generates an `index.html` file with the <script> injected.
     new HtmlWebpackPlugin({
       inject: true,
-      template: path.join(__dirname, './src/renderer/index.html'),
+      template: path.join(__dirname, './src/index.html'),
       // Minify the HTML in production, but not in development.
       minify: DEV ? undefined : {
         removeComments: true,
@@ -171,8 +131,20 @@ module.exports = {
     // to restart the development server for Webpack to discover it. This plugin
     // makes the discovery automatic so you don't have to restart.
     DEV && new WatchMissingNodeModulesPlugin(),
-    // Minify JavaScript in production with Babili which supports ES2015+ syntax
-    // unlike UglifyJS.
-    !DEV && new BabiliPlugin(),
+    // Minify JavaScript in production.
+    !DEV && new UglifyJsPlugin({
+      compress: {
+        screw_ie8: true, // React doesn't support IE8
+        warnings: false,
+      },
+      mangle: {
+        screw_ie8: true,
+      },
+      output: {
+        comments: false,
+        screw_ie8: true,
+      },
+      sourceMap: true,
+    }),
   ].filter(Boolean),
 };

@@ -7,34 +7,34 @@
 echo ''
 echo '[1/5] Installing `studio-signal-client` dependencies.'
 echo ''
-cd ./repos/studio-signal-client
+cd ./projects/studio-signal-client
 yarn
 cd ../..
 
 echo ''
 echo '[2/5] Installing `studio-signal-server` dependencies.'
 echo ''
-cd ./repos/studio-signal-server
+cd ./projects/studio-signal-server
 yarn
 cd ../..
 
 echo ''
 echo '[3/5] Installing `studio-ui` dependencies.'
 echo ''
-cd ./repos/studio-ui
+cd ./projects/studio-ui
 yarn
 cd ../..
 
 echo ''
 echo '[4/5] Installing `studio-desktop` dependencies.'
 echo ''
-cd ./repos/studio-desktop
+cd ./projects/studio-desktop
 yarn
 cd ../..
 
 echo ''
 echo '[5/5] Installing `studio-web` dependencies.'
 echo ''
-cd ./repos/studio-web
+cd ./projects/studio-web
 yarn
 cd ../..

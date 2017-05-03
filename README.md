@@ -14,8 +14,6 @@ We try to make it very easy to get started working in universe. Just run the fol
 
 ## Projects
 
-All projects are currently stored in the root level `./repos` folder. This folder structure may be reconsidered.
-
 - `studio-desktop`: The Decode Studio desktop application. The desktop application runs using Electron and so there are two “platforms” this project builds for. The Electron main process and the Electron renderer process. Depends on `studio-ui` for all of the networking and UI resources that is shared with `studio-web`.
 - `studio-web`: The Desktop Studio web application that guests will connect to. This application will be deployed and distributed on the web. Depends on `studio-ui` for all of the networking and UI resources that is shared with `studio-desktop`.
 - `studio-ui`: The common networking and UI resources for `studio-desktop` and `studio-web`. Must be buildable using the build setups for both `studio-desktop` and `studio-web`. Depends on `studio-signal-client` for the project’s signaling service compatible with `studio-signal-server`.
@@ -42,15 +40,15 @@ To pick port numbers we start at 1998 and then count up by one. Whenever you nee
   <tbody>
     <tr>
       <td>1998</td>
-      <td>The webpack development server for the Electron renderer process in <code>./repos/studio-desktop</code>.</td>
+      <td>The webpack development server for the Electron renderer process in <code>./projects/studio-desktop</code>.</td>
     </tr>
     <tr>
       <td>1999</td>
-      <td>The webpack development server for the web app in <code>./repos/studio-web</code>.</td>
+      <td>The webpack development server for the web app in <code>./projects/studio-web</code>.</td>
     </tr>
     <tr>
       <td>2000</td>
-      <td>The WebRTC signaling server for the studio found in <code>./repos/studio-signal-server</code>.</td>
+      <td>The WebRTC signaling server for the studio found in <code>./projects/studio-signal-server</code>.</td>
     </tr>
   </tbody>
 </table>
@@ -67,13 +65,13 @@ Currently every project is written in TypeScript (including backend projects), h
 
 Each project has its own TypeScript “project” marked by a `tsconfig.json` file. Some projects need to build for multiple platforms like `studio-desktop` (Electron main process and Electron renderer process). For these projects there will be multiple `tsconfig.{platform}.json` files which will extend from the common `tsconfig.json` file which exists for tools like VS Code.
 
-All TypeScript configs extend from the base config in `./repos/typescript/config/base.json`. This config enables all of the strict TypeScript options to give the best possible typing experience.
+All TypeScript configs extend from the base config in `./projects/typescript/config/base.json`. This config enables all of the strict TypeScript options to give the best possible typing experience.
 
 When projects share code then the `tsconfig.json` of the consuming code will be used to transform code which has a different `tsconfig.json`. For example, `studio-web` depends on `studio-ui`. Therefore `studio-web`’s `tsconfig.json` must be able to build the code in `studio-web`. This helps tooling when we type check.
 
 #### Typings
 
-All of our custom typings are in `./repos/typescript/typings`. We have some ambient typings (in the `ambient` folder) and some typings that are specific to modules that we use (in the `modules` folder).
+All of our custom typings are in `./projects/typescript/typings`. We have some ambient typings (in the `ambient` folder) and some typings that are specific to modules that we use (in the `modules` folder).
 
 Ambient typings are those types which exist in the environment. This includes extensions to DOM APIs that are not typed, and some Decode specific utility types like the global `DEV` boolean or the `mixed` type.
 
