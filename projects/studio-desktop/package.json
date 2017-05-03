@@ -7,7 +7,7 @@
     "postinstall": "rm -rf node_modules/@decode"
   },
   "dependencies": {
-    "@decode/studio-ui": "file:../studio-ui",
+    "@decode/studio-core": "file:../studio-core",
     "debug": "^2.6.3",
     "immutable": "^3.8.1",
     "react": "^15.4.2",

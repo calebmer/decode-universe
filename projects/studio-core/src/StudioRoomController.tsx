@@ -10,8 +10,8 @@ import { StudioUserAudioNotFound } from './StudioUserAudioNotFound';
 
 const audioContext = new AudioContext();
 
-const deviceIDKey = '@decode/studio-ui/deviceID';
-const nameKey = '@decode/studio-ui/name';
+const deviceIDKey = '@decode/studio-core/deviceID';
+const nameKey = '@decode/studio-core/name';
 
 /**
  * Creates a `<StudioRoomController/>` component with some of the provided

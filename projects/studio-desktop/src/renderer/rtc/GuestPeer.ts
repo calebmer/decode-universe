@@ -1,4 +1,4 @@
-import { Peer, PeerConfig } from '@decode/studio-ui';
+import { Peer, PeerConfig } from '@decode/studio-core';
 
 /**
  * A peer that we know is a guest. We should be receiving that peer’s local

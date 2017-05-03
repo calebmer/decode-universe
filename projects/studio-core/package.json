@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "@decode/studio-ui",
+  "name": "@decode/studio-core",
   "version": "0.0.0-versionless",
   "main": "./src/index.ts",
   "typings": "./src/index.ts",

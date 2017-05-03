@@ -1,4 +1,4 @@
-import { Peer, PeerConfig, PeerState, RemoteRecordee } from '@decode/studio-ui';
+import { Peer, PeerConfig, PeerState, RemoteRecordee } from '@decode/studio-core';
 
 /**
  * A peer that might be a host, but we don’t actually know. We will only know

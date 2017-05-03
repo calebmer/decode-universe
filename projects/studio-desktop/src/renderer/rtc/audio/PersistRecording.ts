@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { v4 as uuid } from 'uuid';
-import { Recorder } from '@decode/studio-ui';
+import { Recorder } from '@decode/studio-core';
 import { RecordingManifest } from './RecordingManifest';
 
 /**

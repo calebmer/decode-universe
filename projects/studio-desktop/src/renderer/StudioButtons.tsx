@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as fs from 'fs';
-import { ReactObservable } from '@decode/studio-ui';
+import { ReactObservable } from '@decode/studio-core';
 import { ExportRecording } from './rtc/audio/ExportRecording';
 import { HostPeersMesh } from './rtc/HostPeersMesh';
 

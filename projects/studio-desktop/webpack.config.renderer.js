@@ -108,7 +108,7 @@ module.exports = {
         test: /\.(js|jsx|ts|tsx)$/,
         include: [
           path.join(__dirname, './src/renderer'),
-          path.join(__dirname, '../studio-ui/src'),
+          path.join(__dirname, '../studio-core/src'),
           path.join(__dirname, '../studio-signal-client/src'),
         ],
         loader: 'awesome-typescript-loader',
@@ -131,7 +131,7 @@ module.exports = {
         test: /\.js$/,
         include: [
           path.join(__dirname, './src'),
-          path.join(__dirname, '../studio-ui/src'),
+          path.join(__dirname, '../studio-core/src'),
           path.join(__dirname, '../studio-signal-client/src'),
         ],
         loader: 'source-map-loader',

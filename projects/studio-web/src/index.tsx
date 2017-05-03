@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { PeersMesh, StudioRoomController } from '@decode/studio-ui';
+import { PeersMesh, StudioRoomController } from '@decode/studio-core';
 import { MaybeHostPeer } from './rtc/MaybeHostPeer';
 
 const StudioRoom = StudioRoomController.createComponent({

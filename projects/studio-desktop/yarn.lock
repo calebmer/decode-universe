@@ -12,7 +12,7 @@
     debug "^2.6.3"
     socket.io-client "^1.7.3"
 
-"@decode/studio-ui@file:../studio-ui":
+"@decode/studio-core@file:../studio-core":
   version "0.0.0-versionless"
   dependencies:
     immutable "^3.8.1"

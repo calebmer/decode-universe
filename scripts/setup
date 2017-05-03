@@ -19,9 +19,9 @@ yarn
 cd ../..
 
 echo ''
-echo '[3/5] Installing `studio-ui` dependencies.'
+echo '[3/5] Installing `studio-core` dependencies.'
 echo ''
-cd ./projects/studio-ui
+cd ./projects/studio-core
 yarn
 cd ../..
 

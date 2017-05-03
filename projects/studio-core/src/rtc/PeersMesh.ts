@@ -4,7 +4,7 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { SignalClient, Signal } from '@decode/studio-signal-client';
 import { Peer, PeerConfig, PeerState } from './Peer';
 
-const debug = createDebugger('@decode/studio-ui:PeersMesh');
+const debug = createDebugger('@decode/studio-core:PeersMesh');
 
 /**
  * The number of milliseconds to use when debouncing our response to an

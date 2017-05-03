@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { StudioRoomController } from '@decode/studio-ui';
+import { StudioRoomController } from '@decode/studio-core';
 import { HostPeersMesh } from './rtc/HostPeersMesh';
 import { StudioButtons } from './StudioButtons';
 

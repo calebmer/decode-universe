@@ -6,7 +6,7 @@ import {
   PeerState,
   LocalRecorder,
   RemoteRecorder,
-} from '@decode/studio-ui';
+} from '@decode/studio-core';
 import { PersistRecording } from './audio/PersistRecording';
 import { GuestPeer } from './GuestPeer';
 
