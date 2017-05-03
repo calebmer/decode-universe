@@ -27,8 +27,8 @@ Universe is split into projects. The following is a list of all the projects in 
 
 ## Scripts
 
-- `setup`: Sets up all projects by installing dependencies and performing other configuration steps. This script is idempotent. Feel free to run it even after you have already setup universe!
-- `check-ts`: Checks TypeScript types in all of our projects. Use this script to check if there are any type errors anywhere in the system.
+- **`setup`:** Sets up all projects by installing dependencies and performing other configuration steps. This script is idempotent. Feel free to run it even after you have already setup universe!
+- **`check-ts`:** Checks TypeScript types in all of our projects. Use this script to check if there are any type errors anywhere in the system.
 
 ## Port Map
 
