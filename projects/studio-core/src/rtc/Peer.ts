@@ -92,11 +92,6 @@ export class Peer {
   public readonly connectionStatus: Observable<PeerConnectionStatus>;
 
   /**
-   * The local audio context for this peer.
-   */
-  protected readonly localAudioContext: AudioContext;
-
-  /**
    * The remote state subject is where we will send new state objects. The value
    * will be null while we are loading. The view into this subject for consumers
    * will filter out nulls.
@@ -142,8 +137,7 @@ export class Peer {
   /**
    * The destination with which we send our local audio.
    */
-  private localAudioDestination: MediaStreamAudioDestinationNode | null
-    = null;
+  private readonly localAudioDestination: MediaStreamAudioDestinationNode;
 
   /**
    * Anything that should be disposed of when we close the peer.
@@ -156,21 +150,21 @@ export class Peer {
     localState,
     localAudio,
   }: PeerConfig) {
-    // Set some properties on the class.
-    this.localAudioContext = localAudioContext;
     // Create a new connection using the pre-defined config.
     this.connection = new RTCPeerConnection(rtcConfig);
+    // Create the media stream destination object from the provided audio
+    // context.
+    this.localAudioDestination =
+      localAudioContext.createMediaStreamDestination();
+    // Add the stream from the audio destination to our `RTCPeerConnection`
+    // instance.
+    this.connection.addStream(this.localAudioDestination.stream);
     // If we have a local stream then we want to add it to our connection.
     if (localAudio !== null) {
       // Set the local audio on our instance.
       this.localAudio = localAudio;
-      // Create the media stream destination object from our context.
-      this.localAudioDestination =
-        this.localAudioContext.createMediaStreamDestination();
       // Connect our local audio to the destination.
       this.localAudio.connect(this.localAudioDestination);
-      // Add the stream to our `RTCPeerConnection` instance.
-      this.connection.addStream(this.localAudioDestination.stream);
     }
     // Set the current local state to the initial state we were given.
     this.currentLocalState = localState;
@@ -307,38 +301,20 @@ export class Peer {
    * **WARNING:** This should only be used in `PeersMesh` or else peers may get
    * out of sync!
    */
-  public _setLocalAudio(audio: AudioNode): boolean {
+  public _setLocalAudio(audio: AudioNode): void {
     // State check.
     if (this.isClosed === true) {
       throw new Error('Peer is closed.');
     }
-    // If we need to renegotiate this will be set to `true`.
-    let needsRenegotiation = false;
     // If we have some local audio and we have a local audio destination then we
     // want to disconnect the audio from the destination.
     if (this.localAudio !== null && this.localAudioDestination !== null) {
       this.localAudio.disconnect(this.localAudioDestination);
     }
-    // If we don’t have a local audio destination, or the context on the
-    // `AudioNode` is different from the one on our destination then we need to
-    // create a new audio destination and add the destination’s stream to our
-    // connection.
-    if (this.localAudioDestination === null) {
-      // Creates a media stream destination and adds the media stream to our
-      // connection.
-      this.localAudioDestination =
-        this.localAudioContext.createMediaStreamDestination();
-      // Adds the stream to our `RTCPeerConnection` instance.
-      this.connection.addStream(this.localAudioDestination.stream);
-      // We need to renegotiate after this!
-      needsRenegotiation = true;
-    }
     // Finally, we need to connect our local audio to our local audio
     // destination.
     this.localAudio = audio;
     this.localAudio.connect(this.localAudioDestination);
-    // Return whether or not we will need to renegotiate.
-    return needsRenegotiation;
   }
 
   /**
@@ -351,7 +327,7 @@ export class Peer {
    * **WARNING:** This should only be used in `PeersMesh` or else peers may get
    * out of sync!
    */
-  public _unsetLocalAudio(): boolean {
+  public _unsetLocalAudio(): void {
     // State check.
     if (this.isClosed === true) {
       throw new Error('Peer is closed.');
@@ -363,8 +339,6 @@ export class Peer {
     }
     // Set the local audio to null.
     this.localAudio = null;
-    // We don’t need to re-negotiate.
-    return false;
   }
 }
 

@@ -93,7 +93,9 @@ export class MaybeHostPeer extends Peer {
   /**
    * Adds a local audio and updates the recording audio on our recordees.
    */
-  public _setLocalAudio(audio: AudioNode): boolean {
+  public _setLocalAudio(audio: AudioNode): void {
+    // Call our super class’s implementation.
+    super._setLocalAudio(audio);
     // Update our instance with the new audio to be recorded.
     this.recordingAudio = audio;
     // Update the audio for all of the recordees that have not stopped.
@@ -102,14 +104,14 @@ export class MaybeHostPeer extends Peer {
         recordee.setAudio(audio);
       }
     }
-    // Call our super class’s implementation.
-    return super._setLocalAudio(audio);
   }
 
   /**
    * Removes the local audio node and updates all of our non-stopped recordees.
    */
-  public _unsetLocalAudio(): boolean {
+  public _unsetLocalAudio(): void {
+    // Call our super class’s implementation.
+    super._unsetLocalAudio();
     // Update our instance with the new stream to be recorded.
     this.recordingAudio = null;
     // Unset the stream for all of the recordees that have not stopped.
@@ -118,7 +120,5 @@ export class MaybeHostPeer extends Peer {
         recordee.unsetAudio();
       }
     }
-    // Call our super class’s implementation.
-    return super._unsetLocalAudio();
   }
 }

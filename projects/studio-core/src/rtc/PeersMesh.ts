@@ -461,18 +461,11 @@ export class PeersMesh<TPeer extends Peer = Peer> {
       this.mutedLocalAudio = audio;
       return;
     }
-    debug('Setting a new local media stream');
     // Add the stream to all of our peers.
     this.peersSubject.value.forEach((peer, address) => {
       if (peer !== undefined && address !== undefined) {
-        // Add the stream to the peer.
-        const needsRenegotiation = peer._setLocalAudio(audio);
-        // Schedule negotiation with our peer if needed.
-        if (needsRenegotiation === true) {
-          this.schedulePeerNegotiations(address);
-        } else {
-          debug(`Re-negotiation not needed for ${address}`);
-        }
+        // Add the audio to the peer.
+        peer._setLocalAudio(audio);
       }
     });
     // Send the next local audio stream.
@@ -494,18 +487,11 @@ export class PeersMesh<TPeer extends Peer = Peer> {
       this.mutedLocalAudio = null;
       return;
     }
-    debug('Unsetting the local media stream');
     // Add the stream to all of our peers.
     this.peersSubject.value.forEach((peer, address) => {
       if (peer !== undefined && address !== undefined) {
-        // Unset the local stream.
-        const needsRenegotiation = peer._unsetLocalAudio();
-        // Schedule negotiation with our peer if needed.
-        if (needsRenegotiation === true) {
-          this.schedulePeerNegotiations(address);
-        } else {
-          debug(`Re-negotiation not needed for ${address}`);
-        }
+        // Unset the local audio.
+        peer._unsetLocalAudio();
       }
     });
     // Send the next local audio stream.
