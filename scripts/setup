@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# This script should be idempotent! In other words you should be able to run it
+# multiple times and you will always get the same result no matter the previous
+# state of universe.
+
+echo ''
+echo '[1/5] Installing `studio-signal-client` dependencies.'
+echo ''
+cd ./repos/studio-signal-client
+yarn
+cd ../..
+
+echo ''
+echo '[2/5] Installing `studio-signal-server` dependencies.'
+echo ''
+cd ./repos/studio-signal-server
+yarn
+cd ../..
+
+echo ''
+echo '[3/5] Installing `studio-ui` dependencies.'
+echo ''
+cd ./repos/studio-ui
+yarn
+cd ../..
+
+echo ''
+echo '[4/5] Installing `studio-desktop` dependencies.'
+echo ''
+cd ./repos/studio-desktop
+yarn
+cd ../..
+
+echo ''
+echo '[5/5] Installing `studio-web` dependencies.'
+echo ''
+cd ./repos/studio-web
+yarn
+cd ../..
