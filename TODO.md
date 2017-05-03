@@ -35,3 +35,10 @@
 - [ ] Room state. Guests need to know if we are recording or not!
 - [ ] Search for `TODO` and try to resolve those notes.
 - [ ] Auto-update desktop app.
+- [ ] Try to re-enable echo cancellation.
+- [ ] Mute/unmute with a hot key.
+- [ ] Timer which counts up how long you have been recording.
+- [ ] Record the chat and add timestamps so that editors/producers can quickly jump to certain points!
+
+## Deploys
+- https://decode-studio-web-eqklfsfrre.now.sh
