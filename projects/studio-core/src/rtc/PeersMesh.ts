@@ -146,7 +146,7 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     // Close every peer that we know of.
     this.peersSubject.value.forEach(peer => {
       if (peer !== undefined) {
-        peer.close();
+        peer._close();
       }
     });
     // Complete our subjects. We are done with them.
@@ -242,7 +242,7 @@ export class PeersMesh<TPeer extends Peer = Peer> {
    */
   protected deletePeer(address: string, peer: TPeer): void {
     // Close the peer.
-    peer.close();
+    peer._close();
     // Remove the peer from our internal map.
     this.peersSubject.next(this.peersSubject.value.delete(address));
   }
@@ -415,7 +415,7 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     // message.
     this.peersSubject.value.forEach(peer => {
       if (peer !== undefined) {
-        peer.setLocalState(nextState);
+        peer._setLocalState(nextState);
       }
     });
     // Update our subject so that anyone observing can get the update.
@@ -466,7 +466,7 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     this.peersSubject.value.forEach((peer, address) => {
       if (peer !== undefined && address !== undefined) {
         // Add the stream to the peer.
-        const needsRenegotiation = peer.setLocalAudio(audio);
+        const needsRenegotiation = peer._setLocalAudio(audio);
         // Schedule negotiation with our peer if needed.
         if (needsRenegotiation === true) {
           this.schedulePeerNegotiations(address);
@@ -499,7 +499,7 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     this.peersSubject.value.forEach((peer, address) => {
       if (peer !== undefined && address !== undefined) {
         // Unset the local stream.
-        const needsRenegotiation = peer.unsetLocalAudio();
+        const needsRenegotiation = peer._unsetLocalAudio();
         // Schedule negotiation with our peer if needed.
         if (needsRenegotiation === true) {
           this.schedulePeerNegotiations(address);

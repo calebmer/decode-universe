@@ -261,7 +261,7 @@ export class Peer {
    * **WARNING:** This should only be used in `PeersMesh` or else peers may get
    * out of sync!
    */
-  public close(): void {
+  public _close(): void {
     // If the peer is already closed then throw an error.
     if (this.isClosed === true) {
       throw new Error('Already closed.');
@@ -286,7 +286,7 @@ export class Peer {
    * **WARNING:** This should only be used in `PeersMesh` or else peers may get
    * out of sync!
    */
-  public setLocalState(state: PeerState): void {
+  public _setLocalState(state: PeerState): void {
     // State check.
     if (this.isClosed === true) {
       throw new Error('Peer is closed.');
@@ -307,7 +307,7 @@ export class Peer {
    * **WARNING:** This should only be used in `PeersMesh` or else peers may get
    * out of sync!
    */
-  public setLocalAudio(audio: AudioNode): boolean {
+  public _setLocalAudio(audio: AudioNode): boolean {
     // State check.
     if (this.isClosed === true) {
       throw new Error('Peer is closed.');
@@ -351,7 +351,7 @@ export class Peer {
    * **WARNING:** This should only be used in `PeersMesh` or else peers may get
    * out of sync!
    */
-  public unsetLocalAudio(): boolean {
+  public _unsetLocalAudio(): boolean {
     // State check.
     if (this.isClosed === true) {
       throw new Error('Peer is closed.');
