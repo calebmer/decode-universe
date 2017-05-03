@@ -62,9 +62,6 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
       // The source of our audio from a `MediaStream` received from
       // `getUserMedia()`.
       MediaStreamAudioSourceNode,
-      // A dynamics compressor which will improve the quality of our audio in
-      // general.
-      DynamicsCompressorNode,
       // A node which will allow us to adjust the volume of the output audio.
       //
       // **NOTE:** If the user wants to mute their audio they unset any local
@@ -142,7 +139,7 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
             nodes[i].connect(nodes[i + 1]);
           }
           // Set the volume to whatever value is currently in state.
-          const volume = nodes[2];
+          const volume = nodes[1];
           volume.gain.value = this.localVolume.value;
         }
       }
@@ -216,21 +213,6 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
           // be `connect()`ed and `disconnect()`ed in `componentDidUpdate()`.
           nodes: [
             audioContext.createMediaStreamSource(stream),
-            // Create and configure a compressor. The settings we choose for the
-            // compressor comes from this article on [audio compression for
-            // voice overs][1]. We are likely misssing some of the crucial
-            // points of the article by copying its numbers. Talk to a
-            // professional!
-            //
-            // [1]: https://gist.github.com/scottburton11/3222152
-            (() => {
-              const compressor = audioContext.createDynamicsCompressor();
-              compressor.threshold.value = -26;
-              compressor.ratio.value = 3 / 1;
-              compressor.attack.value = 1 / 1000;
-              compressor.release.value = 10 / 1000;
-              return compressor;
-            })(),
             audioContext.createGain(),
           ],
         },
@@ -263,7 +245,7 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
       // If we have some audio state then we want to update the gain value on
       // the volume with our new local volume.
       if (userAudio.state === 'success') {
-        const volume = userAudio.nodes[2];
+        const volume = userAudio.nodes[1];
         volume.gain.value = localVolume;
       }
       // Update our local volume state.
