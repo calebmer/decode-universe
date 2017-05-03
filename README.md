@@ -14,12 +14,12 @@ We try to make it very easy to get started working in universe. Just run the fol
 
 ## Projects
 
-- `studio-desktop`: The Decode Studio desktop application. The desktop application runs using Electron and so there are two “platforms” this project builds for. The Electron main process and the Electron renderer process. Depends on `studio-core` for all of the networking and UI resources that is shared with `studio-web`.
-- `studio-web`: The Desktop Studio web application that guests will connect to. This application will be deployed and distributed on the web. Depends on `studio-core` for all of the networking and UI resources that is shared with `studio-desktop`.
-- `studio-core`: The common networking and UI resources for `studio-desktop` and `studio-web`. Must be buildable using the build setups for both `studio-desktop` and `studio-web`. Depends on `studio-signal-client` for the project’s signaling service compatible with `studio-signal-server`.
-- `studio-signal-client`: A client for `studio-signal-server` and the common message types used in communicating messages between the two projects.
-- `studio-signal-server`: A server that is used by Decode Studio peers to find each other accross the world and send signals while establishing a peer-to-peer connection. Depends on `studio-signal-client` for the common message types that both projects need to communicate.
-- `typescript`: Assorted utilities for TypeScript development in all Decode projects.
+- **`studio-desktop`:** The Decode Studio desktop application. The desktop application runs using Electron and so there are two “platforms” this project builds for. The Electron main process and the Electron renderer process. Depends on `studio-core` for all of the networking and UI resources that is shared with `studio-web`.
+- **`studio-web`:** The Desktop Studio web application that guests will connect to. This application will be deployed and distributed on the web. Depends on `studio-core` for all of the networking and UI resources that is shared with `studio-desktop`.
+- **`studio-core`:** The common networking and UI resources for `studio-desktop` and `studio-web`. Must be buildable using the build setups for both `studio-desktop` and `studio-web`. Depends on `studio-signal-client` for the project’s signaling service compatible with `studio-signal-server`.
+- **`studio-signal-client`:** A client for `studio-signal-server` and the common message types used in communicating messages between the two projects.
+- **`studio-signal-server`:** A server that is used by Decode Studio peers to find each other accross the world and send signals while establishing a peer-to-peer connection. Depends on `studio-signal-client` for the common message types that both projects need to communicate.
+- **`typescript`:** Assorted utilities for TypeScript development in all Decode projects.
 
 ## Scripts
 
