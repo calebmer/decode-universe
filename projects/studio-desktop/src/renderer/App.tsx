@@ -1,10 +1,11 @@
 import * as path from 'path';
 import { remote } from 'electron';
+import { v4 as uuid } from 'uuid';
 import * as React from 'react';
 import { FileSystemUtils as fs } from './shared/storage/FileSystemUtils';
 import { Storage } from './shared/storage/Storage';
 import { Directory } from './directory/Directory';
-// import { StudioRoom } from './studio/StudioRoom';
+import { StudioRoom } from './studio/StudioRoom';
 
 /**
  * Opens a `Storage` instance at a root directory that is selected exclusively
@@ -28,11 +29,13 @@ async function openStorage(): Promise<Storage> {
 
 type State = {
   storage: Storage | null,
+  roomName: string | null,
 };
 
 export class App extends React.PureComponent<{}, State> {
   state: State = {
     storage: null,
+    roomName: null,
   };
 
   componentDidMount() {
@@ -44,12 +47,30 @@ export class App extends React.PureComponent<{}, State> {
       .catch(error => console.error(error));
   }
 
+  private handleCreateRoom = () => {
+    this.setState({ roomName: uuid() });
+  };
+
+  private handleGoToDirectory = () => {
+    this.setState({ roomName: null });
+  };
+
   render() {
-    const { storage } = this.state;
+    const { storage, roomName } = this.state;
     if (storage === null) {
       return null;
     }
-    return <Directory storage={storage}/>;
-    // return <StudioRoom roomName="hello world" storage={storage}/>;
+    return roomName === null ? (
+      <Directory
+        storage={storage}
+        onCreateRoom={this.handleCreateRoom}
+      />
+    ) : (
+      <StudioRoom
+        roomName={roomName}
+        storage={storage}
+        onBack={this.handleGoToDirectory}
+      />
+    );
   }
 }

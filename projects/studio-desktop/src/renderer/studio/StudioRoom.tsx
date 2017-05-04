@@ -3,7 +3,12 @@ import { StudioRoomController, PeersMesh, Peer } from '@decode/studio-core';
 import { Storage } from '../shared/storage/Storage';
 import { StudioButtons } from './StudioButtons';
 
-export const StudioRoom = StudioRoomController.createComponent<{ storage: Storage }, PeersMesh>({
+type ExtraProps = {
+  storage: Storage,
+  onBack: () => void,
+};
+
+export const StudioRoom = StudioRoomController.createComponent<ExtraProps, PeersMesh>({
   createPeersMesh: ({
     roomName,
     localAudioContext,
@@ -19,10 +24,11 @@ export const StudioRoom = StudioRoomController.createComponent<{ storage: Storag
       createPeerInstance: config => new Peer(config),
     })
   ),
-  renderButtons: ({ storage }, { mesh }) => (
+  renderButtons: ({ storage, onBack }, { mesh }) => (
     <StudioButtons
       storage={storage}
       mesh={mesh}
+      onBack={onBack}
     />
   ),
 });

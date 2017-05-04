@@ -1,13 +1,12 @@
 import * as React from 'react';
-import * as fs from 'fs';
 import { PeersMesh } from '@decode/studio-core';
 import { Storage } from '../shared/storage/Storage';
-import { ExportRecording } from './rtc/audio/ExportRecording';
 import { Recording } from './Recording';
 
 type Props = {
   storage: Storage,
   mesh: PeersMesh,
+  onBack: () => void,
 };
 
 type State = {
@@ -132,18 +131,8 @@ export class StudioButtons extends React.PureComponent<Props, State> {
     this.setState({ recording: { state: 'inactive' } });
   };
 
-  private handleExport = () => {
-    const recordingsDirectory = '/Users/calebmer/Desktop/decode/recordings';
-    for (const name of fs.readdirSync(recordingsDirectory)) {
-      if (name.startsWith('.')) {
-        continue;
-      }
-      ExportRecording.exportWAV(`${recordingsDirectory}/${name}`)
-        .catch(error => console.error(error));
-    }
-  };
-
   render() {
+    const { onBack } = this.props;
     const { recording } = this.state;
     return (
       <p>
@@ -153,8 +142,8 @@ export class StudioButtons extends React.PureComponent<Props, State> {
               Start Recording
             </button>
             {' '}
-            <button onClick={this.handleExport}>
-              Export WAV
+            <button onClick={onBack}>
+              Return to Recording Directory
             </button>
           </span>
         ) :
