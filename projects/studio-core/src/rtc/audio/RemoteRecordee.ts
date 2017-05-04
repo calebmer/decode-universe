@@ -1,4 +1,3 @@
-import { Subscription } from 'rxjs';
 import { Disposable } from '@decode/jsutils';
 import { RemoteRecorderProtocol } from './RemoteRecorderProtocol';
 import { LocalRecorder } from './LocalRecorder';
@@ -58,12 +57,6 @@ export class RemoteRecordee implements Disposable {
    */
   private readonly channel: RTCDataChannel;
 
-  /**
-   * The subscription which represents anything that is currently recording. If
-   * nothing is currently recording then it will be null.
-   */
-  private subscription: Subscription | null = null;
-
   private constructor({
     channel,
     context,
@@ -99,16 +92,11 @@ export class RemoteRecordee implements Disposable {
         console.error(new Error('Already started.'));
         return;
       }
-      // Subscribe to the recorder’s stream and send that data to our channel.
-      this.subscription = this.recorder.stream.subscribe({
+      // Listen to the recorder’s stream and send that data to our channel.
+      // When the recorder closes this event listener should be removed.
+      this.recorder.on('data', data => {
         // Send the data through our channel.
-        next: data => this.channel.send(data),
-        // If we got an error then report it.
-        // TODO: Better error handling. If we get an error should the `Recorder`
-        // know?
-        error: error => console.error(error),
-        // TODO: If we complete then we should probably record silence?
-        complete: () => {},
+        this.channel.send(data);
       });
       // Start our recorder.
       this.recorder.start();
@@ -143,12 +131,7 @@ export class RemoteRecordee implements Disposable {
     if (this.recorder.stopped === true) {
       throw new Error('Already stopped.');
     }
-    // Unsubscribe from the stream subscription.
-    if (this.subscription !== null) {
-      this.subscription.unsubscribe();
-      this.subscription = null;
-    }
-    // Stop the recorder.
+    // Stop the recorder. This will also remove all our event listeners.
     this.recorder.stop();
     // Remove all the event listeners.
     this.channel.removeEventListener('message', this.handleMessage);

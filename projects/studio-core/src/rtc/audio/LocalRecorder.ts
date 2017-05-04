@@ -1,4 +1,4 @@
-import { Observable, Subject } from 'rxjs';
+import { EventEmitter } from '@decode/jsutils';
 import { Recorder } from './Recorder';
 
 /**
@@ -13,7 +13,10 @@ const bufferSize = 16384;
  * local audio managed by `setAudio()` and `unsetAudio()`. There are no fancy
  * network shenanigans with this class.
  */
-export class LocalRecorder implements Recorder {
+export
+class LocalRecorder
+extends EventEmitter<Recorder.EventMap>
+implements Recorder {
   private internalStarted = false;
   private internalStopped = false;
 
@@ -49,20 +52,6 @@ export class LocalRecorder implements Recorder {
   }
 
   /**
-   * The internal stream subject. It will be made public through the `subject`
-   * variable. Takes `Float32Array`s directly.
-   */
-  private readonly streamSubject = new Subject<Float32Array>();
-
-  /**
-   * A hot observable that emits all of the recording data as we receive it from
-   * our data channel. If you don’t subscribe before calling `start()` then you
-   * may miss some data!
-   */
-  public readonly stream: Observable<ArrayBuffer> =
-    this.streamSubject.map(array => array.buffer);
-
-  /**
    * The processor for our audio node which will report our audio data. We
    * connect any audio we may have to this node and then the audio will be
    * reported.
@@ -87,6 +76,7 @@ export class LocalRecorder implements Recorder {
     context: AudioContext,
     audio: AudioNode | null,
   }) {
+    super();
     this.name = name;
     this.context = context;
     this.audio = audio;
@@ -100,7 +90,8 @@ export class LocalRecorder implements Recorder {
     const { inputBuffer } = event;
     // Clone the channel data and send the input channel data to our channel
     // data observers.
-    this.streamSubject.next(new Float32Array(inputBuffer.getChannelData(0)));
+    const data = new Float32Array(inputBuffer.getChannelData(0));
+    this.emit('data', data.buffer);
   };
 
   /**
@@ -164,8 +155,8 @@ export class LocalRecorder implements Recorder {
     this.processor.removeEventListener('audioprocess', this.handleAudioProcess);
     // Disconnect our processor from the destination.
     this.processor.disconnect(this.context.destination);
-    // Complete our stream. It is done!
-    this.streamSubject.complete();
+    // Clear out all of the listeners for our event emitter.
+    this.clearAllListeners();
   }
 
   /**

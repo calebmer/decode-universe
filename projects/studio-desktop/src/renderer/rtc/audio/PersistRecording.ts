@@ -298,25 +298,16 @@ function persistRecorder(
   writable.on('error', (error: Error) => {
     console.error(error);
   });
-  // Subscribe to the recorder’s stream and whenever we get data then write it
-  // to the file writable stream.
-  const subscription = recorder.stream.subscribe({
-    // Convert our `ArrayBuffer` to a Node.js buffer and write it to the file’s
-    // write stream
-    next: buffer => writable.write(Buffer.from(buffer)),
-    // TODO: Better error reporting.
-    error: error => console.error(error),
-    // Once the stream finishes then we want to end the write stream.
-    complete: () => {
-      ended = true;
-      writable.end();
-    },
+  // Listen to the recorder’s stream and whenever we get data then write it to
+  // the file writable stream.
+  const disposable = recorder.on('data', buffer => {
+    writable.write(Buffer.from(buffer));
   });
   return {
     // Dispose by unsubscribing from the subscription and ending the writable
     // stream if we have not already ended it.
     dispose: () => {
-      subscription.unsubscribe();
+      disposable.dispose();
       // If we have not yet ended the stream then end it here.
       if (ended === false) {
         writable.end();

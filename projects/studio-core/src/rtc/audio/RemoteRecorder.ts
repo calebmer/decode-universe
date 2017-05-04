@@ -1,11 +1,14 @@
-import { Subject } from 'rxjs';
+import { EventEmitter } from '@decode/jsutils';
 import { Recorder } from './Recorder';
 import { RemoteRecorderProtocol } from './RemoteRecorderProtocol';
 
 /**
  * The recorder class for the recording protocol.
  */
-export class RemoteRecorder implements Recorder {
+export
+class RemoteRecorder
+extends EventEmitter<Recorder.EventMap>
+implements Recorder {
   /**
    * Creates a new recorder instance using the provided `RTCDataChannel`.
    */
@@ -95,20 +98,6 @@ export class RemoteRecorder implements Recorder {
    */
   public readonly sampleRate: number;
 
-  /**
-   * The internal subject for `stream` which we can use to emit events. We want
-   * to expose an `Observable` and not the powerful `Subject` methods so this is
-   * private whereas `stream` is just an observable version of this.
-   */
-  private readonly streamSubject = new Subject<ArrayBuffer>();
-
-  /**
-   * A hot observable that emits all of the recording data as we receive it from
-   * our data channel. If you don’t subscribe before calling `start()` then you
-   * may miss some data!
-   */
-  public readonly stream = this.streamSubject.asObservable();
-
   private constructor({
     channel,
     name,
@@ -118,6 +107,7 @@ export class RemoteRecorder implements Recorder {
     name: string,
     sampleRate: number,
   }) {
+    super();
     // Update our instance.
     this.channel = channel;
     this.name = name;
@@ -135,14 +125,14 @@ export class RemoteRecorder implements Recorder {
    * All of these messages constitute step 3 of the protocol.
    */
   private handleMessage = (event: MessageEvent) => {
-    this.streamSubject.next(event.data);
+    this.emit('data', event.data);
   };
 
   /**
    * Handles an error by pushing it to our stream and continuing on.
    */
   private handleError = (event: ErrorEvent) => {
-    this.streamSubject.error(event.error);
+    this.emit('error', event.error);
   };
 
   /**
@@ -205,7 +195,7 @@ export class RemoteRecorder implements Recorder {
     ) {
       this.channel.close();
     }
-    // Complete the stream.
-    this.streamSubject.complete();
+    // Clear out all of the listeners for our event emitter.
+    this.clearAllListeners();
   }
 }
