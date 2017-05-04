@@ -79,7 +79,7 @@ export class Peer {
    * state.
    */
   public readonly remoteState: Observable<Peer.State> =
-    this.remoteStateSubject.filter(state => state !== null);
+    this.remoteStateSubject.filter(state => state !== null) as Observable<Peer.State>;
 
   /**
    * The current remote state for this peer.

@@ -22,7 +22,7 @@ const nameKey = '@decode/studio-core/name';
  * Decode Studio clients. These two clients have different semantics. These
  * options are where the semantics may be injected.
  */
-const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>, TPeer extends Peer = Peer>({
+const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>, TPeer extends Peer = Peer>({
   createPeersMesh: userCreatePeersMesh,
   renderButtons,
 }: {
@@ -35,14 +35,15 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
   }) => TPeersMesh,
 
   // Renders some buttons at the top of the studio room UI.
-  renderButtons?: (options: {
-    mesh: TPeersMesh,
-  }) => JSX.Element,
+  renderButtons?: (
+    props: Readonly<TExtraProps>,
+    state: Readonly<{ mesh: TPeersMesh }>,
+  ) => JSX.Element,
 
 }) => {
   type Props = {
     roomName: string,
-  };
+  } & TExtraProps;
 
   type State = {
     userAudio: UserAudioState,
@@ -293,7 +294,7 @@ const createComponent = <TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
             // room.
             mesh !== null ? (
               <div>
-                {renderButtons && renderButtons({ mesh })}
+                {renderButtons && renderButtons(this.props, { mesh })}
                 <StudioRoom
                   mesh={mesh}
                   audioContext={audioContext}

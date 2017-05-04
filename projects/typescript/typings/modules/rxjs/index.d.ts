@@ -6,6 +6,11 @@ export class Observable<T> {
 
   constructor(subscriberFn: SubscriberFn<T>)
 
+  subscribe(
+    next: (value: T) => void,
+    error?: (error: {}) => void,
+    complete?: () => void,
+  ): Subscription;
   subscribe(subscriber: Subscriber<T>): Subscription;
 
   map<U>(mapper: (value: T) => U): Observable<U>;

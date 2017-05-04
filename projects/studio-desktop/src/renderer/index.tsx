@@ -1,29 +1,43 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { StudioRoomController } from '@decode/studio-core';
-import { HostPeersMesh } from './rtc/HostPeersMesh';
+import { StudioRoomController, PeersMesh, Peer } from '@decode/studio-core';
+import { Storage } from './storage/Storage';
 import { StudioButtons } from './StudioButtons';
 
-const StudioRoom = StudioRoomController.createComponent<HostPeersMesh>({
+const StudioRoom = StudioRoomController.createComponent<{ storage: Storage }, PeersMesh>({
   createPeersMesh: ({
     roomName,
     localAudioContext,
     previousLocalName,
   }) => (
-    new HostPeersMesh({
+    new PeersMesh({
       roomName,
       localAudioContext,
       localState: {
         name: previousLocalName || 'Host',
         isMuted: false,
       },
+      createPeerInstance: config => new Peer(config),
     })
   ),
-
-  renderButtons: ({ mesh }) => <StudioButtons mesh={mesh}/>,
+  renderButtons: ({ storage }, { mesh }) => (
+    <StudioButtons
+      storage={storage}
+      mesh={mesh}
+    />
+  ),
 });
 
-ReactDOM.render(
-  <StudioRoom roomName="hello world"/>,
-  document.getElementById('root'),
+Storage.open('/Users/calebmer/Desktop/decode').then(
+  storage => {
+    ReactDOM.render((
+      <StudioRoom
+        roomName="hello world"
+        storage={storage}
+      />
+    ), document.getElementById('root'));
+  },
+  error => {
+    console.error(error);
+  },
 );

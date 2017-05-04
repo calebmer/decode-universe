@@ -29,8 +29,8 @@ async function exportWAV(recordingDirectory: string): Promise<void> {
   Object.keys(manifest.recorders).map(async id => {
     await exportRecorderToWAV(
       manifest.recorders[id],
-      `${rawDirectory}/${id}`,
-      `${wavDirectory}/${id}.wav`,
+      rawDirectory + '/' + id,
+      wavDirectory + '/' + id + '.wav',
     );
   });
 }
@@ -61,12 +61,12 @@ async function exportRecorderToWAV(
     );
   });
   // Compute the number of silence samples we will need to add to the start of
-  // the output WAV recording. This is computed from the `startedAt` time on our
-  // recorder. If it is not 0 then the recorder started a little bit after the
-  // recording and we should add silence to pad the output so that all our
-  // recordings have a consistent length.
+  // the output WAV recording. This is computed from the `startedAtDelta` time
+  // on our recorder. If it is not 0 then the recorder started a little bit
+  // after the recording and we should add silence to pad the output so that all
+  // our recordings have a consistent length.
   const silenceSampleSize =
-    Math.floor(recorder.sampleRate * (recorder.startedAt / 1000));
+    Math.floor(recorder.sampleRate * (recorder.startedAtDelta / 1000));
   // The final sample size of our recording. It will be the size of our raw file
   // divided by 4.
   const sampleSize = (stats.size / 4) + silenceSampleSize;

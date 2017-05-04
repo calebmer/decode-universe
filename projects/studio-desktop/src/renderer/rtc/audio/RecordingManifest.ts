@@ -44,6 +44,6 @@ export namespace RecordingManifest {
      * Add this nomber to `recordedAt` to get the milliseconds since the Unix
      * epoch at which this recorder started.
      */
-    readonly startedAt: number,
+    readonly startedAtDelta: number,
   };
 }

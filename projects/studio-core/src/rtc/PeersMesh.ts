@@ -94,7 +94,7 @@ extends EventEmitter<PeersMesh.EventMap> {
   /**
    * The local audio context we use for our audio.
    */
-  protected readonly localAudioContext: AudioContext;
+  public readonly localAudioContext: AudioContext;
 
   /**
    * Used to create a peer instance. Different studio clients may want to
