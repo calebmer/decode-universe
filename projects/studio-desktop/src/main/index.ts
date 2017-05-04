@@ -11,7 +11,8 @@ let window: Electron.BrowserWindow | null = null;
 app.on('ready', () => {
   // If we are in development then we want to install our devtools.
   if (DEV) {
-    require('./devtools');
+    const { DevTools } = require('./devtools');
+    DevTools.install();
   }
 
   // Create the window.

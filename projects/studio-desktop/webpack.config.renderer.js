@@ -70,9 +70,10 @@ module.exports = {
         // If we are in development then we want to use the absolute path of
         // the module because our bundle is hosted from `webpack-dev-server`.
         //
-        // Do this for all modules except those modules that are builtin. They
-        // should be required in the standard way.
-        if (DEV && !builtinModules.includes(request)) {
+        // Do this for all modules except those modules that are builtin and the
+        // `electron` module. They should be required directly instead of
+        // required by their absolute path.
+        if (DEV && ![...builtinModules, 'electron'].includes(request)) {
           const moduleAbsolutePath =
             path.resolve(__dirname, 'node_modules', request);
 

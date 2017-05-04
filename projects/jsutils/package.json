@@ -2,12 +2,13 @@
   "private": true,
   "name": "@decode/jsutils",
   "version": "0.0.0-versionless",
-  "main": "./src/index.ts",
-  "typings": "./src/index.ts",
+  "main": "./universal.ts",
+  "typings": "./universal.ts",
   "scripts": {
     "postinstall": "rm -rf node_modules/@decode"
   },
   "devDependencies": {
+    "@types/react": "^15.0.23",
     "tslib": "^1.6.0"
   }
 }

@@ -3,10 +3,10 @@ import { v4 as uuid } from 'uuid';
 import { Disposable } from '@decode/jsutils';
 import { Recorder } from '@decode/studio-core';
 import { FileSystemUtils as fs } from './FileSystemUtils';
-import { RecorderStorage } from './RecorderStorage';
+import { RecorderRawStorage } from './RecorderRawStorage';
 
 type RecorderMapValue = {
-  readonly storage: RecorderStorage,
+  readonly storage: RecorderRawStorage,
   readonly manifest: RecorderManifest,
 };
 
@@ -38,7 +38,7 @@ export class RecordingStorage {
           // Return a map entry with the id as the key, and the recorder storage
           // as the value.
           return [id, {
-            storage: await RecorderStorage.open(recorderFilePath),
+            storage: await RecorderRawStorage.open(recorderFilePath),
             manifest: recorderManifest,
           }];
         })
@@ -106,8 +106,18 @@ export class RecordingStorage {
   }
 
   /**
+   * Used by `writeManifest()` to ensure that we only write the manifest if all
+   * previous writes have finished.
+   */
+  private manifestWritePromise: Promise<void> = Promise.resolve();
+
+  /**
    * Writes the manifest to the file system overwriting any manifest that was
    * there previously.
+   *
+   * If this method is called when we are currently writing another manifest
+   * then we need to wait for that write to finish before writing our own
+   * manifest.
    */
   private async writeManifest(): Promise<void> {
     // Create a map of recorder ids to their manifest.
@@ -122,27 +132,38 @@ export class RecordingStorage {
       startedAt: this.startedAt,
       recorders,
     };
-    // Write the manfiest file to the file system.
-    await fs.writeFile(
-      // We want to write our manifest to the manifest file path.
-      path.join(this.directoryPath, 'manifest.json'),
-      // Stringify the manifest when writing it. If we are in development then
-      // we want to pretty print the JSON with 2 space indentation for easy
-      // debugging.
-      JSON.stringify(manifest, null, DEV ? 2 : undefined),
-    );
+    // Update the manifest write promise so that once it resolves (or rejects)
+    // we will perform our own write. We chain this onto the promise and set it
+    // back to the class instance so that the next time `writeManifest()` is
+    // called the user will need to wait for this write to finish.
+    this.manifestWritePromise = this.manifestWritePromise
+      // We ignore any errors. We just want to know that the last write is done.
+      // Not whether or not it was successful.
+      .catch(() => {})
+      // Once the promise resolves perform our write.
+      .then(() => fs.writeFile(
+        // We want to write our manifest to the manifest file path.
+        path.join(this.directoryPath, 'manifest.json'),
+        // Stringify the manifest when writing it. If we are in development then
+        // we want to pretty print the JSON with 2 space indentation for easy
+        // debugging.
+        JSON.stringify(manifest, null, DEV ? 2 : undefined),
+      ));
+    // Wait for *our* write to resolve or reject. The promise may change under
+    // us, but that’s fine.
+    await this.manifestWritePromise;
   }
 
   /**
-   * Writes a recorder stream to a new `RecorderStorage` instance.
+   * Writes a recorder stream to a new `RecorderRawStorage` instance.
    *
    * The returned disposable will cancel the write.
    */
   public writeRecorder(recorder: Recorder): Disposable {
     // Randomly generate an id for this recorder in the storage system.
     const id = uuid();
-    // Open a new `RecorderStorage` instance a a fresh path.
-    const storage = RecorderStorage.open(
+    // Open a new `RecorderRawStorage` instance a a fresh path.
+    const storage = RecorderRawStorage.open(
       // Create a path for a file in the `recorders` directory with the randomly
       // generated uuid.
       path.join(this.directoryPath, rawRecorderDataDirectoryName, id),
@@ -165,18 +186,44 @@ export class RecordingStorage {
   }
 
   /**
+   * Gets the length of the recording in seconds.
+   */
+  public async getSecondsLength(): Promise<number> {
+    // Get the time in seconds for all of the recorder data.
+    const recorderSeconds = await Promise.all(this.getAllRecorders().map(
+      async ({ sampleRate, startedAtDelta, storage }) => {
+        // Get the sample length of the raw file.
+        const sampleLength = await storage.getSampleLength();
+        // Convert the sample length into seconds by dividing the sample rate.
+        const seconds = sampleLength / sampleRate;
+        // Add the delta from the time we started.
+        const secondsAfterStart = seconds + (startedAtDelta / 1000);
+        // Return the final time in seconds.
+        return secondsAfterStart;
+      },
+    ));
+    // Get the maximum seconds value from all our recorders.
+    const max = recorderSeconds.reduce((a, b) => Math.max(a, b), 0);
+    // Return the maximum.
+    return max;
+  }
+
+  /**
    * Returns all of the recorders for this recording in no particular order.
    * The id for each recorder is also provided.
    */
   public getAllRecorders(): Array<{
     id: string,
-    recorder: RecorderStorage,
+    name: string,
+    sampleRate: number,
+    startedAtDelta: number,
+    storage: RecorderRawStorage,
   }> {
     return Array.from(this.recorders)
       .map(([id, { manifest, storage }]) => ({
         ...manifest,
         id,
-        recorder: storage,
+        storage,
       }));
   }
 }

@@ -6,8 +6,8 @@ import {
   LocalRecorder,
   RemoteRecorder,
 } from '@decode/studio-core';
-import { RecordingDirectoryStorage } from './storage/RecordingDirectoryStorage';
-import { RecordingStorage } from './storage/RecordingStorage';
+import { RecordingDirectoryStorage } from '../shared/storage/RecordingDirectoryStorage';
+import { RecordingStorage } from '../shared/storage/RecordingStorage';
 
 /**
  * Represents a recording while it happens. Responsible for watching a
@@ -69,7 +69,7 @@ export class Recording {
     this.storage = storage;
     // Setup our local recorder based instance off of the information provided
     // in our mesh and start recording that recorder persisting it to a
-    // `RecorderStorage` instance.
+    // `RecorderRawStorage` instance.
     {
       // Create a new `LocalRecorder` instance.
       const localRecorder = new LocalRecorder({

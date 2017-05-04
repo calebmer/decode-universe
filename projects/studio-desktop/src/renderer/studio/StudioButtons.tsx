@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as fs from 'fs';
 import { PeersMesh } from '@decode/studio-core';
-import { Storage } from './storage/Storage';
+import { Storage } from '../shared/storage/Storage';
 import { ExportRecording } from './rtc/audio/ExportRecording';
 import { Recording } from './Recording';
 

@@ -1,21 +1,22 @@
 import { createWriteStream } from 'fs';
 import { Disposable } from '@decode/jsutils';
 import { Recorder } from '@decode/studio-core';
+import { FileSystemUtils as fs } from './FileSystemUtils';
 
 /**
  * Stores the data from a single `Recorder`.
  */
-export class RecorderStorage {
+export class RecorderRawStorage {
   /**
-   * Open an instance of `RecorderStorage`. Unlike many other storages the
+   * Open an instance of `RecorderRawStorage`. Unlike many other storages the
    * storage for a recorder does not have to be created first. Calling `write()`
    * will create a new file in the directory, or overwrite any file currently at
    * the provided `filePath`.
    *
    * It can also be opened synchronously.
    */
-  public static open(filePath: string): RecorderStorage {
-    return new RecorderStorage({ filePath });
+  public static open(filePath: string): RecorderRawStorage {
+    return new RecorderRawStorage({ filePath });
   }
 
   /**
@@ -66,6 +67,20 @@ export class RecorderStorage {
         }
       },
     };
+  }
+
+  /**
+   * Get the byte length of the raw recorder data.
+   */
+  public getByteLength(): Promise<number> {
+    return fs.fileByteSize(this.filePath);
+  }
+
+  /**
+   * Get the sample length of the recorder data.
+   */
+  public getSampleLength(): Promise<number> {
+    return this.getByteLength().then(length => length / 4);
   }
 
   // TODO: public read() {}

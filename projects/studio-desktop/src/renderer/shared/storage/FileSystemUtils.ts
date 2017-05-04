@@ -61,6 +61,15 @@ function fileExists(filePath: string): Promise<boolean> {
   });
 }
 
+function fileByteSize(filePath: string): Promise<number> {
+  return new Promise<number>((resolve, reject) => {
+    fs.stat(
+      filePath,
+      (error, stats) => error ? reject(error) : resolve(stats.size),
+    );
+  });
+}
+
 export const FileSystemUtils = {
   createDirectory,
   readDirectory,
@@ -68,4 +77,5 @@ export const FileSystemUtils = {
   writeFile,
   readFileAsString,
   fileExists,
+  fileByteSize,
 };

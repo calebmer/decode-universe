@@ -1,3 +1,9 @@
 import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
 
-installExtension(REACT_DEVELOPER_TOOLS, false);
+function install() {
+  installExtension(REACT_DEVELOPER_TOOLS, false);
+}
+
+export const DevTools = {
+  install,
+};

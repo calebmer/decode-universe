@@ -1,5 +1,6 @@
 {
   "private": true,
+  "productName": "Decode Studio",
   "name": "@decode/studio-desktop",
   "version": "0.0.0-versionless",
   "main": "./build/main/index.js",
