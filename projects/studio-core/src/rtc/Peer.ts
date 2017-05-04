@@ -1,4 +1,3 @@
-import { Observable, BehaviorSubject } from 'rxjs';
 import { Disposable, EventEmitter } from '@decode/jsutils';
 
 /**
@@ -83,7 +82,7 @@ export class Peer extends EventEmitter<Peer.EventMap> {
   /**
    * Whether or not the peer has been closed.
    */
-  public get isClosed(): boolean {
+  public isClosed(): boolean {
     return this.internalIsClosed;
   }
 
@@ -92,42 +91,34 @@ export class Peer extends EventEmitter<Peer.EventMap> {
    */
   public readonly connection: RTCPeerConnection;
 
-  private _connectionStatus: PeerConnectionStatus;
+  private connectionStatus: PeerConnectionStatus;
 
   /**
    * The status of the connection that we have with our peer.
    */
-  public get connectionStatus(): PeerConnectionStatus {
-    return this._connectionStatus;
+  public getConnectionStatus(): PeerConnectionStatus {
+    return this.connectionStatus;
   }
 
-  /**
-   * All of the remote media streams that our peer has given us access to. As
-   * the peer may add and remove streams over time this is an observable.
-   */
-  public readonly remoteStream: Observable<MediaStream | null>;
+  private remoteStream: MediaStream | null = null;
 
   /**
-   * The remote state subject is where we will send new state objects. The value
-   * will be null while we are loading. The view into this subject for consumers
-   * will filter out nulls.
+   * Returns the current remote media stream that our peer has given us. If
+   * `null` then the peer has not yet given us a media stream, but it is likely
+   * that they eventually will.
    */
-  private readonly remoteStateSubject = new BehaviorSubject<PeerState | null>(null);
+  public getRemoteStream(): MediaStream | null {
+    return this.remoteStream;
+  }
+
+  private remoteState: PeerState | null = null;
 
   /**
-   * The state of our peer. Will emit the most recent state that we know about
-   * immeadiately on subscription unless we have not yet gotten state from our
-   * peer. In that case there will be no emissions until the peer sends us their
-   * state.
+   * The state of our peer. If the peer has not yet sent us their state then
+   * this value will be `null`.
    */
-  public readonly remoteState: Observable<PeerState> =
-    this.remoteStateSubject.filter(state => state !== null);
-
-  /**
-   * The current remote state for this peer.
-   */
-  public get currentRemoteState(): PeerState | null {
-    return this.remoteStateSubject.value;
+  public getRemoteState(): PeerState | null {
+    return this.remoteState;
   }
 
   /**
@@ -176,9 +167,6 @@ export class Peer extends EventEmitter<Peer.EventMap> {
     this.localAudioContext = localAudioContext;
     // Create a new connection using the pre-defined config.
     this.connection = new RTCPeerConnection(rtcConfig);
-    // Set our current connection status directly from the `RTCPeerConnection`.
-    this._connectionStatus =
-      getConnectionStatus(this.connection.iceConnectionState);
     // Create the media stream destination object from the provided audio
     // context.
     this.localAudioDestination =
@@ -195,8 +183,6 @@ export class Peer extends EventEmitter<Peer.EventMap> {
     }
     // Set the current local state to the initial state we were given.
     this.currentLocalState = localState;
-    // Create some observables that watch the connection and emit events.
-    this.remoteStream = watchRemoteStream(this.connection);
     // If we are the initiator then we want to create some data channels. If we
     // are not the initiator then we want to set an event listener that waits
     // for the initiator to create new data channels.
@@ -223,9 +209,14 @@ export class Peer extends EventEmitter<Peer.EventMap> {
     // of the peer connection. These listeners will be updating state on our
     // class instance and emitting events.
     {
+      // Set our current connection status directly from the
+      // `RTCPeerConnection`.
+      this.connectionStatus =
+        getConnectionStatus(this.connection.iceConnectionState);
       // Create an event listeners map. These listeners will be added and
       // removed from our `RTCPeerConnection` when appropriate.
       const eventListeners = new Map([
+
         // When the ICE connection state changes we want to update our own
         // connection status.
         ['iceconnectionstatechange', () => {
@@ -234,11 +225,54 @@ export class Peer extends EventEmitter<Peer.EventMap> {
             getConnectionStatus(this.connection.iceConnectionState);
           // If the connection status changed then we want to update the
           // connection status and emit a change event.
-          if (this._connectionStatus !== nextConnectionStatus) {
-            this._connectionStatus = nextConnectionStatus;
-            this.emit('connectionStatusChange', this._connectionStatus);
+          if (this.connectionStatus !== nextConnectionStatus) {
+            this.connectionStatus = nextConnectionStatus;
+            this.emit('connectionStatusChange', this.connectionStatus);
           }
         }],
+
+        // Add an event listener for whenever the connection adds a new stream.
+        // We want to make sure at that point that our current stream is up to
+        // date.
+        ['addstream', ({ stream }: MediaStreamEvent) => {
+          // If the stream was null then return!
+          if (stream === null) {
+            return;
+          }
+          // Hack, but Chrome won't work without this. We never do anything with
+          // this node, it's just a workaround.
+          //
+          // We took this from: https://github.com/mikeal/waudio/blob/2933809e05f840a4f34121e07f7e61633205906f/index.js#L9-L12
+          // Followup issue: https://github.com/mikeal/waudio/issues/2
+          {
+            const node = new Audio();
+            node.srcObject = stream;
+          }
+          // Get the new stream which will be the first remote stream on our
+          // `RTCPeerConnection` or null if there are no remote streams.
+          const nextStream = this.connection.getRemoteStreams()[0] || null;
+          // If the remote stream changed then we want to update our class
+          // instance and then emit a change event.
+          if (this.remoteStream !== nextStream) {
+            this.remoteStream = nextStream;
+            this.emit('remoteStreamChange', this.remoteStream);
+          }
+        }],
+
+        // Perform the same stream check as `addstream` and then update our
+        // class instance and emit an event.
+        ['removestream', () => {
+          // Get the new stream which will be the first remote stream on our
+          // `RTCPeerConnection` or null if there are no remote streams.
+          const nextStream = this.connection.getRemoteStreams()[0] || null;
+          // If the remote stream changed then we want to update our class
+          // instance and then emit a change event.
+          if (this.remoteStream !== nextStream) {
+            this.remoteStream = nextStream;
+            this.emit('remoteStreamChange', this.remoteStream);
+          }
+        }],
+
       ]);
       // Add all of the event listeners from the map we declared above to our
       // `RTCPeerConnection`.
@@ -288,12 +322,13 @@ export class Peer extends EventEmitter<Peer.EventMap> {
     // remote state observable that there is new data.
     const handleMessage = (event: MessageEvent) => {
       const remoteState: PeerState = JSON.parse(event.data);
-      this.remoteStateSubject.next(remoteState);
+      this.remoteState = remoteState;
+      this.emit('remoteStateChange', this.remoteState);
     };
 
     // Handles an error from our data channel by alerting any listeners.
     const handleError = (event: ErrorEvent) => {
-      this.remoteStateSubject.error(event.error);
+      this.emit('error', event.error);
     };
 
     // Add our event listeners to the data channel.
@@ -319,7 +354,7 @@ export class Peer extends EventEmitter<Peer.EventMap> {
    */
   public _close(): void {
     // If the peer is already closed then throw an error.
-    if (this.isClosed === true) {
+    if (this.isClosed()) {
       throw new Error('Already closed.');
     }
     // Flip the `isClosed` flag to true.
@@ -331,8 +366,6 @@ export class Peer extends EventEmitter<Peer.EventMap> {
     if (this.connection.signalingState !== 'closed') {
       this.connection.close();
     }
-    // Complete our subjects. We are done with them.
-    this.remoteStateSubject.complete();
   }
 
   /**
@@ -344,7 +377,7 @@ export class Peer extends EventEmitter<Peer.EventMap> {
    */
   public _setLocalState(state: PeerState): void {
     // State check.
-    if (this.isClosed === true) {
+    if (this.isClosed()) {
       throw new Error('Peer is closed.');
     }
     if (this.stateChannel !== null && this.stateChannel.readyState === 'open') {
@@ -365,7 +398,7 @@ export class Peer extends EventEmitter<Peer.EventMap> {
    */
   public _setLocalAudio(audio: AudioNode): void {
     // State check.
-    if (this.isClosed === true) {
+    if (this.isClosed()) {
       throw new Error('Peer is closed.');
     }
     // If we have some local audio and we have a local audio destination then we
@@ -391,7 +424,7 @@ export class Peer extends EventEmitter<Peer.EventMap> {
    */
   public _unsetLocalAudio(): void {
     // State check.
-    if (this.isClosed === true) {
+    if (this.isClosed()) {
       throw new Error('Peer is closed.');
     }
     // If we have some local audio and we have a local audio destination then we
@@ -452,61 +485,4 @@ function getConnectionStatus(iceConnectionState: string): PeerConnectionStatus {
     default:
       return PeerConnectionStatus.connecting;
   }
-}
-
-/**
- * Creates an observable that tracks the array of `MediaStream`s produced by an
- * `RTCPeerConnection` instance.
- */
-function watchRemoteStream(
-  connection: RTCPeerConnection,
-): Observable<MediaStream | null> {
-  return new Observable<MediaStream | null>(observer => {
-    // Notify observer of the current remote stream, or null if there is no
-    // remote stream.
-    observer.next(connection.getRemoteStreams()[0] || null);
-
-    /**
-     * Handles the `addstream` event on `RTCPeerConnection`.
-     */
-    const handleAddStream = ({ stream }: MediaStreamEvent) => {
-      // If the stream was null then return!
-      if (stream === null) {
-        return;
-      }
-      // Hack, but Chrome won't work without this. We never do anything with
-      // this node, it's just a workaround.
-      //
-      // We took this from: https://github.com/mikeal/waudio/blob/2933809e05f840a4f34121e07f7e61633205906f/index.js#L9-L12
-      // Followup issue: https://github.com/mikeal/waudio/issues/2
-      {
-        const node = new Audio();
-        node.srcObject = stream;
-      }
-      // Update our observer with the first remote stream.
-      observer.next(connection.getRemoteStreams()[0] || null);
-    };
-
-    /**
-     * Handles the `removestream` event on `RTCPeerConnection`.
-     */
-    const handleRemoveStream = ({ stream }: MediaStreamEvent) => {
-      // If the stream was null then return!
-      if (stream === null) {
-        return;
-      }
-      // Update our observer with the first remote stream.
-      observer.next(connection.getRemoteStreams()[0] || null);
-    };
-
-    // Add event listeners.
-    connection.addEventListener('addstream', handleAddStream);
-    connection.addEventListener('removestream', handleRemoveStream);
-
-    return () => {
-      // Remove event listeners.
-      connection.removeEventListener('addstream', handleAddStream);
-      connection.removeEventListener('removestream', handleRemoveStream);
-    };
-  });
 }

@@ -7,3 +7,16 @@
 export interface Disposable {
   dispose(): void;
 }
+
+/**
+ * Combines an array of disposables into a single disposable.
+ */
+function concat(disposables: Array<Disposable>): Disposable {
+  return {
+    dispose: () => disposables.forEach(disposable => disposable.dispose()),
+  };
+}
+
+export const Disposable = {
+  concat,
+};

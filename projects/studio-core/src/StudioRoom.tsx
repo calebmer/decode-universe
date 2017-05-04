@@ -1,10 +1,11 @@
 import * as React from 'react';
-import { Observable } from 'rxjs';
-import { ReactObservable } from './observable/ReactObservable';
+// import { Observable } from 'rxjs';
+// import { ReactObservable } from './observable/ReactObservable';
 import { UserAudioDevicesSelect } from './audio/UserAudioDevicesSelect';
 import { AudioVisualization } from './audio/AudioVisualization';
 import { PeersMesh } from './rtc/PeersMesh';
 import { StudioPeer } from './StudioPeer';
+import { EventListener } from './EventListener';
 
 export function StudioRoom({
   mesh,
@@ -19,12 +20,12 @@ export function StudioRoom({
 }: {
   mesh: PeersMesh,
   audioContext: AudioContext,
-  deviceID: Observable<string | null>,
+  deviceID: string | null,
   onSelectDeviceID: (deviceID: string) => void,
-  disableAudio: Observable<boolean>,
+  disableAudio: boolean,
   onDisableAudio: () => void,
   onEnableAudio: () => void,
-  localVolume: Observable<number>,
+  localVolume: number,
   onLocalVolumeChange: (localVolume: number) => void,
 }) {
   const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) =>
@@ -53,32 +54,22 @@ export function StudioRoom({
       </p>
       <p>
         Audio Input:{' '}
-        {ReactObservable.render(
-          deviceID,
-          deviceID => (
-            <UserAudioDevicesSelect
-              kind="input"
-              deviceID={deviceID}
-              onSelect={onSelectDeviceID}
-            />
-          ),
-        )}
+        <UserAudioDevicesSelect
+          kind="input"
+          deviceID={deviceID}
+          onSelect={onSelectDeviceID}
+        />
       </p>
       <p>
         Volume:{' '}
-        {ReactObservable.render(
-          localVolume,
-          localVolume => (
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={1}
-              value={localVolume * 100}
-              onChange={handleLocalVolumeChange}
-            />
-          ),
-        )}
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={1}
+          value={localVolume * 100}
+          onChange={handleLocalVolumeChange}
+        />
       </p>
       <p>
         <label>
