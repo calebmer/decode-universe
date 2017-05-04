@@ -2,6 +2,9 @@
 # yarn lockfile v1
 
 
+"@decode/jsutils@file:../jsutils":
+  version "0.0.0-versionless"
+
 "@types/debug@^0.0.29":
   version "0.0.29"
   resolved "https://registry.yarnpkg.com/@types/debug/-/debug-0.0.29.tgz#a1e514adfbd92f03a224ba54d693111dbf1f3754"

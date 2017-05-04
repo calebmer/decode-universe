@@ -8,6 +8,7 @@
     "postinstall": "rm -rf node_modules/@decode"
   },
   "dependencies": {
+    "@decode/jsutils": "file:../jsutils",
     "debug": "^2.6.3",
     "socket.io-client": "^1.7.3"
   },

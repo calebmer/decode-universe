@@ -126,12 +126,11 @@ extends EventEmitter<PeersMesh.EventMap> {
     this.localAudioContext = localAudioContext;
     this.createPeerInstance = createPeerInstance;
     // Create the signal client.
-    this.signals = new SignalClient({
-      roomName,
-      onSignal: (address, signal) => {
-        this.handleSignal(address, signal)
+    this.signals = new SignalClient({ roomName });
+    // Add an event listener to our signal client.
+    this.signals.on('signal', ({ from, signal }) => {
+      this.handleSignal(from, signal)
           .catch(error => console.error(error));
-      },
     });
     // Create the local state subject using the initial state provided to us.
     this.localStateSubject = new BehaviorSubject(localState);

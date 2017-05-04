@@ -1,5 +1,6 @@
 import * as createDebugger from 'debug';
 import * as socketIO from 'socket.io-client';
+import { EventEmitter } from '@decode/jsutils';
 import {
   JoinRequestMessage,
   JoinResponseMessage,
@@ -10,17 +11,11 @@ import {
 
 const debug = createDebugger('@decode/studio-signal-client');
 
-export class SignalClient {
+export class SignalClient extends EventEmitter<SignalClient.EventMap> {
   /**
    * The name of the room which we are connected to.
    */
   private readonly roomName: string;
-
-  /**
-   * The callback function that our client needs to call whenever we have
-   * a signal.
-   */
-  private readonly onSignal: (from: string, signal: Signal) => void;
 
   /**
    * The socket.io socket for this signalign client.
@@ -29,13 +24,11 @@ export class SignalClient {
 
   constructor({
     roomName,
-    onSignal,
   }: {
     roomName: string,
-    onSignal: (from: string, signal: Signal) => void,
   }) {
+    super();
     this.roomName = roomName;
-    this.onSignal = onSignal;
     this.socket = null;
   }
 
@@ -50,6 +43,8 @@ export class SignalClient {
       this.socket.close();
       this.socket = null;
     }
+    // Clear all of the event listeners.
+    this.clearAllListeners();
   }
 
   /**
@@ -72,7 +67,7 @@ export class SignalClient {
     // When we get a signal from the socket we want to let our listener know.
     socket.on('signal', ({ from, signal }: SignalIncomingMessage) => {
       debug(`Received ${signal.type} from ${from}`);
-      this.onSignal(from, signal);
+      this.emit('signal', { from, signal });
     });
     // The message we will send to join the room.
     const request: JoinRequestMessage = { roomName: this.roomName };
@@ -96,5 +91,11 @@ export class SignalClient {
     const message: SignalOutgoingMessage = { to, signal };
     this.socket.emit('signal', message);
     debug(`Sent ${signal.type} to ${to}`);
+  }
+}
+
+export namespace SignalClient {
+  export interface EventMap {
+    signal: { from: string, signal: Signal };
   }
 }
