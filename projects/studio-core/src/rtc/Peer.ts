@@ -1,5 +1,5 @@
 import { Observable, BehaviorSubject } from 'rxjs';
-import { Disposable } from '@decode/jsutils';
+import { Disposable, EventEmitter } from '@decode/jsutils';
 
 /**
  * The config used to initialize a `Peer` instance.
@@ -27,6 +27,17 @@ export type PeerState = {
    */
   readonly isMuted: boolean,
 };
+
+export namespace Peer {
+  /**
+   * Events that a peer emits.
+   */
+  export interface EventMap {
+    connectionStatusChange: PeerConnectionStatus;
+    remoteStreamChange: MediaStream | null;
+    remoteStateChange: PeerState;
+  }
+}
 
 /**
  * The configuration we use when creating `RTCPeerConnection` instances.
@@ -63,7 +74,7 @@ const rtcConfig = {
  * instance of `Peer` that models the same connection. What is “local” and what
  * is “remote” is swapped in these two instances on different computers.
  */
-export class Peer {
+export class Peer extends EventEmitter<Peer.EventMap> {
   /**
    * The internal, writable, representation of `isClosed`.
    */
@@ -81,16 +92,20 @@ export class Peer {
    */
   public readonly connection: RTCPeerConnection;
 
+  private _connectionStatus: PeerConnectionStatus;
+
+  /**
+   * The status of the connection that we have with our peer.
+   */
+  public get connectionStatus(): PeerConnectionStatus {
+    return this._connectionStatus;
+  }
+
   /**
    * All of the remote media streams that our peer has given us access to. As
    * the peer may add and remove streams over time this is an observable.
    */
   public readonly remoteStream: Observable<MediaStream | null>;
-
-  /**
-   * Represents the status of the connection that we have with our peer.
-   */
-  public readonly connectionStatus: Observable<PeerConnectionStatus>;
 
   /**
    * The remote state subject is where we will send new state objects. The value
@@ -156,10 +171,14 @@ export class Peer {
     localState,
     localAudio,
   }: PeerConfig) {
+    super();
     // Set some properties on the class.
     this.localAudioContext = localAudioContext;
     // Create a new connection using the pre-defined config.
     this.connection = new RTCPeerConnection(rtcConfig);
+    // Set our current connection status directly from the `RTCPeerConnection`.
+    this._connectionStatus =
+      getConnectionStatus(this.connection.iceConnectionState);
     // Create the media stream destination object from the provided audio
     // context.
     this.localAudioDestination =
@@ -177,7 +196,6 @@ export class Peer {
     // Set the current local state to the initial state we were given.
     this.currentLocalState = localState;
     // Create some observables that watch the connection and emit events.
-    this.connectionStatus = watchConnectionStatus(this.connection);
     this.remoteStream = watchRemoteStream(this.connection);
     // If we are the initiator then we want to create some data channels. If we
     // are not the initiator then we want to set an event listener that waits
@@ -200,6 +218,42 @@ export class Peer {
       // Add the data channel event listener. It will remove itself once its
       // mission is completed.
       this.connection.addEventListener('datachannel', handleDataChannel);
+    }
+    // Add some event listeners which will always be listening for the entirety
+    // of the peer connection. These listeners will be updating state on our
+    // class instance and emitting events.
+    {
+      // Create an event listeners map. These listeners will be added and
+      // removed from our `RTCPeerConnection` when appropriate.
+      const eventListeners = new Map([
+        // When the ICE connection state changes we want to update our own
+        // connection status.
+        ['iceconnectionstatechange', () => {
+          // Compute the next connection status from the connection state.
+          const nextConnectionStatus =
+            getConnectionStatus(this.connection.iceConnectionState);
+          // If the connection status changed then we want to update the
+          // connection status and emit a change event.
+          if (this._connectionStatus !== nextConnectionStatus) {
+            this._connectionStatus = nextConnectionStatus;
+            this.emit('connectionStatusChange', this._connectionStatus);
+          }
+        }],
+      ]);
+      // Add all of the event listeners from the map we declared above to our
+      // `RTCPeerConnection`.
+      eventListeners.forEach((listener, eventName) => {
+        this.connection.addEventListener(eventName, listener);
+      });
+      // Add a disposable which will remove all of the event listeners in the
+      // map we declared above from our `RTCPeerConnection`.
+      this.disposables.push({
+        dispose: () => {
+          eventListeners.forEach((listener, eventName) => {
+            this.connection.removeEventListener(eventName, listener);
+          });
+        },
+      });
     }
   }
 
@@ -375,29 +429,6 @@ export enum PeerConnectionStatus {
    * for example.
    */
   disconnected,
-}
-
-/**
- * Watches the connection status for changes.
- */
-function watchConnectionStatus(
-  connection: RTCPeerConnection,
-): Observable<PeerConnectionStatus> {
-  return new Observable<PeerConnectionStatus>(observer => {
-    // Immeadiately emit the connection status.
-    observer.next(getConnectionStatus(connection.iceConnectionState));
-    // This function will handle a change in the connection status by computing
-    // the new connection status and emitting the new connection status.
-    const handleChange = () => {
-      observer.next(getConnectionStatus(connection.iceConnectionState));
-    };
-    // Add the event listener.
-    connection.addEventListener('iceconnectionstatechange', handleChange);
-    // Remove the event listener on unsubscribe.
-    return () => {
-      connection.removeEventListener('iceconnectionstatechange', handleChange);
-    };
-  });
 }
 
 /**
