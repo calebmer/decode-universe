@@ -8,6 +8,7 @@ import { RecorderStorage } from './RecorderStorage';
 /**
  * Export all of a recording’s assets to the provided directory.
  */
+// This needs to be called `doExport` because `export` is a syntax error.
 async function doExport(
   storage: RecordingStorage,
   exportDirectoryPath: string,
