@@ -124,7 +124,7 @@ export function StudioRoom({
       </div>
       <p>
         Invite guests to the recording:{' '}
-        <code>http://localhost:1999?room={encodeURIComponent(mesh.roomName)}</code>
+        <code>http://localhost:1999/?room={encodeURIComponent(mesh.roomName)}</code>
       </p>
       {ReactObservable.render(
         mesh.peers,
