@@ -1,4 +1,5 @@
 import { Observable, BehaviorSubject } from 'rxjs';
+import { Disposable } from '@decode/jsutils';
 
 /**
  * The config used to initialize a `Peer` instance.

@@ -1,0 +1,16 @@
+{
+  "extends": "../typescript/config/base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "esnext",
+    "lib": ["es2015", "es2016", "es2017"],
+    "baseUrl": ".",
+    "paths": {
+      "@decode/*": ["../*"]
+    }
+  },
+  "include": [
+    "./src",
+    "../typescript/typings/ambient/universal"
+  ]
+}

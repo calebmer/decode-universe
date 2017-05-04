@@ -4,6 +4,6 @@
  *
  * This interface helps abstract over many types of endable processes.
  */
-declare interface Disposable {
+export interface Disposable {
   dispose(): void;
 }

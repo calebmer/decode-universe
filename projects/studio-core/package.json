@@ -8,6 +8,7 @@
     "postinstall": "rm -rf node_modules/@decode"
   },
   "dependencies": {
+    "@decode/jsutils": "file:../jsutils",
     "@decode/studio-signal-client": "file:../studio-signal-client",
     "debug": "^2.6.3",
     "immutable": "^3.8.1",

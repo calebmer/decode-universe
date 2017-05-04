@@ -1,4 +1,5 @@
 import { Subscription } from 'rxjs';
+import { Disposable } from '@decode/jsutils';
 import { RemoteRecorderProtocol } from './RemoteRecorderProtocol';
 import { LocalRecorder } from './LocalRecorder';
 

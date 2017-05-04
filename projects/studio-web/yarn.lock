@@ -2,18 +2,23 @@
 # yarn lockfile v1
 
 
+"@decode/jsutils@file:../jsutils":
+  version "0.0.0-versionless"
+
+"@decode/studio-core@file:../studio-core":
+  version "0.0.0-versionless"
+  dependencies:
+    "@decode/studio-signal-client" "file:../studio-signal-client"
+    debug "^2.6.3"
+    immutable "^3.8.1"
+    react "^15.4.2"
+    rxjs "^5.3.0"
+
 "@decode/studio-signal-client@file:../studio-signal-client":
   version "0.0.0-versionless"
   dependencies:
     debug "^2.6.3"
     socket.io-client "^1.7.3"
-
-"@decode/studio-core@file:../studio-core":
-  version "0.0.0-versionless"
-  dependencies:
-    immutable "^3.8.1"
-    react "^15.4.2"
-    rxjs "^5.3.0"
 
 "@types/react-dom@^0.14.23":
   version "0.14.23"

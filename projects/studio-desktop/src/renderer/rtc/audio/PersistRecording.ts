@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import { v4 as uuid } from 'uuid';
+import { Disposable } from '@decode/jsutils';
 import { Recorder } from '@decode/studio-core';
 import { RecordingManifest } from './RecordingManifest';
 
