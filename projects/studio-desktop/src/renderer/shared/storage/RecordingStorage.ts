@@ -3,12 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { Disposable } from '@decode/jsutils';
 import { Recorder } from '@decode/studio-core';
 import { FileSystemUtils as fs } from './FileSystemUtils';
-import { RecorderRawStorage } from './RecorderRawStorage';
-
-type RecorderMapValue = {
-  readonly storage: RecorderRawStorage,
-  readonly manifest: RecorderManifest,
-};
+import { RecorderStorage } from './RecorderStorage';
 
 const rawRecorderDataDirectoryName = 'raw';
 
@@ -27,9 +22,9 @@ export class RecordingStorage {
     // Parse the manifest into a string.
     const manifest: RecordingManifest = JSON.parse(manifestString);
     // Open all of our recorders.
-    const recorders = new Map<string, RecorderMapValue>(await Promise.all(
+    const recorders = new Map<string, RecorderStorage>(await Promise.all(
       Object.keys(manifest.recorders)
-        .map(async (id: string): Promise<[string, RecorderMapValue]> => {
+        .map(async (id: string): Promise<[string, RecorderStorage]> => {
           // Create the file path to our raw recorder file.
           const recorderFilePath =
             path.join(directoryPath, rawRecorderDataDirectoryName, id);
@@ -37,10 +32,10 @@ export class RecordingStorage {
           const recorderManifest = manifest.recorders[id];
           // Return a map entry with the id as the key, and the recorder storage
           // as the value.
-          return [id, {
-            storage: await RecorderRawStorage.open(recorderFilePath),
-            manifest: recorderManifest,
-          }];
+          return [
+            id,
+            await RecorderStorage.open(recorderFilePath, recorderManifest),
+          ];
         })
     ));
     // Use the private constructor to create a new `RecordingStorage` instance.
@@ -89,7 +84,7 @@ export class RecordingStorage {
    * A map of all the recorder storage instances keyed by their ids. Entries are
    * stored in no particular order.
    */
-  private readonly recorders: Map<string, RecorderMapValue>;
+  private readonly recorders: Map<string, RecorderStorage>;
 
   private constructor({
     directoryPath,
@@ -98,7 +93,7 @@ export class RecordingStorage {
   }: {
     directoryPath: string,
     startedAt: number,
-    recorders: Map<string, RecorderMapValue>,
+    recorders: Map<string, RecorderStorage>,
   }) {
     this.directoryPath = directoryPath;
     this.startedAt = startedAt;
@@ -124,8 +119,12 @@ export class RecordingStorage {
     const recorders: { [id: string]: RecorderManifest } = {};
     // For all of our recorders add an entry to the recorder map with the
     // manifest as the value.
-    for (const [id, { manifest }] of this.recorders) {
-      recorders[id] = manifest;
+    for (const [id, recorder] of this.recorders) {
+      recorders[id] = {
+        name: recorder.name,
+        sampleRate: recorder.sampleRate,
+        startedAtDelta: recorder.startedAtDelta,
+      };
     }
     // Create the full manifest.
     const manifest: RecordingManifest = {
@@ -163,20 +162,18 @@ export class RecordingStorage {
     // Randomly generate an id for this recorder in the storage system.
     const id = uuid();
     // Open a new `RecorderRawStorage` instance a a fresh path.
-    const storage = RecorderRawStorage.open(
+    const storage = RecorderStorage.open(
       // Create a path for a file in the `recorders` directory with the randomly
       // generated uuid.
       path.join(this.directoryPath, rawRecorderDataDirectoryName, id),
-    );
-    // Add the recorder to our map.
-    this.recorders.set(id, {
-      storage,
-      manifest: {
+      {
         name: recorder.name,
         sampleRate: recorder.sampleRate,
         startedAtDelta: Date.now() - this.startedAt,
       },
-    });
+    );
+    // Add the recorder to our map.
+    this.recorders.set(id, storage);
     // Try to write the manifest which was updated above. If that fails then we
     // want to report an error.
     this.writeManifest().catch(error => console.error(error));
@@ -190,18 +187,18 @@ export class RecordingStorage {
    */
   public async getSecondsLength(): Promise<number> {
     // Get the time in seconds for all of the recorder data.
-    const recorderSeconds = await Promise.all(this.getAllRecorders().map(
-      async ({ sampleRate, startedAtDelta, storage }) => {
+    const recorderSeconds = await Promise.all(
+      Array.from(this.recorders.values()).map(async storage => {
         // Get the sample length of the raw file.
         const sampleLength = await storage.getSampleLength();
         // Convert the sample length into seconds by dividing the sample rate.
-        const seconds = sampleLength / sampleRate;
+        const seconds = sampleLength / storage.sampleRate;
         // Add the delta from the time we started.
-        const secondsAfterStart = seconds + (startedAtDelta / 1000);
+        const secondsAfterStart = seconds + (storage.startedAtDelta / 1000);
         // Return the final time in seconds.
         return secondsAfterStart;
-      },
-    ));
+      }),
+    );
     // Get the maximum seconds value from all our recorders.
     const max = recorderSeconds.reduce((a, b) => Math.max(a, b), 0);
     // Return the maximum.
@@ -212,19 +209,8 @@ export class RecordingStorage {
    * Returns all of the recorders for this recording in no particular order.
    * The id for each recorder is also provided.
    */
-  public getAllRecorders(): Array<{
-    id: string,
-    name: string,
-    sampleRate: number,
-    startedAtDelta: number,
-    storage: RecorderRawStorage,
-  }> {
-    return Array.from(this.recorders)
-      .map(([id, { manifest, storage }]) => ({
-        ...manifest,
-        id,
-        storage,
-      }));
+  public getAllRecorders(): Map<string, RecorderStorage> {
+    return new Map(this.recorders);
   }
 }
 

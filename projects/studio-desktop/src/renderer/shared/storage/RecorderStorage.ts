@@ -6,7 +6,7 @@ import { FileSystemUtils as fs } from './FileSystemUtils';
 /**
  * Stores the data from a single `Recorder`.
  */
-export class RecorderRawStorage {
+export class RecorderStorage {
   /**
    * Open an instance of `RecorderRawStorage`. Unlike many other storages the
    * storage for a recorder does not have to be created first. Calling `write()`
@@ -15,21 +15,49 @@ export class RecorderRawStorage {
    *
    * It can also be opened synchronously.
    */
-  public static open(filePath: string): RecorderRawStorage {
-    return new RecorderRawStorage({ filePath });
+  public static open(
+    rawFilePath: string,
+    options: { name: string, sampleRate: number, startedAtDelta: number },
+  ): RecorderStorage {
+    return new RecorderStorage({ ...options, rawFilePath });
   }
 
   /**
    * The file at which this recorder lives.
    */
-  private readonly filePath: string;
+  public readonly rawFilePath: string;
+
+  /**
+   * The name of the recorder.
+   */
+  public readonly name: string;
+
+  /**
+   * The sample rate at which this recorder is recorded.
+   */
+  public readonly sampleRate: number;
+
+  /**
+   * How long after the recording started did this recorder start (in
+   * milliseconds).
+   */
+  public readonly startedAtDelta: number;
 
   private constructor({
-    filePath,
+    rawFilePath,
+    name,
+    sampleRate,
+    startedAtDelta,
   }: {
-    filePath: string,
+    rawFilePath: string,
+    name: string,
+    sampleRate: number,
+    startedAtDelta: number,
   }) {
-    this.filePath = filePath;
+    this.rawFilePath = rawFilePath;
+    this.name = name;
+    this.sampleRate = sampleRate;
+    this.startedAtDelta = startedAtDelta;
   }
 
   /**
@@ -41,7 +69,7 @@ export class RecorderRawStorage {
       recorder.start();
     }
     // Creates a write stream for the provided file path.
-    const writable = createWriteStream(this.filePath);
+    const writable = createWriteStream(this.rawFilePath);
     // TODO: Better error reporting.
     writable.on('error', (error: Error) => {
       console.error(error);
@@ -73,7 +101,7 @@ export class RecorderRawStorage {
    * Get the byte length of the raw recorder data.
    */
   public getByteLength(): Promise<number> {
-    return fs.fileByteSize(this.filePath);
+    return fs.fileByteSize(this.rawFilePath);
   }
 
   /**
@@ -82,6 +110,4 @@ export class RecorderRawStorage {
   public getSampleLength(): Promise<number> {
     return this.getByteLength().then(length => length / 4);
   }
-
-  // TODO: public read() {}
 }

@@ -5,14 +5,24 @@ import { RecordingStorage } from '../shared/storage/RecordingStorage';
 export const DirectoryRecording = ({
   id,
   storage,
+  onExport,
 }: {
   id: string,
   storage: RecordingStorage,
+  onExport: (storage: RecordingStorage) => void,
 }) => (
   <div>
-    <span>{id}</span>{' '}
-    <button>Export WAV</button>{' '}
-    <button>Delete</button>
+    <div>
+      <span>{id}</span>
+      {' '}
+      <button onClick={() => onExport(storage)}>
+        Export
+      </button>
+      {' '}
+      <button>
+        Delete
+      </button>
+    </div>
     <ul>
       <li>Started: {new Date(storage.startedAt).toString()}</li>
       <li>
@@ -25,25 +35,19 @@ export const DirectoryRecording = ({
       <li>
         <span>Recorders:</span>
         <ul>
-          {storage.getAllRecorders().map(({
-            id,
-            name,
-            startedAtDelta,
-            sampleRate,
-            storage,
-          }) => (
+          {Array.from(storage.getAllRecorders()).map(([id, recorder]) => (
             <li key={id}>
-              <span>{name}</span>
+              <span>{recorder.name}</span>
               <ul>
-                <li>Delta: +{startedAtDelta}ms</li>
-                <li>Sample Rate: {sampleRate}</li>
+                <li>Delta: +{recorder.startedAtDelta}ms</li>
+                <li>Sample Rate: {recorder.sampleRate}</li>
                 <li>
                   Duration:{' '}
                   {ReactPromise.render(
-                    storage.getSampleLength(),
+                    recorder.getSampleLength(),
                     sampleLength => (
                       <span>
-                        {Math.round((sampleLength / sampleRate) * 100) / 100}s
+                        {Math.round((sampleLength / recorder.sampleRate) * 100) / 100}s
                       </span>
                     ),
                   )}
@@ -51,7 +55,7 @@ export const DirectoryRecording = ({
                 <li>
                   Bytes:{' '}
                   {ReactPromise.render(
-                    storage.getByteLength(),
+                    recorder.getByteLength(),
                     byteLength => <span>{byteLength}</span>,
                   )}
                 </li>

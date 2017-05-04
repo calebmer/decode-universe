@@ -1,42 +1,120 @@
-import * as fs from 'fs';
+import * as path from 'path';
+import { createReadStream, createWriteStream } from 'fs';
 import * as stream from 'stream';
-import { RecordingManifest } from './RecordingManifest';
+import * as moment from 'moment';
+import { RecordingStorage } from './RecordingStorage';
+import { RecorderStorage } from './RecorderStorage';
 
-async function exportWAV(recordingDirectory: string): Promise<void> {
-  const manifestFilePath = `${recordingDirectory}/manifest.json`;
-  const rawDirectory = `${recordingDirectory}/raw`;
-  const wavDirectory = `${recordingDirectory}/wav`;
-  try {
-    await new Promise<void>((resolve, reject) => {
-      fs.mkdir(
-        wavDirectory,
-        error => error ? reject(error) : resolve(),
+/**
+ * Export all of a recording’s assets to the provided directory.
+ */
+async function doExport(
+  storage: RecordingStorage,
+  exportDirectoryPath: string,
+): Promise<void> {
+  // Get the file names for all our recorders.
+  const recorderFileNames = getRecorderFileNames(storage);
+  // Wait for all of the recorders to export.
+  await Promise.all(
+    Array.from(storage.getAllRecorders()).map(async ([id, recorder]) => {
+      // If we did not get a name for this recorder then we need to throw an
+      // error.
+      if (!recorderFileNames.has(id)) {
+        throw new Error(`Did not get a file name for recorder with id '${id}'`);
+      }
+      // Get the file name for this recorder’s id. We know it exists.
+      const fileName = recorderFileNames.get(id)!;
+      // Export the recorder to WAV at the specified output file path.
+      await exportRecorderToWAV(
+        recorder,
+        path.join(exportDirectoryPath, fileName),
       );
-    });
-  } catch (error) {
-    if (error.code !== 'EEXIST') {
-      throw error;
-    }
-  }
-  const manifestString = await new Promise<string>((resolve, reject) => {
-    fs.readFile(
-      manifestFilePath,
-      'utf8',
-      (error, result) => error ? reject(error) : resolve(result),
-    );
-  });
-  const manifest: RecordingManifest = JSON.parse(manifestString);
-  Object.keys(manifest.recorders).map(async id => {
-    await exportRecorderToWAV(
-      manifest.recorders[id],
-      rawDirectory + '/' + id,
-      wavDirectory + '/' + id + '.wav',
-    );
-  });
+    }),
+  );
 }
 
-export const ExportRecording = {
-  exportWAV,
+/**
+ * Get all of the file names that we expect from an export so that we can check
+ * for collisions in the file system before we export.
+ */
+function getExportFileNames(storage: RecordingStorage): Set<string> {
+  // Get the recorder file names and return a set of just the values.
+  return new Set(getRecorderFileNames(storage).values());
+}
+
+/**
+ * Gets a map of recorder ids to the file name we will use for that recorder. We
+ * need to do this in a batch so that we can handle duplicate shortened names.
+ */
+// TODO: test!!!!!!
+function getRecorderFileNames(storage: RecordingStorage): Map<string, string> {
+  // The extension we will add to our file names.
+  const extension = '.wav';
+  // While we want to return a map of `id`s to `fileName`s this map is the
+  // reverse. It shows `fileName`s to an array of `id`s. This allows us to
+  // dedupe file names that are generated for a few different recorder ids.
+  const reverseFileNames = new Map<string, Array<string>>();
+  // For all of the recorders...
+  for (const [id, { name }] of storage.getAllRecorders()) {
+    // Get the file name for this recorder.
+    const fileName = getFileName(storage.startedAt, name);
+    // If we already have this file name then add the id to the array of ids
+    // corresponding to this file name.
+    //
+    // Otherwise we want to create a new array where this id is the only one.
+    if (reverseFileNames.has(fileName)) {
+      reverseFileNames.get(fileName)!.push(id);
+    } else {
+      reverseFileNames.set(fileName, [id]);
+    }
+  }
+  // Now create our actual file name map.
+  const fileNames = new Map<string, string>();
+  // For all of the reverse file names...
+  for (const [fileName, ids] of reverseFileNames) {
+    // If there is only one id for this file name then we do not need to dedupe
+    // the name. Otherwise we will need to add a number to the end in order to
+    // dedupe the extension.
+    if (ids.length === 1) {
+      // Set the id with the filename plus the extension.
+      fileNames.set(ids[0], fileName + extension);
+    } else {
+      let index = 1;
+      // Set a file name for all of the ids, all the while adding an index to
+      // the end of the file name to dedupe it.
+      for (const id of ids) {
+        fileNames.set(id, `${fileName}-${index++}` + extension);
+      }
+    }
+  }
+  // Return the finalized file names map.
+  return fileNames;
+}
+
+/**
+ * Gets the file name (without extension) for a recorder by turning the
+ * `startedAt` time into a concise time stamp and slugifying the `name`.
+ */
+function getFileName(startedAt: number, name: string): string {
+  // Format the time into a simple timestamp format that contains the date and
+  // the time.
+  const time = moment(startedAt)
+    .format('YYYY-MM-DD');
+  // Turn the name into a slug. The process involves lowercasing the string,
+  // replacing all series of non alpha-numeric characters with a hyphen (`-`),
+  // and finally remove leading and trailing hyphones.
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/ig, '-')
+    .replace(/^-/, '')
+    .replace(/-$/, '');
+  // If the slug is not an empty string then let us add it onto the time.
+  return time + (slug !== '' ? `-${slug}` : '');
+}
+
+export const RecordingExporter = {
+  export: doExport,
+  getExportFileNames,
 };
 
 /**
@@ -47,32 +125,24 @@ export const ExportRecording = {
  * saved without changes.
  */
 async function exportRecorderToWAV(
-  recorder: RecordingManifest.Recorder,
-  rawFilePath: string,
-  wavFilePath: string,
+  storage: RecorderStorage,
+  outputFilePath: string,
 ): Promise<void> {
-  // Get the stats for our raw file. We don’t want to read it because we are
-  // going to stream the file later on. However, we do need to know the size for
-  // the WAV file header.
-  const stats = await new Promise<fs.Stats>((resolve, reject) => {
-    fs.stat(
-      rawFilePath,
-      (error, stats) => error ? reject(error) : resolve(stats),
-    );
-  });
+  // Get the byte size of our raw file. We will use this to write our header.
+  const byteSize = await storage.getByteLength();
   // Compute the number of silence samples we will need to add to the start of
   // the output WAV recording. This is computed from the `startedAtDelta` time
   // on our recorder. If it is not 0 then the recorder started a little bit
   // after the recording and we should add silence to pad the output so that all
   // our recordings have a consistent length.
   const silenceSampleSize =
-    Math.floor(recorder.sampleRate * (recorder.startedAtDelta / 1000));
+    Math.floor(storage.sampleRate * (storage.startedAtDelta / 1000));
   // The final sample size of our recording. It will be the size of our raw file
   // divided by 4.
-  const sampleSize = (stats.size / 4) + silenceSampleSize;
+  const sampleSize = (byteSize / 4) + silenceSampleSize;
   // Create a write stream which we will use to write out the WAV data as we get
   // it.
-  const writable = fs.createWriteStream(wavFilePath);
+  const writable = createWriteStream(outputFilePath);
   // Create and write the header for our WAV file. As always, see
   // [`MediaStreamRecorder`][1] for the reference implementation.
   //
@@ -104,9 +174,9 @@ async function exportRecorderToWAV(
     // Channel count.
     view.setUint16(22, 1, true);
     // Sample rate.
-    view.setUint32(24, recorder.sampleRate, true);
+    view.setUint32(24, storage.sampleRate, true);
     // Byte rate (sample rate * block align).
-    view.setUint32(28, recorder.sampleRate * 1 * 2, true); // numChannels * 2 (via https://github.com/streamproc/MediaStreamRecorder/pull/71)
+    view.setUint32(28, storage.sampleRate * 1 * 2, true); // numChannels * 2 (via https://github.com/streamproc/MediaStreamRecorder/pull/71)
     // Block align (channel count * bytes per sample).
     view.setUint16(32, 1 * 2, true);
     // Bits per sample.
@@ -129,7 +199,7 @@ async function exportRecorderToWAV(
   // Construct a promise that will resolve or reject once our streams finish.
   await new Promise<void>((resolve, reject) => {
     // Create a stream that will read our raw file.
-    fs.createReadStream(rawFilePath)
+    createReadStream(storage.rawFilePath)
       // Pipe the readable stream into a `WAVTransform` which will convert the
       // raw data into data appropriate for WAV files.
       .pipe(new WAVTransform())

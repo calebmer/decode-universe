@@ -12,6 +12,7 @@
     "@decode/studio-core": "file:../studio-core",
     "debug": "^2.6.3",
     "immutable": "^3.8.1",
+    "moment": "^2.18.1",
     "react": "^15.4.2",
     "react-dom": "^15.4.2",
     "rxjs": "^5.3.0",
