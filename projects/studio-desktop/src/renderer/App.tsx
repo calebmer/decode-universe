@@ -48,7 +48,9 @@ export class App extends React.PureComponent<{}, State> {
   }
 
   private handleCreateRoom = () => {
-    this.setState({ roomName: uuid() });
+    // If we are in development then just join the room with the name `dev`.
+    // Otherwise we want to generate a random id.
+    this.setState({ roomName: DEV ? 'dev' : uuid() });
   };
 
   private handleGoToDirectory = () => {
