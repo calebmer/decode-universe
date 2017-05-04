@@ -4,7 +4,6 @@ import { ReactObservable } from './observable/ReactObservable';
 import { AudioVisualization } from './audio/AudioVisualization';
 import { AudioDestination } from './audio/AudioDestination';
 import { Peer, PeerConnectionStatus } from './rtc/Peer';
-import { EventListener } from './EventListener';
 
 export function StudioPeer({
   peer,
@@ -28,13 +27,12 @@ export function StudioPeer({
           ),
         )}
         {' '}
-        <EventListener
-          emitter={peer}
-          event="connectionStatusChange"
-          render={() => (
-            <span>({PeerConnectionStatus[peer.connectionStatus]})</span>
-          )}
-        />
+        {ReactObservable.render(
+          peer.connectionStatus,
+          connectionStatus => (
+            <span>({PeerConnectionStatus[connectionStatus]})</span>
+          ),
+        )}
       </p>
       {ReactObservable.render(
         peer.remoteStream
