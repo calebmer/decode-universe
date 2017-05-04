@@ -2,7 +2,7 @@ import * as createDebugger from 'debug';
 import { OrderedMap } from 'immutable';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { SignalClient, Signal } from '@decode/studio-signal-client';
-import { Peer, PeerConfig, PeerState } from './Peer';
+import { Peer } from './Peer';
 
 const debug = createDebugger('@decode/studio-core:PeersMesh');
 
@@ -98,7 +98,7 @@ export class PeersMesh<TPeer extends Peer = Peer> {
    * communicate with their peers differently so this allows them to extend the
    * `Peer` class and initiate their own custom peers.
    */
-  private readonly createPeerInstance: (config: PeerConfig) => TPeer;
+  private readonly createPeerInstance: (config: Peer.Config) => TPeer;
 
   /**
    * A signal client instance that can be used to send signals to our peers
@@ -115,8 +115,8 @@ export class PeersMesh<TPeer extends Peer = Peer> {
   }: {
     roomName: string,
     localAudioContext: AudioContext,
-    localState: PeerState,
-    createPeerInstance: (config: PeerConfig) => TPeer,
+    localState: Peer.State,
+    createPeerInstance: (config: Peer.Config) => TPeer,
   }) {
     // Set some properties on the class instance.
     this.localAudioContext = localAudioContext;
@@ -378,18 +378,18 @@ export class PeersMesh<TPeer extends Peer = Peer> {
   /**
    * The local state on this peer mesh.
    */
-  private readonly localStateSubject: BehaviorSubject<PeerState>;
+  private readonly localStateSubject: BehaviorSubject<Peer.State>;
 
   /**
    * The local state for this mesh. Use `setState` to update and the updates
    * from `setState` will be propogated to all of the peers in our mesh.
    */
-  public readonly localState: Observable<PeerState>;
+  public readonly localState: Observable<Peer.State>;
 
   /**
    * The current local peer state.
    */
-  public get currentLocalState(): PeerState {
+  public get currentLocalState(): Peer.State {
     return this.localStateSubject.value;
   }
 
@@ -405,9 +405,9 @@ export class PeersMesh<TPeer extends Peer = Peer> {
    * Updates the local state with a partial state object. Anyone listening to
    * the local state will be updated, and any peers will also be updated.
    */
-  private updateLocalState(partialState: Partial<PeerState>): void {
+  private updateLocalState(partialState: Partial<Peer.State>): void {
     // Create the next state object.
-    const nextState: PeerState = {
+    const nextState: Peer.State = {
       ...this.localStateSubject.value,
       ...partialState,
     };

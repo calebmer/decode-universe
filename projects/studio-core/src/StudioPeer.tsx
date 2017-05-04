@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { ReactObservable } from './observable/ReactObservable';
 import { AudioVisualization } from './audio/AudioVisualization';
 import { AudioDestination } from './audio/AudioDestination';
-import { Peer, PeerConnectionStatus } from './rtc/Peer';
+import { Peer } from './rtc/Peer';
 
 export function StudioPeer({
   peer,
@@ -30,7 +30,7 @@ export function StudioPeer({
         {ReactObservable.render(
           peer.connectionStatus,
           connectionStatus => (
-            <span>({PeerConnectionStatus[connectionStatus]})</span>
+            <span>({Peer.ConnectionStatus[connectionStatus]})</span>
           ),
         )}
       </p>

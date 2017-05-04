@@ -2,33 +2,6 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { Disposable } from '@decode/jsutils';
 
 /**
- * The config used to initialize a `Peer` instance.
- */
-export type PeerConfig = {
-  readonly isLocalInitiator: boolean,
-  readonly localAudioContext: AudioContext,
-  readonly localState: PeerState,
-  readonly localAudio: AudioNode | null,
-};
-
-/**
- * Some basic state that is shared between the peers in a peer to peer
- * connection.
- *
- * This state is designed to be easily serialized to and deserialized from JSON.
- */
-export type PeerState = {
-  /**
-   * The name of the peer.
-   */
-  readonly name: string,
-  /**
-   * Whether or not the peer has muted their audio.
-   */
-  readonly isMuted: boolean,
-};
-
-/**
  * The configuration we use when creating `RTCPeerConnection` instances.
  *
  * There are some free STUN servers available to us. Let’s use them!
@@ -90,14 +63,14 @@ export class Peer {
   /**
    * Represents the status of the connection that we have with our peer.
    */
-  public readonly connectionStatus: Observable<PeerConnectionStatus>;
+  public readonly connectionStatus: Observable<Peer.ConnectionStatus>;
 
   /**
    * The remote state subject is where we will send new state objects. The value
    * will be null while we are loading. The view into this subject for consumers
    * will filter out nulls.
    */
-  private readonly remoteStateSubject = new BehaviorSubject<PeerState | null>(null);
+  private readonly remoteStateSubject = new BehaviorSubject<Peer.State | null>(null);
 
   /**
    * The state of our peer. Will emit the most recent state that we know about
@@ -105,13 +78,13 @@ export class Peer {
    * peer. In that case there will be no emissions until the peer sends us their
    * state.
    */
-  public readonly remoteState: Observable<PeerState> =
+  public readonly remoteState: Observable<Peer.State> =
     this.remoteStateSubject.filter(state => state !== null);
 
   /**
    * The current remote state for this peer.
    */
-  public get currentRemoteState(): PeerState | null {
+  public get currentRemoteState(): Peer.State | null {
     return this.remoteStateSubject.value;
   }
 
@@ -128,7 +101,7 @@ export class Peer {
    * updated again. We use it so that when `stateChannel` comes online we can
    * immeadiately send the latest local state.
    */
-  private currentLocalState: PeerState | null;
+  private currentLocalState: Peer.State | null;
 
   /**
    * The local audio context for this peer.
@@ -155,7 +128,7 @@ export class Peer {
     localAudioContext,
     localState,
     localAudio,
-  }: PeerConfig) {
+  }: Peer.Config) {
     // Set some properties on the class.
     this.localAudioContext = localAudioContext;
     // Create a new connection using the pre-defined config.
@@ -233,7 +206,7 @@ export class Peer {
     // Handles a message from our data channel by alerting any listeners to the
     // remote state observable that there is new data.
     const handleMessage = (event: MessageEvent) => {
-      const remoteState: PeerState = JSON.parse(event.data);
+      const remoteState: Peer.State = JSON.parse(event.data);
       this.remoteStateSubject.next(remoteState);
     };
 
@@ -288,7 +261,7 @@ export class Peer {
    * **WARNING:** This should only be used in `PeersMesh` or else peers may get
    * out of sync!
    */
-  public _setLocalState(state: PeerState): void {
+  public _setLocalState(state: Peer.State): void {
     // State check.
     if (this.isClosed === true) {
       throw new Error('Peer is closed.');
@@ -350,31 +323,60 @@ export class Peer {
   }
 }
 
-/**
- * Represents a connection status that we may be in with a peer. The values are
- * arranged in such a way to make the UI that represents a connection status
- * easy to render.
- */
-export enum PeerConnectionStatus {
+export namespace Peer {
   /**
-   * We have recognized that the peer exists and we are currently trying to
-   * arrive at a stable connection with that peer.
+   * The config used to initialize a `Peer` instance.
+   */
+  export type Config = {
+    readonly isLocalInitiator: boolean,
+    readonly localAudioContext: AudioContext,
+    readonly localState: Peer.State,
+    readonly localAudio: AudioNode | null,
+  };
+
+  /**
+   * Some basic state that is shared between the peers in a peer to peer
+   * connection.
    *
-   * This is kind of like “loading.”
+   * This state is designed to be easily serialized to and deserialized from JSON.
    */
-  connecting,
+  export type State = {
+    /**
+     * The name of the peer.
+     */
+    readonly name: string,
+    /**
+     * Whether or not the peer has muted their audio.
+     */
+    readonly isMuted: boolean,
+  };
 
   /**
-   * We have a stable connection with our peer.
+   * Represents a connection status that we may be in with a peer. The values are
+   * arranged in such a way to make the UI that represents a connection status
+   * easy to render.
    */
-  connected,
+  export enum ConnectionStatus {
+    /**
+     * We have recognized that the peer exists and we are currently trying to
+     * arrive at a stable connection with that peer.
+     *
+     * This is kind of like “loading.”
+     */
+    connecting,
 
-  /**
-   * We lost the connection with our peer. Disconnects are not fatal, however!
-   * Disconnects may be temporary if the peer’s internet connection is flaky,
-   * for example.
-   */
-  disconnected,
+    /**
+     * We have a stable connection with our peer.
+     */
+    connected,
+
+    /**
+     * We lost the connection with our peer. Disconnects are not fatal, however!
+     * Disconnects may be temporary if the peer’s internet connection is flaky,
+     * for example.
+     */
+    disconnected,
+  }
 }
 
 /**
@@ -382,8 +384,8 @@ export enum PeerConnectionStatus {
  */
 function watchConnectionStatus(
   connection: RTCPeerConnection,
-): Observable<PeerConnectionStatus> {
-  return new Observable<PeerConnectionStatus>(observer => {
+): Observable<Peer.ConnectionStatus> {
+  return new Observable<Peer.ConnectionStatus>(observer => {
     // Immeadiately emit the connection status.
     observer.next(getConnectionStatus(connection.iceConnectionState));
     // This function will handle a change in the connection status by computing
@@ -406,20 +408,20 @@ function watchConnectionStatus(
  *
  * [1]: https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/iceConnectionState#RTCIceConnectionState_enum
  */
-function getConnectionStatus(iceConnectionState: string): PeerConnectionStatus {
+function getConnectionStatus(iceConnectionState: string): Peer.ConnectionStatus {
   switch (iceConnectionState) {
     case 'new':
     case 'checking':
-      return PeerConnectionStatus.connecting;
+      return Peer.ConnectionStatus.connecting;
     case 'connected':
     case 'completed':
-      return PeerConnectionStatus.connected;
+      return Peer.ConnectionStatus.connected;
     case 'failed':
     case 'disconnected':
     case 'closed':
-      return PeerConnectionStatus.disconnected;
+      return Peer.ConnectionStatus.disconnected;
     default:
-      return PeerConnectionStatus.connecting;
+      return Peer.ConnectionStatus.connecting;
   }
 }
 

@@ -3,7 +3,6 @@ import { BehaviorSubject } from 'rxjs';
 import {
   PeersMesh,
   Peer,
-  PeerState,
   LocalRecorder,
   RemoteRecorder,
 } from '@decode/studio-core';
@@ -64,7 +63,7 @@ export class HostPeersMesh extends PeersMesh<GuestPeer> {
   }: {
     roomName: string,
     localAudioContext: AudioContext,
-    localState: PeerState,
+    localState: Peer.State,
   }) {
     super({
       roomName,

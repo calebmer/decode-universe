@@ -1,4 +1,4 @@
-import { Peer, PeerConfig, PeerState, RemoteRecordee } from '@decode/studio-core';
+import { Peer, RemoteRecordee } from '@decode/studio-core';
 
 /**
  * A peer that might be a host, but we don’t actually know. We will only know
@@ -30,7 +30,7 @@ export class MaybeHostPeer extends Peer {
    */
   private recordingName: string;
 
-  constructor(config: PeerConfig) {
+  constructor(config: Peer.Config) {
     super(config);
     // Get the audio we want to record.
     this.recordingAudio = config.localAudio;
@@ -84,7 +84,7 @@ export class MaybeHostPeer extends Peer {
     }
   }
 
-  public _setLocalState(state: PeerState): void {
+  public _setLocalState(state: Peer.State): void {
     super._setLocalState(state);
     // Update the human-readable recording name from the state.
     this.recordingName = state.name;

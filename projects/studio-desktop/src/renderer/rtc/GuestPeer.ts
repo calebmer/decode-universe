@@ -1,4 +1,4 @@
-import { Peer, PeerConfig } from '@decode/studio-core';
+import { Peer } from '@decode/studio-core';
 
 /**
  * A peer that we know is a guest. We should be receiving that peer’s local
@@ -10,7 +10,7 @@ import { Peer, PeerConfig } from '@decode/studio-core';
  */
 // TODO: Do we need this?
 export class GuestPeer extends Peer {
-  constructor(config: PeerConfig) {
+  constructor(config: Peer.Config) {
     super(config);
     // Create the recorder. Don’t wait for it to resolve.
   }
