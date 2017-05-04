@@ -15,7 +15,7 @@ export class SignalClient extends EventEmitter<SignalClient.EventMap> {
   /**
    * The name of the room which we are connected to.
    */
-  private readonly roomName: string;
+  public readonly roomName: string;
 
   /**
    * The socket.io socket for this signalign client.

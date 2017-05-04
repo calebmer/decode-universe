@@ -110,6 +110,13 @@ extends EventEmitter<PeersMesh.EventMap> {
    */
   private readonly signals: SignalClient;
 
+  /**
+   * Get the room name that the mesh is connected to.
+   */
+  public get roomName(): string {
+    return this.signals.roomName;
+  }
+
   constructor({
     roomName,
     localAudioContext,

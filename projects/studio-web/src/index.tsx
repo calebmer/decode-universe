@@ -1,7 +1,9 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+import * as querystring from 'querystring';
 import { PeersMesh, StudioRoomController } from '@decode/studio-core';
 import { MaybeHostPeer } from './rtc/MaybeHostPeer';
+import { StudioMustJoinRoom } from './StudioMustJoinRoom';
 
 const StudioRoom = StudioRoomController.createComponent({
   createPeersMesh: ({
@@ -27,7 +29,10 @@ const StudioRoom = StudioRoomController.createComponent({
   ),
 });
 
+const query = querystring.parse(location.search.slice(1));
+const roomName = query['room'];
+
 ReactDOM.render(
-  <StudioRoom roomName="hello world"/>,
+  !roomName ? <StudioMustJoinRoom/> : <StudioRoom roomName={roomName}/>,
   document.getElementById('root'),
 );
