@@ -23,6 +23,7 @@ Universe is split into projects. The following is a list of all the projects in 
 - **`studio-core`:** The common networking and UI resources for `studio-desktop` and `studio-web`. Must be buildable using the build setups for both `studio-desktop` and `studio-web`. Depends on `studio-signal-client` for the project’s signaling service compatible with `studio-signal-server`.
 - **`studio-signal-client`:** A client for `studio-signal-server` and the common message types used in communicating messages between the two projects.
 - **`studio-signal-server`:** A server that is used by Decode Studio peers to find each other accross the world and send signals while establishing a peer-to-peer connection. Depends on `studio-signal-client` for the common message types that both projects need to communicate.
+- **`jsutils`:** Various general JavaScript utilities that can be used in any JS environment.
 - **`typescript`:** Assorted utilities for TypeScript development in all Decode projects.
 
 ## Scripts
