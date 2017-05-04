@@ -68,11 +68,9 @@ module.exports = {
       // Compile all of our JavaScript and TypeScript files with TypeScript.
       {
         test: /\.(js|jsx|ts|tsx)$/,
-        include: [
-          path.join(__dirname, './src'),
-          path.join(__dirname, '../studio-core/src'),
-          path.join(__dirname, '../studio-signal-client/src'),
-        ],
+        include: new RegExp(
+          `${escapeRegExp(path.resolve(__dirname, '..'))}/[^/]+/src`
+        ),
         loader: 'awesome-typescript-loader',
         options: {
           // The default instance name, `at-loader`, is confusing.
@@ -89,11 +87,9 @@ module.exports = {
       !DEV && {
         enforce: 'pre',
         test: /\.js$/,
-        include: [
-          path.join(__dirname, './src'),
-          path.join(__dirname, '../studio-core/src'),
-          path.join(__dirname, '../studio-signal-client/src'),
-        ],
+        include: new RegExp(
+          `${escapeRegExp(path.resolve(__dirname, '..'))}/[^/]+/src`
+        ),
         loader: 'source-map-loader',
       },
     ].filter(Boolean),
@@ -148,3 +144,7 @@ module.exports = {
     }),
   ].filter(Boolean),
 };
+
+function escapeRegExp(text) {
+  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+}
