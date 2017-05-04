@@ -1,6 +1,7 @@
 import * as createDebugger from 'debug';
 import { OrderedMap } from 'immutable';
 import { Observable, BehaviorSubject } from 'rxjs';
+import { EventEmitter } from '@decode/jsutils';
 import { SignalClient, Signal } from '@decode/studio-signal-client';
 import { Peer } from './Peer';
 
@@ -50,7 +51,9 @@ const debounceNegotiationNeededMs = 200;
  * and we only connect to the mesh after `connect()` is called. To disconnect
  * from the mesh one needs to call `close()`.
  */
-export class PeersMesh<TPeer extends Peer = Peer> {
+export
+class PeersMesh<TPeer extends Peer = Peer>
+extends EventEmitter<PeersMesh.EventMap> {
   /**
    * The private subject observable that contains the immutable map of remote
    * peers we are connected to.
@@ -118,6 +121,7 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     localState: Peer.State,
     createPeerInstance: (config: Peer.Config) => TPeer,
   }) {
+    super();
     // Set some properties on the class instance.
     this.localAudioContext = localAudioContext;
     this.createPeerInstance = createPeerInstance;
@@ -141,13 +145,9 @@ export class PeersMesh<TPeer extends Peer = Peer> {
   public close(): void {
     // Close our signal client instance.
     this.signals.close();
-    // Clear out all of our peers. We are done with them.
-    this.peersSubject.next(this.peersSubject.value.clear());
     // Close every peer that we know of.
-    this.peersSubject.value.forEach(peer => {
-      if (peer !== undefined) {
-        peer._close();
-      }
+    this.peersSubject.value.forEach((peer, address) => {
+      this.deletePeer(address, peer);
     });
     // Complete our subjects. We are done with them.
     this.peersSubject.complete();
@@ -189,6 +189,8 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     });
     // Update our peers map by adding this peer keyed by its address.
     this.peersSubject.next(this.peersSubject.value.set(address, peer));
+    // Emit the add peer event.
+    this.emit('addPeer', { address, peer });
     // Everytime we get an ICE candidate, we want to send a signal to our peer
     // with the candidate information.
     {
@@ -245,6 +247,8 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     peer._close();
     // Remove the peer from our internal map.
     this.peersSubject.next(this.peersSubject.value.delete(address));
+    // Emit the delet peer event.
+    this.emit('deletePeer', { address, peer });
   }
 
   /**
@@ -544,5 +548,12 @@ export class PeersMesh<TPeer extends Peer = Peer> {
     // “Delete” our muted local stream. We won’t need it again until we are
     // muted.
     this.mutedLocalAudio = null;
+  }
+}
+
+export namespace PeersMesh {
+  export interface EventMap {
+    addPeer: { address: string, peer: Peer };
+    deletePeer: { address: string, peer: Peer };
   }
 }
