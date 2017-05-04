@@ -17,8 +17,13 @@ async function openStorage(): Promise<Storage> {
   // some data in the `userData` directory, and so we nest the data for our
   // storage in the “Decode Storage” folder. This name was picked to include
   // “Decode” to avoid naming collisions both now and in the future.
-  const storageDirectoryPath =
-    path.join(remote.app.getPath('userData'), 'Decode Storage');
+  //
+  // If we are in development we also add a `-dev` suffix so that files we
+  // record in development don’t mix with production files.
+  const storageDirectoryPath = path.join(
+    remote.app.getPath('userData'),
+    'Decode Storage' + (DEV ? '-dev' : ''),
+  );
   // Make sure the directory exists. If it does not the create it.
   if (!(await fs.directoryExists(storageDirectoryPath))) {
     await fs.createDirectory(storageDirectoryPath);
