@@ -14,12 +14,12 @@ export const DirectoryRecording = ({
     <button>Export WAV</button>{' '}
     <button>Delete</button>
     <ul>
-      <li>Started At: {new Date(storage.startedAt).toISOString()}</li>
+      <li>Started: {new Date(storage.startedAt).toString()}</li>
       <li>
         Duration:{' '}
         {ReactPromise.render(
           storage.getSecondsLength(),
-          seconds => <span>{Math.round(seconds * 100) / 100}s</span>
+          seconds => <span>{Math.round(seconds * 100) / 100}s</span>,
         )}
       </li>
       <li>
@@ -45,7 +45,14 @@ export const DirectoryRecording = ({
                       <span>
                         {Math.round((sampleLength / sampleRate) * 100) / 100}s
                       </span>
-                    )
+                    ),
+                  )}
+                </li>
+                <li>
+                  Bytes:{' '}
+                  {ReactPromise.render(
+                    storage.getByteLength(),
+                    byteLength => <span>{byteLength}</span>,
                   )}
                 </li>
               </ul>
