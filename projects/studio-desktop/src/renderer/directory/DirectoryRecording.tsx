@@ -4,18 +4,23 @@ import { RecordingStorage } from '../shared/storage/RecordingStorage';
 
 export const DirectoryRecording = ({
   id,
-  storage,
+  recording,
+  isExporting,
   onExport,
 }: {
   id: string,
-  storage: RecordingStorage,
-  onExport: (storage: RecordingStorage) => void,
+  recording: RecordingStorage,
+  isExporting: boolean,
+  onExport: (recording: RecordingStorage) => void,
 }) => (
   <div>
     <div>
       <span>{id}</span>
       {' '}
-      <button onClick={() => onExport(storage)}>
+      <button
+        disabled={isExporting}
+        onClick={() => onExport(recording)}
+      >
         Export
       </button>
       {' '}
@@ -24,18 +29,18 @@ export const DirectoryRecording = ({
       </button>
     </div>
     <ul>
-      <li>Started: {new Date(storage.startedAt).toString()}</li>
+      <li>Started: {new Date(recording.startedAt).toString()}</li>
       <li>
         Duration:{' '}
         {ReactPromise.render(
-          storage.getSecondsLength(),
+          recording.getSecondsLength(),
           seconds => <span>{Math.round(seconds * 100) / 100}s</span>,
         )}
       </li>
       <li>
         <span>Recorders:</span>
         <ul>
-          {Array.from(storage.getAllRecorders()).map(([id, recorder]) => (
+          {Array.from(recording.getAllRecorders()).map(([id, recorder]) => (
             <li key={id}>
               <span>{recorder.name}</span>
               <ul>

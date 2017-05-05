@@ -35,6 +35,7 @@ export interface Map<K, V> extends Iterable<[K, V]> {
   clear(): this;
 
   get(key: K): V;
+  has(key: K): boolean;
 
   map<U>(mapper: (value: V, key: K) => U): Map<K, U>;
   filter(predicate: (value: V, key: K) => boolean): Map<K, V>;

@@ -3,6 +3,7 @@ export type SubscriberFn<T> = (observer: Observer<T>) => Subscription | (() => v
 export class Observable<T> {
   static of<T>(...values: Array<T>): Observable<T>;
   static never(): Observable<never>;
+  static merge<T>(...observables: Array<Observable<T>>): Observable<T>;
 
   constructor(subscriberFn: SubscriberFn<T>)
 

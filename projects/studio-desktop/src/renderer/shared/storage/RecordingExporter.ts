@@ -1,23 +1,28 @@
 import * as path from 'path';
 import { createReadStream, createWriteStream } from 'fs';
 import * as stream from 'stream';
+import { Observable, Subject } from 'rxjs';
 import * as moment from 'moment';
 import { RecordingStorage } from './RecordingStorage';
 import { RecorderStorage } from './RecorderStorage';
 
 /**
  * Export all of a recording’s assets to the provided directory.
+ *
+ * Returns a hot observable that emits the export progress with numbers in the
+ * range of 0 to 1. Unsubscribing from the observable does not cancel the
+ * export!
  */
 // This needs to be called `doExport` because `export` is a syntax error.
 async function doExport(
-  storage: RecordingStorage,
+  recording: RecordingStorage,
   exportDirectoryPath: string,
-): Promise<void> {
+): Promise<Observable<number>> {
   // Get the file names for all our recorders.
-  const recorderFileNames = getRecorderFileNames(storage);
+  const recorderFileNames = getRecorderFileNames(recording);
   // Wait for all of the recorders to export.
-  await Promise.all(
-    Array.from(storage.getAllRecorders()).map(async ([id, recorder]) => {
+  const byteProgresses = await Promise.all(
+    Array.from(recording.getAllRecorders()).map(async ([id, recorder]) => {
       // If we did not get a name for this recorder then we need to throw an
       // error.
       if (!recorderFileNames.has(id)) {
@@ -26,21 +31,33 @@ async function doExport(
       // Get the file name for this recorder’s id. We know it exists.
       const fileName = recorderFileNames.get(id)!;
       // Export the recorder to WAV at the specified output file path.
-      await exportRecorderToWAV(
+      return await exportRecorderToWAV(
         recorder,
         path.join(exportDirectoryPath, fileName),
       );
     }),
   );
+  // Sum up all of our byte sizes to get the total byte size.
+  const totalByteSize = byteProgresses
+    .map(({ byteSize }) => byteSize)
+    .reduce((a, b) => a + b, 0);
+  // Merge all of the observables so that whenever we get some new bytes they
+  // all show up on the observable.
+  return Observable.merge(...byteProgresses.map(({ bytes }) => bytes))
+    // Scans the observable by summing up all of the bytes as they come in.
+    .scan((currentBytes, bytes) => currentBytes + bytes, 0)
+    // Divide our current bytes count with the total byte size to get the
+    // progress from 0 to 1.
+    .map(currentBytes => currentBytes / totalByteSize);
 }
 
 /**
  * Get all of the file names that we expect from an export so that we can check
  * for collisions in the file system before we export.
  */
-function getExportFileNames(storage: RecordingStorage): Set<string> {
+function getExportFileNames(recording: RecordingStorage): Set<string> {
   // Get the recorder file names and return a set of just the values.
-  return new Set(getRecorderFileNames(storage).values());
+  return new Set(getRecorderFileNames(recording).values());
 }
 
 /**
@@ -48,7 +65,7 @@ function getExportFileNames(storage: RecordingStorage): Set<string> {
  * need to do this in a batch so that we can handle duplicate shortened names.
  */
 // TODO: test!!!!!!
-function getRecorderFileNames(storage: RecordingStorage): Map<string, string> {
+function getRecorderFileNames(recording: RecordingStorage): Map<string, string> {
   // The extension we will add to our file names.
   const extension = '.wav';
   // While we want to return a map of `id`s to `fileName`s this map is the
@@ -56,9 +73,9 @@ function getRecorderFileNames(storage: RecordingStorage): Map<string, string> {
   // dedupe file names that are generated for a few different recorder ids.
   const reverseFileNames = new Map<string, Array<string>>();
   // For all of the recorders...
-  for (const [id, { name }] of storage.getAllRecorders()) {
+  for (const [id, { name }] of recording.getAllRecorders()) {
     // Get the file name for this recorder.
-    const fileName = getFileName(storage.startedAt, name);
+    const fileName = getFileName(recording.startedAt, name);
     // If we already have this file name then add the id to the array of ids
     // corresponding to this file name.
     //
@@ -126,18 +143,21 @@ export const RecordingExporter = {
  * saved without changes.
  */
 async function exportRecorderToWAV(
-  storage: RecorderStorage,
+  recording: RecorderStorage,
   outputFilePath: string,
-): Promise<void> {
+): Promise<{
+  byteSize: number,
+  bytes: Observable<number>,
+}> {
   // Get the byte size of our raw file. We will use this to write our header.
-  const byteSize = await storage.getByteLength();
+  const byteSize = await recording.getByteLength();
   // Compute the number of silence samples we will need to add to the start of
   // the output WAV recording. This is computed from the `startedAtDelta` time
   // on our recorder. If it is not 0 then the recorder started a little bit
   // after the recording and we should add silence to pad the output so that all
   // our recordings have a consistent length.
   const silenceSampleSize =
-    Math.floor(storage.sampleRate * (storage.startedAtDelta / 1000));
+    Math.floor(recording.sampleRate * (recording.startedAtDelta / 1000));
   // The final sample size of our recording. It will be the size of our raw file
   // divided by 4.
   const sampleSize = (byteSize / 4) + silenceSampleSize;
@@ -175,9 +195,9 @@ async function exportRecorderToWAV(
     // Channel count.
     view.setUint16(22, 1, true);
     // Sample rate.
-    view.setUint32(24, storage.sampleRate, true);
+    view.setUint32(24, recording.sampleRate, true);
     // Byte rate (sample rate * block align).
-    view.setUint32(28, storage.sampleRate * 1 * 2, true); // numChannels * 2 (via https://github.com/streamproc/MediaStreamRecorder/pull/71)
+    view.setUint32(28, recording.sampleRate * 1 * 2, true); // numChannels * 2 (via https://github.com/streamproc/MediaStreamRecorder/pull/71)
     // Block align (channel count * bytes per sample).
     view.setUint16(32, 1 * 2, true);
     // Bits per sample.
@@ -197,19 +217,33 @@ async function exportRecorderToWAV(
     // Write the header to the write stream.
     writable.write(Buffer.from(header));
   }
-  // Construct a promise that will resolve or reject once our streams finish.
-  await new Promise<void>((resolve, reject) => {
-    // Create a stream that will read our raw file.
-    createReadStream(storage.rawFilePath)
-      // Pipe the readable stream into a `WAVTransform` which will convert the
-      // raw data into data appropriate for WAV files.
-      .pipe(new WAVTransform())
-      // Write the result of the transformed data to our writable.
-      .pipe(writable)
-      // When we finish or get an error then resolve this promise.
-      .on('finish', () => resolve())
-      .on('error', (error: Error) => reject(error));
-  });
+  // Create a subject to push all of the byte counts from our reporter to.
+  const bytesSubject = new Subject<number>();
+  // Create a new reporter which will report the bytes passing through to our
+  // subject.
+  const reporter = new ByteReporter(bytesSubject);
+  // Create a stream that will read our raw file.
+  createReadStream(recording.rawFilePath)
+    // Pipe the stream into a transformer which will immeadiately pass through
+    // the data while also reporting the length of the bytes processed.
+    //
+    // This needs to be before the `WAVTransform` to be based off of the data
+    // that is most closely associated to the total `byteSize`.
+    .pipe(reporter)
+    // Pipe the readable stream into a `WAVTransform` which will convert the
+    // raw data into data appropriate for WAV files.
+    .pipe(new WAVTransform())
+    // Write the result of the transformed data to our writable.
+    .pipe(writable)
+    // When we finish or get an error then complete or error out our bytes
+    // subject.
+    .on('finish', () => bytesSubject.complete())
+    .on('error', (error: Error) => bytesSubject.error(error));
+  // Return our full byte size and the bytes observable.
+  return {
+    byteSize,
+    bytes: bytesSubject.asObservable(),
+  };
 }
 
 /**
@@ -251,6 +285,90 @@ class WAVTransform extends stream.Transform {
     writePCMSamples(view, 0, input);
     // Send back the newly constructed buffer.
     callback(null, Buffer.from(buffer));
+  }
+}
+
+/**
+ * A transformer that passes through all the data, but also reports how many
+ * bytes have passed through periodically.
+ *
+ * We don’t send all the bytes whenever we get them because that has some
+ * serious performance penalties. By buffering and flushing byte counts
+ * periodically performance is greatly improved!
+ */
+class ByteReporter extends stream.Transform {
+  /**
+   * We will output our bytes here when we have enough that we feel like an emit
+   * is a good idea.
+   */
+  private readonly bytesSubject: Subject<number>;
+
+  /**
+   * The buffered byte count which we will periodically flush to `bytesSubject`.
+   */
+  private bufferedByteCount = 0;
+
+  constructor(bytesSubject: Subject<number>) {
+    super();
+    this.bytesSubject = bytesSubject;
+    // Schedule a byte flush for 100ms from now.
+    this.scheduleFlushBytes();
+  }
+
+  protected _transform(
+    data: Buffer,
+    encoding: string,
+    callback: (error: Error | null, data: Buffer) => void,
+  ): void {
+    // Add the byte count from this data to our buffered byte count.
+    this.bufferedByteCount += data.length;
+    // Send the data right back!
+    callback(null, data);
+  }
+
+  protected _flush(callback: () => void) {
+    // If there was already a timeout then we need to clear it.
+    if (this.flushBytesTimeout !== null) {
+      clearTimeout(this.flushBytesTimeout);
+    }
+    // Flush any remaining bytes we may have.
+    this.flushBytes();
+    // Call our callback.
+    callback();
+  }
+
+  /**
+   * The timeout we use for tracking byte flushes.
+   */
+  private flushBytesTimeout: any = null;
+
+  /**
+   * Schedule a call to `flushBytes()`.
+   */
+  private scheduleFlushBytes(): void {
+    // If there was already a timeout then we need to clear it.
+    if (this.flushBytesTimeout !== null) {
+      clearTimeout(this.flushBytesTimeout);
+    }
+    // Set the timeout to flush some bytes.
+    this.flushBytesTimeout = setTimeout(() => {
+      // Remove the timeout now that it has been called.
+      this.flushBytesTimeout = null;
+      // Flush the bytes.
+      this.flushBytes();
+      // Schedule another byte flush.
+      this.scheduleFlushBytes();
+    }, 125);
+  }
+
+  /**
+   * Flush any buffered bytes we have to our subject.
+   */
+  private flushBytes(): void {
+    // Flush our bytes to the subject.
+    this.bytesSubject.next(this.bufferedByteCount);
+    // Reset the byte count back to 0.
+    this.bufferedByteCount = 0;
   }
 }
 

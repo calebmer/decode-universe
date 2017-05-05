@@ -72,7 +72,7 @@ export class RecordingStorage {
   /**
    * The directory path at which this recording lies.
    */
-  private readonly directoryPath: string;
+  public readonly directoryPath: string;
 
   /**
    * The time, in milliseconds since the Unix epoch, at which this recording was
