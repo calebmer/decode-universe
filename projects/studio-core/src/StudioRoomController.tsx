@@ -62,6 +62,13 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
       // The source of our audio from a `MediaStream` received from
       // `getUserMedia()`.
       MediaStreamAudioSourceNode,
+      // Highpass filter to remove frequencies below 80hz.
+      BiquadFilterNode,
+      // A dynamics compressor. We use Aaron Dowd’s settings for the compressor.
+      // These settings can be seen in the image attached to issue [#16][1].
+      //
+      // [1]: https://github.com/calebmer/decode-universe/issues/16
+      DynamicsCompressorNode,
       // A node which will allow us to adjust the volume of the output audio.
       //
       // **NOTE:** If the user wants to mute their audio they unset any local
@@ -98,7 +105,7 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
     private readonly deviceID =
       new BehaviorSubject(localStorage.getItem(deviceIDKey));
     private readonly disableAudio = new BehaviorSubject(DEV);
-    private readonly localVolume = new BehaviorSubject(0.4);
+    private readonly localVolume = new BehaviorSubject(1);
 
     /**
      * We want to subscribe to our mesh’s local state so that whenever the name
@@ -145,7 +152,7 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
             nodes[i].connect(nodes[i + 1]);
           }
           // Set the volume to whatever value is currently in state.
-          const volume = nodes[1];
+          const volume: GainNode = nodes[3];
           volume.gain.value = this.localVolume.value;
         }
       }
@@ -220,7 +227,31 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
           // Create all of the audio nodes for the user audio state. They will
           // be `connect()`ed and `disconnect()`ed in `componentDidUpdate()`.
           nodes: [
+            // Create the media stream source audio node.
             state.audioContext.createMediaStreamSource(stream),
+            // Add a highpass filter to remove certain lower frequencies.
+            (() => {
+              const highpass = state.audioContext.createBiquadFilter();
+              highpass.type = 'highpass';
+              highpass.frequency.value = 80;
+              return highpass;
+            })(),
+            // Add a dynamics compressor. We use Aaron Dowd’s settings which are
+            // seen in the image attachement to issue [#16][1].
+            //
+            // [1]: https://github.com/calebmer/decode-universe/issues/16
+            (() => {
+              const compressor = state.audioContext.createDynamicsCompressor();
+              compressor.threshold.value = -15;
+              compressor.knee.value = 0.4;
+              compressor.ratio.value = 1.5 / 1;
+              compressor.attack.value = 50 / 1000;
+              compressor.release.value = 200 / 1000;
+              return compressor;
+            })(),
+            // Finally, create a gain audio node which users may use to adjust
+            // their gain on the software side. If at all possible users should
+            // adjust their gain on the hardware side!
             state.audioContext.createGain(),
           ],
         },
@@ -253,7 +284,7 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
       // If we have some audio state then we want to update the gain value on
       // the volume with our new local volume.
       if (userAudio.state === 'success') {
-        const volume = userAudio.nodes[1];
+        const volume: GainNode = userAudio.nodes[3];
         volume.gain.value = localVolume;
       }
       // Update our local volume state.
