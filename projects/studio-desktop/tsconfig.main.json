@@ -6,7 +6,8 @@
     "outDir": "./build/main",
     "target": "es2015",
     "module": "commonjs",
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "typeRoots": []
   },
   "include": [
     "./src/main",

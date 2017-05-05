@@ -12,6 +12,12 @@ To develop the desktop application first make sure that you have a development i
 
 This will open an Electron window with a Webpack development server running in the background. Whenever you edit your code then Webpack should automatically reload the page for you.
 
+If you want to open Decode Studio and immeadiately join a specific room instead of the recordings directory then set the `INITIAL_ROOM` environment variable to any string. This useful when hacking on the actual studio room, or when you want to connect your browser to a consistent room in development. Following is an example that uses `INITIAL_ROOM` with the popular development room `dev`:
+
+```bash
+INITIAL_ROOM=dev ./scripts/dev
+```
+
 ### React Devtools
 
 After you run the project for the first time with `./scripts/dev` you will need to make sure that you force reload the app after a few seconds as the React Devtools are installed in the background after your first run.

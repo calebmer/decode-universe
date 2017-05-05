@@ -8,7 +8,12 @@ const builtinModules = require('builtin-modules');
 const { DefinePlugin, HotModuleReplacementPlugin } = webpack;
 const { UglifyJsPlugin } = webpack.optimize;
 
+// Create a boolean which tells us if we are building for development or
+// production.
 const DEV = process.env.NODE_ENV === 'development';
+// If we are building for development and we have an `INITIAL_ROOM` environment
+// variable then we want to use that as our initial room.
+const INITIAL_ROOM = DEV ? process.env.INITIAL_ROOM || null : null;
 
 module.exports = {
   target: 'electron-renderer',
@@ -154,9 +159,10 @@ module.exports = {
         minifyURLs: true,
       },
     }),
-    // Define our environment so that React will be built appropriately.
+    // Expose some environment variables to our code.
     new DefinePlugin({
       DEV: JSON.stringify(DEV),
+      INITIAL_ROOM: JSON.stringify(INITIAL_ROOM),
       // Many libraries, including React, use `NODE_ENV` so we need to
       // define it.
       'process.env.NODE_ENV': JSON.stringify(DEV ? 'development' : 'production'),
