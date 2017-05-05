@@ -87,10 +87,10 @@ export class Directory extends React.PureComponent<Props, State> {
           </ul>
         )}
         <ul>
-          {storage.directory.getAllRecordings()
+          {Array.from(storage.directory.getAllRecordings())
             // Sort so that the latest recordings are at the top.
-            .sort((a, b) => b.recording.startedAt - a.recording.startedAt)
-            .map(({ id, recording }) => (
+            .sort(([, a], [, b]) => b.startedAt - a.startedAt)
+            .map(([id, recording]) => (
               <li key={id}>
                 <DirectoryRecording
                   id={id}

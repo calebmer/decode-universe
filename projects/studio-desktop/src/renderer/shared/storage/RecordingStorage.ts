@@ -209,8 +209,8 @@ export class RecordingStorage {
    * Returns all of the recorders for this recording in no particular order.
    * The id for each recorder is also provided.
    */
-  public getAllRecorders(): Map<string, RecorderStorage> {
-    return new Map(this.recorders);
+  public getAllRecorders(): ReadonlyMap<string, RecorderStorage> {
+    return this.recorders;
   }
 }
 

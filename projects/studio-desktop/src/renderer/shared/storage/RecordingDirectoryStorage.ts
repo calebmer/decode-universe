@@ -71,16 +71,23 @@ export class RecordingDirectoryStorage {
   /**
    * Creates a new recording with a randomly generated identifier.
    */
-  public createRecording(): Promise<RecordingStorage> {
-    return RecordingStorage.create(path.join(this.directoryPath, uuid()));
+  public async createRecording(): Promise<RecordingStorage> {
+    // Generate a new id for this recording.
+    const id = uuid();
+    // Create the recording storage instance.
+    const recording =
+      await RecordingStorage.create(path.join(this.directoryPath, id));
+    // Add the recording to our internal `recordings` map.
+    this.recordings.set(id, recording);
+    // Return the recording.
+    return recording;
   }
 
   /**
    * Returns all of the recordings in this directory in no particular order.
    * The id for each recording is also provided.
    */
-  public getAllRecordings(): Array<{ id: string, recording: RecordingStorage }> {
-    return Array.from(this.recordings)
-      .map(([id, recording]) => ({ id, recording }));
+  public getAllRecordings(): ReadonlyMap<string, RecordingStorage> {
+    return this.recordings;
   }
 }
