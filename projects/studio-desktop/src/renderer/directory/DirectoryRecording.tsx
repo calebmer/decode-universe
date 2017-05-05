@@ -23,10 +23,6 @@ export const DirectoryRecording = ({
       >
         Export
       </button>
-      {' '}
-      <button>
-        Delete
-      </button>
     </div>
     <ul>
       <li>Started: {new Date(recording.startedAt).toString()}</li>
