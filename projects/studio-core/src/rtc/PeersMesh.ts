@@ -558,6 +558,9 @@ extends EventEmitter<PeersMesh.EventMap> {
 }
 
 export namespace PeersMesh {
+  /**
+   * The map of events that the peer mesh will emit from time to time.
+   */
   export interface EventMap {
     addPeer: { address: string, peer: Peer };
     deletePeer: { address: string, peer: Peer };
