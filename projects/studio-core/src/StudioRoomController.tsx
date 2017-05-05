@@ -8,8 +8,6 @@ import { StudioRoom } from './StudioRoom';
 import { StudioUserAudioNotAllowed } from './StudioUserAudioNotAllowed';
 import { StudioUserAudioNotFound } from './StudioUserAudioNotFound';
 
-const audioContext = new AudioContext();
-
 const deviceIDKey = '@decode/studio-core/deviceID';
 const nameKey = '@decode/studio-core/name';
 
@@ -46,6 +44,7 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
   } & TExtraProps;
 
   type State = {
+    audioContext: AudioContext,
     userAudio: UserAudioState,
     mesh: TPeersMesh | null,
   };
@@ -74,7 +73,10 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
     ],
   };
 
-  function createPeersMesh({ roomName }: Props): TPeersMesh {
+  function createPeersMesh(
+    { roomName }: Props,
+    { audioContext }: State,
+  ): TPeersMesh {
     return userCreatePeersMesh({
       roomName,
       localAudioContext: audioContext,
@@ -84,6 +86,7 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
 
   return class StudioRoomController extends React.Component<Props, State> {
     state: State = {
+      audioContext: new AudioContext(),
       userAudio: { state: 'loading' },
       mesh: null,
     };
@@ -113,7 +116,9 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
         previousProps.roomName !== nextProps.roomName &&
         this.state.mesh !== null
       ) {
-        this.setState({ mesh: createPeersMesh(nextProps) });
+        this.setState(previousState => ({
+          mesh: createPeersMesh(nextProps, previousState),
+        }));
       }
     }
 
@@ -194,7 +199,9 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
     }
 
     componentWillUnmount() {
-      const { mesh } = this.state;
+      const { audioContext, mesh } = this.state;
+      // Close down the audio context releasing resources back to the system.
+      audioContext.close();
       // Unsubscribe from the name subscription if we have one.
       if (this.nameSubscription !== null) {
         this.nameSubscription.unsubscribe();
@@ -213,13 +220,13 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
           // Create all of the audio nodes for the user audio state. They will
           // be `connect()`ed and `disconnect()`ed in `componentDidUpdate()`.
           nodes: [
-            audioContext.createMediaStreamSource(stream),
-            audioContext.createGain(),
+            state.audioContext.createMediaStreamSource(stream),
+            state.audioContext.createGain(),
           ],
         },
         // Use the mesh from the previous state. If there is no mesh in the
         // previous state then we want to create a new mesh.
-        mesh: state.mesh || createPeersMesh(props),
+        mesh: state.mesh || createPeersMesh(props, state),
       }));
     };
 
@@ -254,7 +261,7 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
     };
 
     render() {
-      const { userAudio, mesh } = this.state;
+      const { audioContext, userAudio, mesh } = this.state;
       return (
         <div>
           {ReactObservable.render(
