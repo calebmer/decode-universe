@@ -11,3 +11,7 @@ To develop the web application first make sure that you have a development insta
 ```
 
 This will start a Webpack development server. Navigate your browser to `http://localhost:1999` to see the code built by that Webpack server.
+
+## Environment Variables
+
+- **`DECODE_STUDIO_SIGNAL_SERVER_URL`:** The `socket.io` signal server that the mesh client will connect to for signaling. Defaults to `http://localhost:2000`.

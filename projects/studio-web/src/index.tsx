@@ -12,6 +12,7 @@ const StudioRoom = StudioRoomController.createComponent({
     previousLocalName,
   }) => (
     new PeersMesh({
+      signalServerURL: SIGNAL_SERVER_URL,
       roomName,
       localAudioContext,
       localState: {

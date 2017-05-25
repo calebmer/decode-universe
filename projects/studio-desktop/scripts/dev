@@ -1,6 +1,7 @@
 #!/bin/bash
 
 export NODE_ENV=development
+export DECODE_STUDIO_DESKTOP_RENDERER_URL=http://localhost:1998/index.html
 
 $(npm bin)/concurrently \
   '$(npm bin)/webpack-dev-server --config ./webpack.config.renderer.js --port 1998' \

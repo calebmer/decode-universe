@@ -23,6 +23,7 @@ const nameKey = '@decode/studio-core/name';
 const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>, TPeer extends Peer = Peer>({
   createPeersMesh: userCreatePeersMesh,
   renderButtons,
+  webURL = null,
 }: {
 
   // Called when the component wants to create a new `PeersMesh` instance.
@@ -38,6 +39,7 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
     state: Readonly<{ mesh: TPeersMesh }>,
   ) => JSX.Element,
 
+  webURL?: string,
 }) => {
   type Props = {
     roomName: string,
@@ -343,6 +345,7 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
                   onEnableAudio={this.handleEnableAudio}
                   localVolume={this.localVolume}
                   onLocalVolumeChange={this.handleLocalVolumeChange}
+                  webURL={webURL}
                 />
               </div>
             ) :

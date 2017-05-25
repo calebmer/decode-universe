@@ -16,6 +16,7 @@ export function StudioRoom({
   onEnableAudio,
   localVolume,
   onLocalVolumeChange,
+  webURL,
 }: {
   mesh: PeersMesh,
   audioContext: AudioContext,
@@ -26,6 +27,7 @@ export function StudioRoom({
   onEnableAudio: () => void,
   localVolume: Observable<number>,
   onLocalVolumeChange: (localVolume: number) => void,
+  webURL: string | null,
 }) {
   const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) =>
     mesh.setLocalName(event.target.value);
@@ -122,10 +124,12 @@ export function StudioRoom({
           ),
         )}
       </div>
-      <p>
-        Invite guests to the recording:{' '}
-        <code>http://localhost:1999/?room={encodeURIComponent(mesh.roomName)}</code>
-      </p>
+      {webURL !== null && (
+        <p>
+          Invite guests to the recording:{' '}
+          <code>{webURL}/?room={encodeURIComponent(mesh.roomName)}</code>
+        </p>
+      )}
       {ReactObservable.render(
         mesh.peers,
         peers => (

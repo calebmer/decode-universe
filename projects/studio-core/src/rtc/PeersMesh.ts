@@ -118,11 +118,13 @@ extends EventEmitter<PeersMesh.EventMap> {
   }
 
   constructor({
+    signalServerURL,
     roomName,
     localAudioContext,
     localState,
     createPeerInstance,
   }: {
+    signalServerURL: string,
     roomName: string,
     localAudioContext: AudioContext,
     localState: Peer.State,
@@ -133,7 +135,7 @@ extends EventEmitter<PeersMesh.EventMap> {
     this.localAudioContext = localAudioContext;
     this.createPeerInstance = createPeerInstance;
     // Create the signal client.
-    this.signals = new SignalClient({ roomName });
+    this.signals = new SignalClient({ serverURL: signalServerURL, roomName });
     // Add an event listener to our signal client.
     this.signals.on('signal', ({ from, signal }) => {
       this.handleSignal(from, signal)

@@ -30,3 +30,8 @@ Because we are using Electron there are two environments that we write code for.
 
 - **`./src/main`:** The Electron main process. This is simple to build. We just use `tsc` to directly compile all of the files.
 - **`./src/renderer`:** The Electron renderer process. We use Webpack to bundle all of our files for the renderer process. All of our external `node_modules`, however, are not bundled using Webpack and required falling back to Node.js.
+
+## Environment Variables
+
+- **`DECODE_STUDIO_SIGNAL_SERVER_URL`:** The `socket.io` signal server that the mesh client will connect to for signaling. Defaults to `http://localhost:2000`.
+- **`DECODE_STUDIO_WEB_URL`:** The URL to the web client for recording a podcast. The host will see this url in addition to their room name. With the url they can invite guests to record. Defaults to `http://localhost:1999`.

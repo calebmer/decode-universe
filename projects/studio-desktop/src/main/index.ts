@@ -1,4 +1,5 @@
-import { app, BrowserWindow } from 'electron';
+import { resolve as resolvePath } from 'path';
+import { app, Menu, BrowserWindow } from 'electron';
 
 // Set our global `DEV` environment variable.
 (global as any).DEV = process.env.NODE_ENV === 'development';
@@ -11,7 +12,7 @@ let window: Electron.BrowserWindow | null = null;
 app.on('ready', () => {
   // If we are in development then we want to install our devtools.
   if (DEV) {
-    const { DevTools } = require('./devtools');
+    const { DevTools } = require('./DevTools');
     DevTools.install();
   }
 
@@ -22,16 +23,33 @@ app.on('ready', () => {
   });
 
   // Load the `index.html` of the page.
-  window.loadURL('http://localhost:1998/index.html');
+  window.loadURL(
+    process.env.DECODE_STUDIO_DESKTOP_RENDERER_URL ||
+    `file://${resolvePath(__dirname, '../renderer/index.html')}`
+  );
 
-  // Open the DevTools.
-  window.webContents.openDevTools();
+  // Open the DevTools in development.
+  if (DEV) {
+    window.webContents.openDevTools();
+  }
 
   // Emitted when the window closes.
   window.on('closed', () => {
     // Dereference the window object. We no longer want or need it.
     window = null;
   });
+
+  // Add copy functionality. This needs to go below `window.loadURL()`.
+  //
+  // TODO: We only have copy functionality for the invite link. We should just
+  // make a “click to copy” button instead. Or put it in an input that can be
+  // natively copied.
+  Menu.setApplicationMenu(Menu.buildFromTemplate([
+    {
+      label: 'Edit',
+      submenu: [{ role: 'copy' }]
+    },
+  ]));
 });
 
 // Quit when all windows are closed.

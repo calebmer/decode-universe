@@ -119,6 +119,9 @@ module.exports = {
       // Many libraries, including React, use `NODE_ENV` so we need to
       // define it.
       'process.env.NODE_ENV': JSON.stringify(DEV ? 'development' : 'production'),
+      // Add substitutions for various constants that we use throughout our
+      // dependencies.
+      'SIGNAL_SERVER_URL': JSON.stringify(process.env.DECODE_STUDIO_SIGNAL_SERVER_URL || 'http://localhost:2000'),
     }),
     // Used for any hot replacement functionalities we may use in the future.
     // Currently hot reloading for JavaScripts is not set up.

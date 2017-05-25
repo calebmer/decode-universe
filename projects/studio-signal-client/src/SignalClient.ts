@@ -13,6 +13,11 @@ const debug = createDebugger('@decode/studio-signal-client');
 
 export class SignalClient extends EventEmitter<SignalClient.EventMap> {
   /**
+   * The `socket.io` signal server that we will connect to.
+   */
+  private readonly serverURL: string;
+
+  /**
    * The name of the room which we are connected to.
    */
   public readonly roomName: string;
@@ -23,11 +28,14 @@ export class SignalClient extends EventEmitter<SignalClient.EventMap> {
   private socket: SocketIOClient.Socket | null;
 
   constructor({
+    serverURL,
     roomName,
   }: {
+    serverURL: string,
     roomName: string,
   }) {
     super();
+    this.serverURL = serverURL;
     this.roomName = roomName;
     this.socket = null;
   }
@@ -59,7 +67,7 @@ export class SignalClient extends EventEmitter<SignalClient.EventMap> {
       throw new Error('Socket is already connected.');
     }
     // Create the socket.
-    const socket = this.socket = socketIO('http://localhost:2000');
+    const socket = this.socket = socketIO(this.serverURL);
     // When the socket has fully connected, do some stuff.
     socket.on('connect', () => {
       debug(`Connected to signal exchange as ${socket.id}`);

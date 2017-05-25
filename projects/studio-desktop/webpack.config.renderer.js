@@ -161,11 +161,15 @@ module.exports = {
     }),
     // Expose some environment variables to our code.
     new DefinePlugin({
-      DEV: JSON.stringify(DEV),
-      INITIAL_ROOM: JSON.stringify(INITIAL_ROOM),
+      'DEV': JSON.stringify(DEV),
       // Many libraries, including React, use `NODE_ENV` so we need to
       // define it.
       'process.env.NODE_ENV': JSON.stringify(DEV ? 'development' : 'production'),
+      // Add substitutions for various constants that we use throughout our
+      // dependencies.
+      'INITIAL_ROOM': JSON.stringify(INITIAL_ROOM),
+      'SIGNAL_SERVER_URL': JSON.stringify(process.env.DECODE_STUDIO_SIGNAL_SERVER_URL || 'http://localhost:2000'),
+      'WEB_URL': JSON.stringify(process.env.DECODE_STUDIO_WEB_URL || 'http://localhost:1999'),
     }),
     // Used for any hot replacement functionalities we may use in the future.
     // Currently hot reloading for JavaScripts is not set up.

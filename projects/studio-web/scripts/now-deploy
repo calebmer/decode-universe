@@ -1,6 +1,7 @@
 #!/bin/bash
 
-scripts/build
+# Silence it for now. When we run this script we only want the now output.
+scripts/build > /dev/null
 
 cd build
 
@@ -8,6 +9,6 @@ echo '{
   "name": "decode-studio-web"
 }' > now.json
 
-now
+now --public
 
 rm now.json

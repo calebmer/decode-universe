@@ -9,12 +9,16 @@ type ExtraProps = {
 };
 
 export const StudioRoom = StudioRoomController.createComponent<ExtraProps, PeersMesh>({
+  // We want the host to invite users to the room using the web url.
+  webURL: WEB_URL,
+
   createPeersMesh: ({
     roomName,
     localAudioContext,
     previousLocalName,
   }) => (
     new PeersMesh({
+      signalServerURL: SIGNAL_SERVER_URL,
       roomName,
       localAudioContext,
       localState: {
