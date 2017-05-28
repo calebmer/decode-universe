@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Subscription, BehaviorSubject } from 'rxjs';
+import { css } from 'glamor';
 import { ReactObservable } from './observable/ReactObservable';
 import { UserAudioController } from './audio/UserAudioController';
 import { PeersMesh } from './rtc/PeersMesh';
@@ -296,7 +297,7 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
     render() {
       const { audioContext, userAudio, mesh } = this.state;
       return (
-        <div>
+        <div {...css({ height: '100%' })}>
           {ReactObservable.render(
             this.deviceID,
             deviceID => (
@@ -333,7 +334,7 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
             // If we have a mesh instance then we want to render our studio
             // room.
             mesh !== null ? (
-              <div>
+              <div {...css({ height: '100%' })}>
                 {renderButtons && renderButtons(this.props, { mesh })}
                 <StudioRoom
                   mesh={mesh}

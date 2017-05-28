@@ -1,8 +1,10 @@
+require('ts-node').register({ compilerOptions: { target: 'es5', module: 'commonjs' } });
+
 const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const WatchMissingNodeModulesPlugin = require('react-dev-utils/WatchMissingNodeModulesPlugin');
-const styles = require('../styles');
+const Styles = require('../styles');
 
 const { DefinePlugin, HotModuleReplacementPlugin } = webpack;
 const { UglifyJsPlugin } = webpack.optimize;
@@ -103,7 +105,7 @@ module.exports = {
       // Provide the styles object to the EJS template. This allows us to inject
       // things like the background color into the default CSS included with the
       // template.
-      styles,
+      Styles,
       // Minify the HTML in production, but not in development.
       minify: DEV ? undefined : {
         removeComments: true,

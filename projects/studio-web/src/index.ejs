@@ -2,8 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Decode Studio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- TODO: Self host fonts to be available offline? -->
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,500,700" rel="stylesheet">
     <style>
 /*
  * The default CSS used in the application. Most styles will be added by the
@@ -11,8 +13,21 @@
  * minimal set of styles needed to render the page.
  */
 
+* {
+  box-sizing: border-box;
+}
+
 html {
-  background-color: <%= htmlWebpackPlugin.options.styles.colors.sharkLighter %>;
+  background-color: <%= htmlWebpackPlugin.options.Styles.Colors.background %>;
+}
+
+body {
+  overflow: hidden; /* Disables rubberband scrolling on MacOS. */
+  margin: 0;
+}
+
+html, body, #root {
+  height: 100%;
 }
     </style>
   </head>

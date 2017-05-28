@@ -2,8 +2,8 @@
   "private": true,
   "name": "@decode/styles",
   "version": "0.0.0-versionless",
-  "main": "./styles.json",
-  "typings": "./styles.json",
+  "main": "./src/index.ts",
+  "typings": "./src/index.ts",
   "scripts": {
     "postinstall": "rm -rf node_modules/@decode"
   }
