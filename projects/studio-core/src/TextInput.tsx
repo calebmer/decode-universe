@@ -4,8 +4,12 @@ import { Colors, Fonts } from '@decode/styles';
 
 export function TextInput({
   label,
+  value,
+  onChange,
 }: {
   label: string,
+  value: string,
+  onChange: (value: string) => void,
 }) {
   return (
     <label {...css({
@@ -46,7 +50,8 @@ export function TextInput({
             backgroundColor: Colors.geyserDarker
           },
         })}
-        defaultValue="john.smith@email.com"
+        value={value}
+        onChange={event => onChange(event.target.value)}
       />
     </label>
   );

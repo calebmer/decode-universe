@@ -33,9 +33,6 @@ export function StudioRoom({
   onLocalVolumeChange: (localVolume: number) => void,
   webURL: string | null,
 }) {
-  const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) =>
-    mesh.setLocalName(event.target.value);
-
   const handleMute = () => mesh.muteLocalAudio();
   const handleUnmute = () => mesh.unmuteLocalAudio();
 
@@ -67,25 +64,16 @@ export function StudioRoom({
             backgroundColor: Colors.geyser,
           },
         )}>
-          <StudioRoomSidebar/>
+          <StudioRoomSidebar
+            name={mesh.localState.map(({ name }) => name).distinctUntilChanged()}
+            onChangeName={name => mesh.setLocalName(name)}
+          />
         </aside>
         <div {...css({
           order: '0',
           flexGrow: '1',
           padding: '1px',
         })}>
-          <p>
-            Name:{' '}
-            {ReactObservable.render(
-              mesh.localState.map(({ name }) => name).distinctUntilChanged(),
-              name => (
-                <input
-                  value={name}
-                  onChange={handleNameChange}
-                />
-              ),
-            )}
-          </p>
           <p>
             Audio Input:{' '}
             {ReactObservable.render(
