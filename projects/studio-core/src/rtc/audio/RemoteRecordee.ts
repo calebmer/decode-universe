@@ -1,4 +1,4 @@
-import { Disposable } from '@decode/jsutils';
+import { Disposable } from '@decode/js-utils';
 import { RemoteRecorderProtocol } from './RemoteRecorderProtocol';
 import { LocalRecorder } from './LocalRecorder';
 

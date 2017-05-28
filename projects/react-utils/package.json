@@ -1,14 +1,13 @@
 {
   "private": true,
-  "name": "@decode/jsutils",
+  "name": "@decode/react-utils",
   "version": "0.0.0-versionless",
-  "main": "./universal.ts",
-  "typings": "./universal.ts",
+  "main": "./src/index.ts",
+  "typings": "./src/index.ts",
   "scripts": {
     "postinstall": "rm -rf node_modules/@decode"
   },
   "devDependencies": {
-    "@types/react": "^15.0.23",
-    "tslib": "^1.6.0"
+    "@types/react": "^15.0.23"
   }
 }

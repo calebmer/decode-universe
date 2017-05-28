@@ -6,13 +6,10 @@
     "lib": ["dom", "es2015", "es2016", "es2017"],
     "baseUrl": ".",
     "paths": {
-      "@decode/*": ["../*"],
       "react": ["./node_modules/@types/react"]
     }
   },
   "include": [
-    "./universal.ts",
-    "./react.ts",
     "./src",
     "../typescript/typings/ambient/universal"
   ]

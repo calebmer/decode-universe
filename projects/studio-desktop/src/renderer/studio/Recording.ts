@@ -1,5 +1,5 @@
 import { v4 as uuid } from 'uuid';
-import { Disposable } from '@decode/jsutils';
+import { Disposable } from '@decode/js-utils';
 import {
   PeersMesh,
   Peer,

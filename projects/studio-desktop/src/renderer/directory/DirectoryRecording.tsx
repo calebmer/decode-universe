@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ReactPromise } from '@decode/jsutils/react';
+import { ReactPromise } from '@decode/react-utils';
 import { RecordingStorage } from '../shared/storage/RecordingStorage';
 
 export const DirectoryRecording = ({

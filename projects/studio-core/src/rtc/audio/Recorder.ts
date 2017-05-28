@@ -1,4 +1,4 @@
-import { EventEmitter } from '@decode/jsutils';
+import { EventEmitter } from '@decode/js-utils';
 
 export namespace Recorder {
   export interface EventMap {

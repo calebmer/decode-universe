@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { v4 as uuid } from 'uuid';
-import { Disposable } from '@decode/jsutils';
+import { Disposable } from '@decode/js-utils';
 import { Recorder } from '@decode/studio-core';
 import { FileSystemUtils as fs } from './FileSystemUtils';
 import { RecorderStorage } from './RecorderStorage';

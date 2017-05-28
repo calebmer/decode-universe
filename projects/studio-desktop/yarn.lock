@@ -6,7 +6,10 @@
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/7zip/-/7zip-0.0.6.tgz#9cafb171af82329490353b4816f03347aa150a30"
 
-"@decode/jsutils@file:../jsutils":
+"@decode/js-utils@file:../js-utils":
+  version "0.0.0-versionless"
+
+"@decode/react-utils@file:../react-utils":
   version "0.0.0-versionless"
 
 "@decode/studio-core@file:../studio-core":
@@ -23,6 +26,9 @@
   dependencies:
     debug "^2.6.3"
     socket.io-client "^1.7.3"
+
+"@decode/styles@file:../styles":
+  version "0.0.0-versionless"
 
 "@types/debug@^0.0.29":
   version "0.0.29"

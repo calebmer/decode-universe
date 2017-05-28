@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-"@decode/jsutils@file:../jsutils":
+"@decode/js-utils@file:../js-utils":
   version "0.0.0-versionless"
 
 "@decode/studio-signal-client@file:../studio-signal-client":

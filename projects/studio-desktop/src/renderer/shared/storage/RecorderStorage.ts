@@ -1,5 +1,5 @@
 import { createWriteStream } from 'fs';
-import { Disposable } from '@decode/jsutils';
+import { Disposable } from '@decode/js-utils';
 import { Recorder } from '@decode/studio-core';
 import { FileSystemUtils as fs } from './FileSystemUtils';
 

@@ -1,5 +1,5 @@
 import { Observable, BehaviorSubject } from 'rxjs';
-import { Disposable } from '@decode/jsutils';
+import { Disposable } from '@decode/js-utils';
 
 /**
  * The configuration we use when creating `RTCPeerConnection` instances.

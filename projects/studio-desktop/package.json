@@ -8,7 +8,8 @@
     "postinstall": "rm -rf node_modules/@decode"
   },
   "dependencies": {
-    "@decode/jsutils": "file:../jsutils",
+    "@decode/js-utils": "file:../js-utils",
+    "@decode/react-utils": "file:../react-utils",
     "@decode/studio-core": "file:../studio-core",
     "debug": "^2.6.3",
     "immutable": "^3.8.1",

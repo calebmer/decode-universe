@@ -1,7 +1,7 @@
 import * as createDebugger from 'debug';
 import { OrderedMap } from 'immutable';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { EventEmitter } from '@decode/jsutils';
+import { EventEmitter } from '@decode/js-utils';
 import { SignalClient, Signal } from '@decode/studio-signal-client';
 import { Peer } from './Peer';
 
