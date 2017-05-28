@@ -10,6 +10,7 @@
   "dependencies": {
     "@decode/jsutils": "file:../jsutils",
     "@decode/studio-signal-client": "file:../studio-signal-client",
+    "@decode/styles": "file:../styles",
     "debug": "^2.6.3",
     "immutable": "^3.8.1",
     "react": "^15.4.2",

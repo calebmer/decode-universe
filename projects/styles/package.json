@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "name": "@decode/styles",
+  "version": "0.0.0-versionless",
+  "main": "./styles.json",
+  "typings": "./styles.json",
+  "scripts": {
+    "postinstall": "rm -rf node_modules/@decode"
+  }
+}

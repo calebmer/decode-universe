@@ -8,6 +8,7 @@
   "dependencies": {
     "@decode/jsutils": "file:../jsutils",
     "@decode/studio-core": "file:../studio-core",
+    "@decode/styles": "file:../styles",
     "immutable": "^3.8.1",
     "react": "^15.4.2",
     "react-dom": "^15.4.2",

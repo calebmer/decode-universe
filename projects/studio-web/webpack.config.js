@@ -2,6 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const WatchMissingNodeModulesPlugin = require('react-dev-utils/WatchMissingNodeModulesPlugin');
+const styles = require('../styles');
 
 const { DefinePlugin, HotModuleReplacementPlugin } = webpack;
 const { UglifyJsPlugin } = webpack.optimize;
@@ -98,7 +99,11 @@ module.exports = {
     // Generates an `index.html` file with the <script> injected.
     new HtmlWebpackPlugin({
       inject: true,
-      template: path.join(__dirname, './src/index.html'),
+      template: path.join(__dirname, './src/index.ejs'),
+      // Provide the styles object to the EJS template. This allows us to inject
+      // things like the background color into the default CSS included with the
+      // template.
+      styles,
       // Minify the HTML in production, but not in development.
       minify: DEV ? undefined : {
         removeComments: true,
