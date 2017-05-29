@@ -31,7 +31,7 @@ export function InputBox({
           top: '0',
           left: '0',
           width: '100%',
-          paddingTop: '0.7em',
+          paddingTop: '0.8em',
           paddingLeft: '1em',
         })}
         htmlFor={inputID}
@@ -49,8 +49,8 @@ export function InputBox({
         // Normally our padding is `1em` and `2.2em` respectively, but the
         // `fontSize` is `0.8em` so we need to scale them appropriately.
         padding: `${1 * (1 / 0.8)}em`,
-        paddingTop: `${2.2 * (1 / 0.8)}em`,
-        paddingRight: IconComponent ? `${3.4 * (1 / 0.8)}em` : null,
+        paddingTop: `${2.4 * (1 / 0.8)}em`,
+        paddingRight: IconComponent ? `${3.6 * (1 / 0.8)}em` : null,
 
         ':focus': {
           outline: 'none',
@@ -67,8 +67,8 @@ export function InputBox({
           {...css({
             pointerEvents: 'none',
             position: 'absolute',
-            top: '1.7em',
-            right: '1.2em',
+            top: '1.8em',
+            right: '1.3em',
             color: Colors.osloGrey,
           })}
         >

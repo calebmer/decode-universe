@@ -59,6 +59,9 @@ export function StudioRoom({
             onSelectDeviceID={onSelectDeviceID}
             localVolume={localVolume}
             onLocalVolumeChange={onLocalVolumeChange}
+            disableAudio={disableAudio}
+            onDisableAudio={onDisableAudio}
+            onEnableAudio={onEnableAudio}
           />
         </aside>
         <div {...css({
@@ -66,22 +69,6 @@ export function StudioRoom({
           flexGrow: '1',
           padding: '1px',
         })}>
-          <p>
-            <label>
-              {ReactObservable.render(
-                disableAudio,
-                disableAudio => (
-                  <input
-                    type="checkbox"
-                    checked={disableAudio}
-                    onChange={disableAudio ? onEnableAudio : onDisableAudio}
-                  />
-                ),
-              )}
-              {' '}
-              Disable Audio Output
-            </label>
-          </p>
           <p>
             {ReactObservable.render(
               mesh.localState
