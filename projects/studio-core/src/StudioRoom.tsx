@@ -68,6 +68,8 @@ export function StudioRoom({
             onChangeName={name => mesh.setLocalName(name)}
             deviceID={deviceID}
             onSelectDeviceID={onSelectDeviceID}
+            localVolume={localVolume}
+            onLocalVolumeChange={onLocalVolumeChange}
           />
         </aside>
         <div {...css({
@@ -75,22 +77,6 @@ export function StudioRoom({
           flexGrow: '1',
           padding: '1px',
         })}>
-          <p>
-            Volume:{' '}
-            {ReactObservable.render(
-              localVolume,
-              localVolume => (
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={localVolume * 100}
-                  onChange={handleLocalVolumeChange}
-                />
-              ),
-            )}
-          </p>
           <p>
             <label>
               {ReactObservable.render(

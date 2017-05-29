@@ -22,6 +22,7 @@ export class TextInput extends InputComponent<Props, {}> {
       >
         <input
           id={this.inputID}
+          type="text"
           value={value}
           onChange={this.handleChange}
           {...css({
