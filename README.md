@@ -1,5 +1,7 @@
 # Decode Universe
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/calebmer/decode-universe.svg?token=9e6783f186bb1a9929e6207365fa80597eee02d1325dd0529a0d23c4f62d1ac9&ts=1496087383999)](https://greenkeeper.io/)
+
 The universe of all digital assets used in building, maintaining, and distributing Decode products.
 
 ## Setup
