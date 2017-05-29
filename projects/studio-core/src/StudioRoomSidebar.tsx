@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Observable } from 'rxjs';
 import { css } from 'glamor';
 import { ReactObservable } from './observable/ReactObservable';
-import { TextInput } from './TextInput';
+import { TextInput } from './input/TextInput';
 
 export function StudioRoomSidebar({
   name,

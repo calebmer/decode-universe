@@ -3,6 +3,7 @@ import { createReadStream, createWriteStream } from 'fs';
 import * as stream from 'stream';
 import { Observable, Subject } from 'rxjs';
 import * as moment from 'moment';
+import { slugify } from '@decode/js-utils';
 import { RecordingStorage } from './RecordingStorage';
 import { RecorderStorage } from './RecorderStorage';
 
@@ -121,11 +122,7 @@ function getFileName(startedAt: number, name: string): string {
   // Turn the name into a slug. The process involves lowercasing the string,
   // replacing all series of non alpha-numeric characters with a hyphen (`-`),
   // and finally remove leading and trailing hyphones.
-  const slug = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/ig, '-')
-    .replace(/^-/, '')
-    .replace(/-$/, '');
+  const slug = slugify(name);
   // If the slug is not an empty string then let us add it onto the time.
   return time + (slug !== '' ? `-${slug}` : '');
 }
