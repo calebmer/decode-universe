@@ -3,12 +3,14 @@ import { css } from 'glamor';
 import { Colors, Fonts } from '@decode/styles';
 
 export function InputBox({
-  id,
+  inputID,
   label,
+  labelPassthrough = false,
   children,
 }: {
-  id?: string,
+  inputID?: string,
   label: string,
+  labelPassthrough?: boolean,
   children?: React.ReactNode,
 }) {
   return (
@@ -20,7 +22,8 @@ export function InputBox({
     })}>
       <label
         {...css({
-          cursor: 'default',
+          pointerEvents: labelPassthrough ? 'none' : 'auto',
+          cursor: 'normal',
           position: 'absolute',
           top: '0',
           left: '0',
@@ -28,7 +31,7 @@ export function InputBox({
           paddingTop: '0.7em',
           paddingLeft: '1em',
         })}
-        htmlFor={id}
+        htmlFor={inputID}
       >
         <span {...css(Fonts.label)}>
           {label}

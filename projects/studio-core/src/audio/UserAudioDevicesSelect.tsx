@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { SelectInput } from '../shared/input/SelectInput';
 
 type Props = {
   kind: 'input' | 'output',
@@ -145,15 +146,30 @@ export class UserAudioDevicesSelect extends React.Component<Props, State> {
     );
   }
 
-  handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    // Tell our parent that we got a new device id.
-    this.props.onSelect(event.target.value);
-  };
+  private handleChange = (value: string) => this.props.onSelect(value);
 
   render() {
     const { deviceID } = this.props;
     const { devices } = this.state;
-    return (
+    // If we were not given a selected device then we need to guess
+    // which device is selected.
+    const actualDeviceID = deviceID !== null
+      ? deviceID
+      : getDefaultDeviceID(devices)
+    // Render the `<SelectInput>`, but only if we have the appropriate
+    // information. Otherwise render null.
+    return !actualDeviceID || devices.length === 0 ? null : (
+      <SelectInput
+        label="Audio Input"
+        value={actualDeviceID}
+        options={devices.map((device, i) => ({
+          value: device.deviceId,
+          label: device.label || `Device ${i + 1}`,
+        }))}
+        onChange={this.handleChange}
+      />
+    );
+    /*return (
       devices.length === 0 ? (
         <select/>
       ) : (
@@ -174,7 +190,7 @@ export class UserAudioDevicesSelect extends React.Component<Props, State> {
           ))}
         </select>
       )
-    );
+    );*/
   }
 }
 

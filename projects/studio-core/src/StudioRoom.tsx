@@ -3,7 +3,6 @@ import { Observable } from 'rxjs';
 import { css } from 'glamor';
 import { Colors, Shadow } from '@decode/styles';
 import { ReactObservable } from './observable/ReactObservable';
-import { UserAudioDevicesSelect } from './audio/UserAudioDevicesSelect';
 import { AudioVisualization } from './audio/AudioVisualization';
 import { PeersMesh } from './rtc/PeersMesh';
 import { StudioRoomHeader } from './StudioRoomHeader';
@@ -67,6 +66,8 @@ export function StudioRoom({
           <StudioRoomSidebar
             name={mesh.localState.map(({ name }) => name).distinctUntilChanged()}
             onChangeName={name => mesh.setLocalName(name)}
+            deviceID={deviceID}
+            onSelectDeviceID={onSelectDeviceID}
           />
         </aside>
         <div {...css({
@@ -74,19 +75,6 @@ export function StudioRoom({
           flexGrow: '1',
           padding: '1px',
         })}>
-          <p>
-            Audio Input:{' '}
-            {ReactObservable.render(
-              deviceID,
-              deviceID => (
-                <UserAudioDevicesSelect
-                  kind="input"
-                  deviceID={deviceID}
-                  onSelect={onSelectDeviceID}
-                />
-              ),
-            )}
-          </p>
           <p>
             Volume:{' '}
             {ReactObservable.render(

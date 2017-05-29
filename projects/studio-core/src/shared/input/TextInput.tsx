@@ -17,19 +17,19 @@ export class TextInput extends InputComponent<Props, {}> {
     const { label, value } = this.props;
     return (
       <InputBox
-        id={this.inputID}
+        inputID={this.inputID}
         label={label}
       >
         <input
-          {...css({
-            WebkitAppearance: 'initial',
-            width: '100%',
-            border: 'none',
-            backgroundColor: 'initial',
-          })}
           id={this.inputID}
           value={value}
           onChange={this.handleChange}
+          {...css({
+            WebkitAppearance: 'none',
+            width: '100%',
+            backgroundColor: 'transparent',
+            border: 'none',
+          })}
         />
       </InputBox>
     );
