@@ -1,0 +1,3 @@
+# Ignore any SVG files that are output by the `icons.sketch` file for now. We
+# manually translate those SVGs into React components at the moment.
+*.svg

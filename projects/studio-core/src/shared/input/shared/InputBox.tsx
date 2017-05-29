@@ -1,16 +1,19 @@
 import * as React from 'react';
 import { css } from 'glamor';
 import { Colors, Fonts } from '@decode/styles';
+import { IconComponentType } from '../../icons/IconComponentType';
 
 export function InputBox({
   inputID,
   label,
   labelPassthrough = false,
+  icon: IconComponent,
   children,
 }: {
   inputID?: string,
   label: string,
   labelPassthrough?: boolean,
+  icon?: IconComponentType,
   children?: React.ReactNode,
 }) {
   return (
@@ -47,13 +50,31 @@ export function InputBox({
         // `fontSize` is `0.8em` so we need to scale them appropriately.
         padding: `${1 * (1 / 0.8)}em`,
         paddingTop: `${2.2 * (1 / 0.8)}em`,
+        paddingRight: IconComponent ? `${3.4 * (1 / 0.8)}em` : null,
 
         ':focus': {
           outline: 'none',
           color: Colors.shark,
-          backgroundColor: Colors.geyserDarker
+          backgroundColor: Colors.geyserDarker,
+          ' + .icon': {
+            color: Colors.shark,
+          },
         },
       }))}
+      {IconComponent && (
+        <div
+          className="icon"
+          {...css({
+            pointerEvents: 'none',
+            position: 'absolute',
+            top: '1.7em',
+            right: '1.2em',
+            color: Colors.osloGrey,
+          })}
+        >
+          <IconComponent/>
+        </div>
+      )}
     </div>
   );
 }

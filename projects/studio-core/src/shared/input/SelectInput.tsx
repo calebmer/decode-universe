@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { css } from 'glamor';
+import { IconExpand } from '../icons/IconExpand';
 import { InputComponent } from './shared/InputComponent';
 import { InputBox } from './shared/InputBox';
 
@@ -21,6 +22,7 @@ export class SelectInput extends InputComponent<Props, {}> {
         inputID={this.inputID}
         label={label}
         labelPassthrough={true}
+        icon={IconExpand}
       >
         <select
           id={this.inputID}
