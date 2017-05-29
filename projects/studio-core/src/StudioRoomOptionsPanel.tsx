@@ -1,12 +1,12 @@
 import * as React from 'react';
 import { Observable } from 'rxjs';
-import { css } from 'glamor';
 import { ReactObservable } from './observable/ReactObservable';
 import { TextInput } from './shared/input/TextInput';
 import { RangeInput } from './shared/input/RangeInput';
 import { UserAudioDevicesSelect } from './audio/UserAudioDevicesSelect';
+import { Panel } from './Panel';
 
-export function StudioRoomSidebar({
+export function StudioRoomOptionsPanel({
   name,
   onChangeName,
   deviceID,
@@ -25,11 +25,10 @@ export function StudioRoomSidebar({
     onLocalVolumeChange(volume / 100);
 
   return (
-    <div {...css({
-      width: '16em',
-      height: '100%',
-      overflow: 'hidden',
-    })}>
+    <Panel
+      title="Options"
+      width="16em"
+    >
       {ReactObservable.render(
         name,
         name => (
@@ -68,6 +67,6 @@ export function StudioRoomSidebar({
         value=""
         onChange={() => {}}
       />
-    </div>
+    </Panel>
   );
 }

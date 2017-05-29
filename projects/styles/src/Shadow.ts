@@ -18,7 +18,7 @@ function createInsetShadow({
   top?: boolean,
 } = {}) {
   return {
-    boxShadow: top ? `inset 0 0.4em 0.3em -0.3em ${color}` : undefined,
+    boxShadow: top ? `inset 0 0.5em 0.3em -0.3em ${color}` : undefined,
   };
 }
 

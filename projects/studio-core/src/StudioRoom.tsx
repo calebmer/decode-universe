@@ -1,12 +1,11 @@
 import * as React from 'react';
 import { Observable } from 'rxjs';
 import { css } from 'glamor';
-import { Colors, Shadow } from '@decode/styles';
 import { ReactObservable } from './observable/ReactObservable';
 import { AudioVisualization } from './audio/AudioVisualization';
 import { PeersMesh } from './rtc/PeersMesh';
 import { StudioRoomHeader } from './StudioRoomHeader';
-import { StudioRoomSidebar } from './StudioRoomSidebar';
+import { StudioRoomOptionsPanel } from './StudioRoomOptionsPanel';
 import { StudioPeer } from './StudioPeer';
 
 export function StudioRoom({
@@ -35,35 +34,25 @@ export function StudioRoom({
   const handleMute = () => mesh.muteLocalAudio();
   const handleUnmute = () => mesh.unmuteLocalAudio();
 
-  const handleLocalVolumeChange =
-    (event: React.ChangeEvent<HTMLInputElement>) =>
-      onLocalVolumeChange((parseInt(event.target.value, 10) || 0) / 100);
-
   return (
     <div {...css({
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
     })}>
-      <header {...css(
-        Shadow.createDropShadow(),
-        { borderBottom: `1px solid ${Colors.geyserDarker}` },
-      )}>
+      <header>
         <StudioRoomHeader/>
       </header>
       <div {...css({
         flexGrow: '1',
         display: 'flex',
       })}>
-        <aside {...css(
-          Shadow.createDropShadow(),
-          Shadow.createInsetShadow({ top: true }),
-          {
-            order: '1',
-            backgroundColor: Colors.geyser,
-          },
-        )}>
-          <StudioRoomSidebar
+        <aside {...css({
+          order: '1',
+          overflow: 'scroll',
+          padding: '2em',
+        })}>
+          <StudioRoomOptionsPanel
             name={mesh.localState.map(({ name }) => name).distinctUntilChanged()}
             onChangeName={name => mesh.setLocalName(name)}
             deviceID={deviceID}

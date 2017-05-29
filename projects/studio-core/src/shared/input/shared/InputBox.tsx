@@ -26,7 +26,7 @@ export function InputBox({
       <label
         {...css({
           pointerEvents: labelPassthrough ? 'none' : 'auto',
-          cursor: 'normal',
+          cursor: 'default',
           position: 'absolute',
           top: '0',
           left: '0',
