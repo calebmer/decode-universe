@@ -2,9 +2,14 @@
   "private": true,
   "name": "@decode/universe",
   "version": "0.0.0-versionless",
+  "engines": {
+    "node": "~8.0.0",
+    "npm": "~4.0.0"
+  },
   "dependencies": {
-    "prettier": "^1.4.2",
-    "tslib": "^1.7.1",
+    "lerna": "2.0.0-rc.5",
+    "prettier": "1.4.2",
+    "tslib": "1.7.1",
     "typescript": "2.3.2"
   }
 }

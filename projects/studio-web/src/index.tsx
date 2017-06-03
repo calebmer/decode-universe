@@ -3,12 +3,13 @@ import * as ReactDOM from 'react-dom';
 import * as querystring from 'querystring';
 import { PeersMesh, StudioRoomController } from '@decode/studio-core';
 import { MaybeHostPeer } from './rtc/MaybeHostPeer';
+import { BuildConstants } from './BuildConstants';
 import { StudioMustJoinRoom } from './StudioMustJoinRoom';
 
 const StudioRoom = StudioRoomController.createComponent({
   createPeersMesh: ({ roomName, localAudioContext, previousLocalName }) =>
     new PeersMesh({
-      signalServerURL: SIGNAL_SERVER_URL,
+      signalServerURL: BuildConstants.SIGNAL_SERVER_URL,
       roomName,
       localAudioContext,
       localState: {

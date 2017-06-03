@@ -15,6 +15,8 @@ const DEV = process.env.NODE_ENV === 'development';
 // variable then we want to use that as our initial room.
 const INITIAL_ROOM = DEV ? process.env.INITIAL_ROOM || null : null;
 
+const sourceRegex = `${escapeRegExp(path.resolve(__dirname, '..'))}/[^/]+/src`;
+
 module.exports = {
   target: 'electron-renderer',
   // We want to bail on error if this is a production build.
@@ -25,20 +27,22 @@ module.exports = {
   devtool: DEV ? 'eval' : 'source-map',
   // If we are in development then we will be using a dev server which we want
   // to configure.
-  devServer: !DEV ? undefined : {
-    // Enable gzip compression.
-    compress: true,
-    // Silence the dev server logs. It will still show warnings and errors with
-    // this setting, however.
-    clientLogLevel: 'none',
-    // By default changes in our public folder will not trigger a page reload.
-    watchContentBase: true,
-    // Enable a hot reloading server. It will provide a websocket endpoint for
-    // the dev server client. Instead of using the standard webpack dev server
-    // client we use a client from `react-dev-utils` which has a nicer
-    // development experience.
-    hot: true,
-  },
+  devServer: !DEV
+    ? undefined
+    : {
+        // Enable gzip compression.
+        compress: true,
+        // Silence the dev server logs. It will still show warnings and errors with
+        // this setting, however.
+        clientLogLevel: 'none',
+        // By default changes in our public folder will not trigger a page reload.
+        watchContentBase: true,
+        // Enable a hot reloading server. It will provide a websocket endpoint for
+        // the dev server client. Instead of using the standard webpack dev server
+        // client we use a client from `react-dev-utils` which has a nicer
+        // development experience.
+        hot: true,
+      },
   // Define the files that start our bundle.
   entry: [
     // Include some extra scripts in development for a better DX.
@@ -79,8 +83,11 @@ module.exports = {
         // `electron` module. They should be required directly instead of
         // required by their absolute path.
         if (DEV && ![...builtinModules, 'electron'].includes(request)) {
-          const moduleAbsolutePath =
-            path.resolve(__dirname, 'node_modules', request);
+          const moduleAbsolutePath = path.resolve(
+            __dirname,
+            'node_modules',
+            request,
+          );
 
           callback(null, `commonjs ${moduleAbsolutePath}`);
         } else {
@@ -97,24 +104,16 @@ module.exports = {
     // Make sure to add `.ts` to module resolution.
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
     alias: {
-      // Allow our code to import from other Decode projects.
-      '@decode': path.resolve(__dirname, '..'),
       // Use the browser build for debug and not the Node.js build.
-      'debug': path.resolve(__dirname, './node_modules/debug/src/browser.js'),
+      debug: path.resolve(__dirname, '../../node_modules/debug/src/browser.js'),
     },
-    // We only want to lookup modules in our own `node_modules` folder. We do
-    // *not* want to lookup modules in relative `node_modules` folders. All
-    // dependencies should be specified in our `package.json` file.
-    modules: [path.resolve(__dirname, './node_modules')],
   },
   module: {
     rules: [
       // Compile all of our JavaScript and TypeScript files with TypeScript.
       {
         test: /\.(js|jsx|ts|tsx)$/,
-        include: new RegExp(
-          `${escapeRegExp(path.resolve(__dirname, '..'))}/[^/]+/src`
-        ),
+        include: new RegExp(sourceRegex),
         loader: 'awesome-typescript-loader',
         options: {
           // The default instance name, `at-loader`, is confusing.
@@ -133,9 +132,7 @@ module.exports = {
       !DEV && {
         enforce: 'pre',
         test: /\.js$/,
-        include: new RegExp(
-          `${escapeRegExp(path.resolve(__dirname, '..'))}/[^/]+/src`
-        ),
+        include: new RegExp(sourceRegex),
         loader: 'source-map-loader',
       },
     ].filter(Boolean),
@@ -146,30 +143,37 @@ module.exports = {
       inject: true,
       template: path.join(__dirname, './src/renderer/index.html'),
       // Minify the HTML in production, but not in development.
-      minify: DEV ? undefined : {
-        removeComments: true,
-        collapseWhitespace: true,
-        removeRedundantAttributes: true,
-        useShortDoctype: true,
-        removeEmptyAttributes: true,
-        removeStyleLinkTypeAttributes: true,
-        keepClosingSlash: true,
-        minifyJS: true,
-        minifyCSS: true,
-        minifyURLs: true,
-      },
+      minify: DEV
+        ? undefined
+        : {
+            removeComments: true,
+            collapseWhitespace: true,
+            removeRedundantAttributes: true,
+            useShortDoctype: true,
+            removeEmptyAttributes: true,
+            removeStyleLinkTypeAttributes: true,
+            keepClosingSlash: true,
+            minifyJS: true,
+            minifyCSS: true,
+            minifyURLs: true,
+          },
     }),
     // Expose some environment variables to our code.
     new DefinePlugin({
-      'DEV': JSON.stringify(DEV),
+      DEV: JSON.stringify(DEV),
       // Many libraries, including React, use `NODE_ENV` so we need to
       // define it.
-      'process.env.NODE_ENV': JSON.stringify(DEV ? 'development' : 'production'),
-      // Add substitutions for various constants that we use throughout our
-      // dependencies.
-      'INITIAL_ROOM': JSON.stringify(INITIAL_ROOM),
-      'SIGNAL_SERVER_URL': JSON.stringify(process.env.DECODE_STUDIO_SIGNAL_SERVER_URL || 'http://localhost:2000'),
-      'WEB_URL': JSON.stringify(process.env.DECODE_STUDIO_WEB_URL || 'http://localhost:1999'),
+      'process.env.NODE_ENV': JSON.stringify(
+        DEV ? 'development' : 'production',
+      ),
+      // Define a build constants object.
+      WEBPACK_BUILD_CONSTANTS: JSON.stringify({
+        INITIAL_ROOM: INITIAL_ROOM,
+        SIGNAL_SERVER_URL:
+          process.env.DECODE_STUDIO_SIGNAL_SERVER_URL ||
+            'http://localhost:2000',
+        WEB_URL: process.env.DECODE_STUDIO_WEB_URL || 'http://localhost:1999',
+      }),
     }),
     // Used for any hot replacement functionalities we may use in the future.
     // Currently hot reloading for JavaScripts is not set up.

@@ -4,16 +4,13 @@
   "version": "0.0.0-versionless",
   "main": "./src/index.ts",
   "typings": "./src/index.ts",
-  "scripts": {
-    "postinstall": "rm -rf node_modules/@decode"
-  },
   "dependencies": {
-    "@decode/js-utils": "file:../js-utils",
-    "debug": "^2.6.3",
-    "socket.io-client": "^1.7.3"
+    "@decode/js-utils": "0.0.0-versionless",
+    "debug": "2.6.8",
+    "socket.io-client": "1.7.4"
   },
   "devDependencies": {
-    "@types/debug": "^0.0.29",
-    "@types/socket.io-client": "^1.4.29"
+    "@types/debug": "0.0.29",
+    "@types/socket.io-client": "1.4.29"
   }
 }

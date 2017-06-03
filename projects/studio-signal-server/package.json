@@ -4,16 +4,13 @@
   "version": "0.0.0-versionless",
   "main": "./src/index.ts",
   "typings": "./src/index.ts",
-  "scripts": {
-    "postinstall": "rm -rf node_modules/@decode"
-  },
   "dependencies": {
-    "@decode/studio-signal-client": "file:../studio-signal-client/",
-    "socket.io": "^1.7.3"
+    "@decode/studio-signal-client": "0.0.0-versionless",
+    "socket.io": "1.7.4"
   },
   "devDependencies": {
-    "@types/node": "^7.0.12",
-    "@types/socket.io": "^1.4.29",
-    "ts-node": "^3.0.2"
+    "@types/node": "7.0.27",
+    "@types/socket.io": "1.4.29",
+    "ts-node": "3.0.4"
   }
 }

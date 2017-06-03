@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { StudioRoomController, PeersMesh, Peer } from '@decode/studio-core';
+import { BuildConstants } from '../shared/BuildConstants';
 import { Storage } from '../shared/storage/Storage';
 import { StudioButtons } from './StudioButtons';
 
@@ -13,11 +14,11 @@ export const StudioRoom = StudioRoomController.createComponent<
   PeersMesh
 >({
   // We want the host to invite users to the room using the web url.
-  webURL: WEB_URL,
+  webURL: BuildConstants.WEB_URL,
 
   createPeersMesh: ({ roomName, localAudioContext, previousLocalName }) =>
     new PeersMesh({
-      signalServerURL: SIGNAL_SERVER_URL,
+      signalServerURL: BuildConstants.SIGNAL_SERVER_URL,
       roomName,
       localAudioContext,
       localState: {

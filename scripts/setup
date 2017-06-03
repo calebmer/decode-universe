@@ -4,37 +4,7 @@
 # multiple times and you will always get the same result no matter the previous
 # state of universe.
 
-echo ''
-echo '[1/5] Installing `studio-signal-client` dependencies.'
-echo ''
-cd ./projects/studio-signal-client
-yarn
-cd ../..
-
-echo ''
-echo '[2/5] Installing `studio-signal-server` dependencies.'
-echo ''
-cd ./projects/studio-signal-server
-yarn
-cd ../..
-
-echo ''
-echo '[3/5] Installing `studio-core` dependencies.'
-echo ''
-cd ./projects/studio-core
-yarn
-cd ../..
-
-echo ''
-echo '[4/5] Installing `studio-desktop` dependencies.'
-echo ''
-cd ./projects/studio-desktop
-yarn
-cd ../..
-
-echo ''
-echo '[5/5] Installing `studio-web` dependencies.'
-echo ''
-cd ./projects/studio-web
-yarn
-cd ../..
+echo ""
+echo "[1/1] Bootstrapping with lerna."
+echo ""
+$(npm bin)/lerna bootstrap
