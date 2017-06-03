@@ -1,7 +1,10 @@
 {
+  "private": true,
+  "name": "@decode/universe",
+  "version": "0.0.0-versionless",
   "dependencies": {
     "prettier": "^1.4.2",
     "tslib": "^1.7.1",
-    "typescript": "2.3.0"
+    "typescript": "2.3.2"
   }
 }
