@@ -51,9 +51,9 @@ const debounceNegotiationNeededMs = 200;
  * and we only connect to the mesh after `connect()` is called. To disconnect
  * from the mesh one needs to call `close()`.
  */
-export
-class PeersMesh<TPeer extends Peer = Peer>
-extends EventEmitter<PeersMesh.EventMap> {
+export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
+  PeersMesh.EventMap
+> {
   /**
    * The private subject observable that contains the immutable map of remote
    * peers we are connected to.
@@ -75,8 +75,9 @@ extends EventEmitter<PeersMesh.EventMap> {
    * The map is keyed by the address we use to send messages to our peer through
    * the `SignalClient`.
    */
-  private readonly peersSubject =
-    new BehaviorSubject(OrderedMap<string, TPeer>());
+  private readonly peersSubject = new BehaviorSubject(
+    OrderedMap<string, TPeer>(),
+  );
 
   /**
    * All of the peers that we are currently connected to keyed by their unique
@@ -124,11 +125,11 @@ extends EventEmitter<PeersMesh.EventMap> {
     localState,
     createPeerInstance,
   }: {
-    signalServerURL: string,
-    roomName: string,
-    localAudioContext: AudioContext,
-    localState: Peer.State,
-    createPeerInstance: (config: Peer.Config) => TPeer,
+    signalServerURL: string;
+    roomName: string;
+    localAudioContext: AudioContext;
+    localState: Peer.State;
+    createPeerInstance: (config: Peer.Config) => TPeer;
   }) {
     super();
     // Set some properties on the class instance.
@@ -138,8 +139,7 @@ extends EventEmitter<PeersMesh.EventMap> {
     this.signals = new SignalClient({ serverURL: signalServerURL, roomName });
     // Add an event listener to our signal client.
     this.signals.on('signal', ({ from, signal }) => {
-      this.handleSignal(from, signal)
-          .catch(error => console.error(error));
+      this.handleSignal(from, signal).catch(error => console.error(error));
     });
     // Create the local state subject using the initial state provided to us.
     this.localStateSubject = new BehaviorSubject(localState);
@@ -173,13 +173,15 @@ extends EventEmitter<PeersMesh.EventMap> {
     // room we pointed the signal client towards.
     const addresses = await this.signals.connect();
     // Create a peer for each of our addresses and start negotiations.
-    await Promise.all(addresses.map(async address => {
-      debug(`Initiating connection with peer ${address}`);
-      // Create the peer.
-      this.createPeer(address, true);
-      // Schedule negotiation with our peer.
-      this.schedulePeerNegotiations(address);
-    }));
+    await Promise.all(
+      addresses.map(async address => {
+        debug(`Initiating connection with peer ${address}`);
+        // Create the peer.
+        this.createPeer(address, true);
+        // Schedule negotiation with our peer.
+        this.schedulePeerNegotiations(address);
+      }),
+    );
   }
 
   /**
@@ -235,7 +237,8 @@ extends EventEmitter<PeersMesh.EventMap> {
         // If the connection state is failed or closed then we want to destroy the
         // peer no questions asked.
         if (
-          (iceConnectionState === 'failed' || iceConnectionState === 'closed') &&
+          (iceConnectionState === 'failed' ||
+            iceConnectionState === 'closed') &&
           peer.isClosed === false
         ) {
           // Delete the peer.
@@ -282,8 +285,9 @@ extends EventEmitter<PeersMesh.EventMap> {
     }
     // Start a timeout and set the reference in our timers map. This timeout
     // will be cancelled if another peer negotiation is scheduled.
-    this.peerNegotiationTimers.set(address, setTimeout(
-      () => {
+    this.peerNegotiationTimers.set(
+      address,
+      setTimeout(() => {
         // Delete the timer from our map now that it has completed.
         this.peerNegotiationTimers.delete(address);
         // Get the peer from our peers map.
@@ -291,12 +295,12 @@ extends EventEmitter<PeersMesh.EventMap> {
         // If the peer no longer exists do not continue. Otherwise we want to
         // start negotiations with that peer.
         if (peer !== undefined) {
-          this.startPeerNegotiations(address, peer)
-            .catch(error => console.error(error));
+          this.startPeerNegotiations(address, peer).catch(error =>
+            console.error(error),
+          );
         }
-      },
-      debounceNegotiationNeededMs,
-    ));
+      }, debounceNegotiationNeededMs),
+    );
   }
 
   /**
@@ -347,8 +351,9 @@ extends EventEmitter<PeersMesh.EventMap> {
       // service.
       case 'offer': {
         // Set the remote description to the offer we recieved.
-        await peer.connection
-          .setRemoteDescription(new RTCSessionDescription(signal));
+        await peer.connection.setRemoteDescription(
+          new RTCSessionDescription(signal),
+        );
         // Create an answer.
         const answer = await peer.connection.createAnswer();
         await peer.connection.setLocalDescription(answer);
@@ -369,8 +374,9 @@ extends EventEmitter<PeersMesh.EventMap> {
       // remote description on that peer. After this happens we should be in
       // business for peer-to-peer communciation!
       case 'answer': {
-        await peer.connection
-          .setRemoteDescription(new RTCSessionDescription(signal));
+        await peer.connection.setRemoteDescription(
+          new RTCSessionDescription(signal),
+        );
         break;
       }
 
@@ -378,10 +384,12 @@ extends EventEmitter<PeersMesh.EventMap> {
       // peer.
       case 'candidate': {
         const { sdpMLineIndex, candidate } = signal;
-        peer.connection.addIceCandidate(new RTCIceCandidate({
-          sdpMLineIndex,
-          candidate,
-        }));
+        peer.connection.addIceCandidate(
+          new RTCIceCandidate({
+            sdpMLineIndex,
+            candidate,
+          }),
+        );
         break;
       }
     }
@@ -439,16 +447,16 @@ extends EventEmitter<PeersMesh.EventMap> {
    * `localAudio` without exposing the `Subject` functions to the outside
    * world.
    */
-  private readonly localAudioSubject =
-    new BehaviorSubject<AudioNode | null>(null);
+  private readonly localAudioSubject = new BehaviorSubject<AudioNode | null>(
+    null,
+  );
 
   /**
    * An observable of the state of our local audio. `null` if we don’t
    * currently have local audio. This may happen before any audio is
    * loaded, or when the user is muted.
    */
-  public readonly localAudio =
-    this.localAudioSubject.asObservable();
+  public readonly localAudio = this.localAudioSubject.asObservable();
 
   /**
    * The current local audio at this point in time. `null` if the local audio
@@ -564,7 +572,7 @@ export namespace PeersMesh {
    * The map of events that the peer mesh will emit from time to time.
    */
   export interface EventMap {
-    addPeer: { address: string, peer: Peer };
-    deletePeer: { address: string, peer: Peer };
+    addPeer: { address: string; peer: Peer };
+    deletePeer: { address: string; peer: Peer };
   }
 }

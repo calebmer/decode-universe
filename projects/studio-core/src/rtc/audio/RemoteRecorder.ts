@@ -5,10 +5,8 @@ import { RemoteRecorderProtocol } from './RemoteRecorderProtocol';
 /**
  * The recorder class for the recording protocol.
  */
-export
-class RemoteRecorder
-extends EventEmitter<Recorder.EventMap>
-implements Recorder {
+export class RemoteRecorder extends EventEmitter<Recorder.EventMap>
+  implements Recorder {
   /**
    * Creates a new recorder instance using the provided `RTCDataChannel`.
    */
@@ -28,16 +26,19 @@ implements Recorder {
         // Remove all of the event listeners.
         removeEventListeners();
         // Parse out the message from the event’s data.
-        const message: RemoteRecorderProtocol.RecordeeInfoMessage =
-          JSON.parse(event.data);
+        const message: RemoteRecorderProtocol.RecordeeInfoMessage = JSON.parse(
+          event.data,
+        );
         // Resolve the promise with a new recorder instance. The `Recorder`
         // constructor is private so this is the only place it can be
         // constructed.
-        resolve(new RemoteRecorder({
-          channel,
-          name: message.name,
-          sampleRate: message.sampleRate,
-        }));
+        resolve(
+          new RemoteRecorder({
+            channel,
+            name: message.name,
+            sampleRate: message.sampleRate,
+          }),
+        );
       };
       // If we get an error then we need to reject the promise.
       const handleError = (event: ErrorEvent) => {
@@ -103,9 +104,9 @@ implements Recorder {
     name,
     sampleRate,
   }: {
-    channel: RTCDataChannel,
-    name: string,
-    sampleRate: number,
+    channel: RTCDataChannel;
+    name: string;
+    sampleRate: number;
   }) {
     super();
     // Update our instance.

@@ -25,7 +25,7 @@ app.on('ready', () => {
   // Load the `index.html` of the page.
   window.loadURL(
     process.env.DECODE_STUDIO_DESKTOP_RENDERER_URL ||
-    `file://${resolvePath(__dirname, '../renderer/index.html')}`
+      `file://${resolvePath(__dirname, '../renderer/index.html')}`,
   );
 
   // Open the DevTools in development.
@@ -44,12 +44,14 @@ app.on('ready', () => {
   // TODO: We only have copy functionality for the invite link. We should just
   // make a “click to copy” button instead. Or put it in an input that can be
   // natively copied.
-  Menu.setApplicationMenu(Menu.buildFromTemplate([
-    {
-      label: 'Edit',
-      submenu: [{ role: 'copy' }]
-    },
-  ]));
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      {
+        label: 'Edit',
+        submenu: [{ role: 'copy' }],
+      },
+    ]),
+  );
 });
 
 // Quit when all windows are closed.

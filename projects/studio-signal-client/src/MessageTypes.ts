@@ -4,7 +4,7 @@
  * with the other socket ids.
  */
 export type JoinRequestMessage = {
-  readonly roomName: string,
+  readonly roomName: string;
 };
 
 /**
@@ -12,7 +12,7 @@ export type JoinRequestMessage = {
  * given socket.
  */
 export type JoinResponseMessage = {
-  readonly otherSocketIDs: Array<string>,
+  readonly otherSocketIDs: Array<string>;
 };
 
 /**
@@ -21,8 +21,8 @@ export type JoinResponseMessage = {
  * the correct recipient and let the recipient know which socket sent it.
  */
 export type SignalOutgoingMessage = {
-  readonly to: string,
-  readonly signal: Signal,
+  readonly to: string;
+  readonly signal: Signal;
 };
 
 /**
@@ -31,8 +31,8 @@ export type SignalOutgoingMessage = {
  * this one and should be handled appropriately.
  */
 export type SignalIncomingMessage = {
-  readonly from: string,
-  readonly signal: Signal,
+  readonly from: string;
+  readonly signal: Signal;
 };
 
 /**
@@ -49,23 +49,20 @@ export type SignalIncomingMessage = {
  *    peer connection in response to the `OfferSignal`.
  * 4. TODO: What does `CandidateSignal` *really* do?
  */
-export type Signal =
-  OfferSignal |
-  AnswerSignal |
-  CandidateSignal;
+export type Signal = OfferSignal | AnswerSignal | CandidateSignal;
 
 export type OfferSignal = {
-  readonly type: 'offer',
-  readonly sdp: string,
+  readonly type: 'offer';
+  readonly sdp: string;
 };
 
 export type AnswerSignal = {
-  readonly type: 'answer',
-  readonly sdp: string,
+  readonly type: 'answer';
+  readonly sdp: string;
 };
 
 export type CandidateSignal = {
-  readonly type: 'candidate',
-  readonly sdpMLineIndex: number,
-  readonly candidate: string,
+  readonly type: 'candidate';
+  readonly sdpMLineIndex: number;
+  readonly candidate: string;
 };

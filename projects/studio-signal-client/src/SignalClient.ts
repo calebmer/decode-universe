@@ -31,8 +31,8 @@ export class SignalClient extends EventEmitter<SignalClient.EventMap> {
     serverURL,
     roomName,
   }: {
-    serverURL: string,
-    roomName: string,
+    serverURL: string;
+    roomName: string;
   }) {
     super();
     this.serverURL = serverURL;
@@ -67,7 +67,7 @@ export class SignalClient extends EventEmitter<SignalClient.EventMap> {
       throw new Error('Socket is already connected.');
     }
     // Create the socket.
-    const socket = this.socket = socketIO(this.serverURL);
+    const socket = (this.socket = socketIO(this.serverURL));
     // When the socket has fully connected, do some stuff.
     socket.on('connect', () => {
       debug(`Connected to signal exchange as ${socket.id}`);
@@ -104,6 +104,6 @@ export class SignalClient extends EventEmitter<SignalClient.EventMap> {
 
 export namespace SignalClient {
   export interface EventMap {
-    signal: { from: string, signal: Signal };
+    signal: { from: string; signal: Signal };
   }
 }

@@ -10,12 +10,12 @@ import { DirectoryRecording } from './DirectoryRecording';
 import { DirectoryExportProgress } from './DirectoryExportProgress';
 
 type Props = {
-  storage: Storage,
-  onCreateRoom: () => void,
+  storage: Storage;
+  onCreateRoom: () => void;
 };
 
 type State = {
-  exportProgresses: OrderedMap<RecordingStorage, Observable<number>>,
+  exportProgresses: OrderedMap<RecordingStorage, Observable<number>>;
 };
 
 export class Directory extends React.PureComponent<Props, State> {
@@ -74,23 +74,24 @@ export class Directory extends React.PureComponent<Props, State> {
             Start Studio Sesson
           </button>
         </p>
-        {exportProgresses.size > 0 && (
+        {exportProgresses.size > 0 &&
           <ul>
-            {exportProgresses.map((progress, recording) => (
-              <li key={recording.directoryPath}>
-                <DirectoryExportProgress
-                  recording={recording}
-                  progress={progress}
-                />
-              </li>
-            )).toArray()}
-          </ul>
-        )}
+            {exportProgresses
+              .map((progress, recording) =>
+                <li key={recording.directoryPath}>
+                  <DirectoryExportProgress
+                    recording={recording}
+                    progress={progress}
+                  />
+                </li>,
+              )
+              .toArray()}
+          </ul>}
         <ul>
           {Array.from(storage.directory.getAllRecordings())
             // Sort so that the latest recordings are at the top.
             .sort(([, a], [, b]) => b.startedAt - a.startedAt)
-            .map(([id, recording]) => (
+            .map(([id, recording]) =>
               <li key={id}>
                 <DirectoryRecording
                   id={id}
@@ -98,15 +99,17 @@ export class Directory extends React.PureComponent<Props, State> {
                   isExporting={exportProgresses.has(recording)}
                   onExport={this.handleExport}
                 />
-              </li>
-            ))}
+              </li>,
+            )}
         </ul>
       </div>
     );
   }
 }
 
-async function startExport(recording: RecordingStorage): Promise<Observable<number> | void> {
+async function startExport(
+  recording: RecordingStorage,
+): Promise<Observable<number> | void> {
   // Get a directory from the user using a dialog.
   const exportDirectoryPath = await new Promise<string | undefined>(resolve => {
     // Show an open dialog. The user will select a directory and we will then
@@ -150,7 +153,7 @@ async function startExport(recording: RecordingStorage): Promise<Observable<numb
             title: 'Overwrite Existing Files',
             message:
               'Some existing files will be overwritten. Are you sure you ' +
-              'want to continue?',
+                'want to continue?',
             buttons: ['Overwrite', 'Cancel'],
             defaultId: 0,
             cancelId: 1,
@@ -171,7 +174,10 @@ async function startExport(recording: RecordingStorage): Promise<Observable<numb
   }
   // Actually perform the export and get an observable that represents the
   // export progress.
-  const progress = await RecordingExporter.export(recording, exportDirectoryPath);
+  const progress = await RecordingExporter.export(
+    recording,
+    exportDirectoryPath,
+  );
   // Return the progress observable.
   return progress;
 }

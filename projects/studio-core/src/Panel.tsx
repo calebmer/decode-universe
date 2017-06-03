@@ -7,39 +7,37 @@ export function Panel({
   title,
   children,
 }: {
-  width?: string,
-  title?: string,
-  children?: React.ReactNode,
+  width?: string;
+  title?: string;
+  children?: React.ReactNode;
 }) {
   const hasHeading = !!title;
   return (
-    <div {...css(
-      Shadow.createDropShadow(),
-      {
+    <div
+      {...css(Shadow.createDropShadow(), {
         overflow: 'hidden',
         width,
         borderRadius: '0.4em',
         backgroundColor: Colors.geyser,
-      },
-    )}>
-      {hasHeading && (
-        <header {...css(Fonts.title, {
-          cursor: 'default',
-          padding: '1em',
-          paddingBottom: '2em',
-          backgroundColor: Colors.white,
-          borderBottom: `1px solid ${Colors.geyserDarker}`,
-        })}>
+      })}
+    >
+      {hasHeading &&
+        <header
+          {...css(Fonts.title, {
+            cursor: 'default',
+            padding: '1em',
+            paddingBottom: '2em',
+            backgroundColor: Colors.white,
+            borderBottom: `1px solid ${Colors.geyserDarker}`,
+          })}
+        >
           {title}
-        </header>
-      )}
-      {hasHeading ? (
-        <div {...css(Shadow.createInsetShadow({ top: true }))}>
-          {children}
-        </div>
-      ) : (
-        children
-      )}
+        </header>}
+      {hasHeading
+        ? <div {...css(Shadow.createInsetShadow({ top: true }))}>
+            {children}
+          </div>
+        : children}
     </div>
   );
 }

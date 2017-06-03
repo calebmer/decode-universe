@@ -11,7 +11,9 @@ export interface Disposable {
 /**
  * Combines many disposables into one large disposable.
  */
-function concat(...disposables: Array<Disposable | Array<Disposable>>): Disposable {
+function concat(
+  ...disposables: Array<Disposable | Array<Disposable>>
+): Disposable {
   return {
     dispose: () => {
       disposables.forEach(disposable => {

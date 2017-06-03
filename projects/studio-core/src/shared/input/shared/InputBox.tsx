@@ -10,19 +10,21 @@ export function InputBox({
   icon: IconComponent,
   children,
 }: {
-  inputID?: string,
-  label: string,
-  labelPassthrough?: boolean,
-  icon?: IconComponentType,
-  children?: React.ReactNode,
+  inputID?: string;
+  label: string;
+  labelPassthrough?: boolean;
+  icon?: IconComponentType;
+  children?: React.ReactNode;
 }) {
   return (
-    <div {...css({
-      display: 'block',
-      position: 'relative',
-      margin: '-1px',
-      border: `solid 1px ${Colors.geyserDarker}`,
-    })}>
+    <div
+      {...css({
+        display: 'block',
+        position: 'relative',
+        margin: '-1px',
+        border: `solid 1px ${Colors.geyserDarker}`,
+      })}
+    >
       <label
         {...css({
           pointerEvents: labelPassthrough ? 'none' : 'auto',
@@ -43,25 +45,28 @@ export function InputBox({
       {/* Clone the only child element and add some styles to make it look
         * nice. Other input specific styles will be added outside of this
         * component. */}
-      {React.cloneElement(React.Children.only(children), css(Fonts.input, {
-        fontSize: '0.8em',
+      {React.cloneElement(
+        React.Children.only(children),
+        css(Fonts.input, {
+          fontSize: '0.8em',
 
-        // Normally our padding is `1em` and `2.2em` respectively, but the
-        // `fontSize` is `0.8em` so we need to scale them appropriately.
-        padding: `${1 * (1 / 0.8)}em`,
-        paddingTop: `${2.4 * (1 / 0.8)}em`,
-        paddingRight: IconComponent ? `${3.6 * (1 / 0.8)}em` : null,
+          // Normally our padding is `1em` and `2.2em` respectively, but the
+          // `fontSize` is `0.8em` so we need to scale them appropriately.
+          padding: `${1 * (1 / 0.8)}em`,
+          paddingTop: `${2.4 * (1 / 0.8)}em`,
+          paddingRight: IconComponent ? `${3.6 * (1 / 0.8)}em` : null,
 
-        ':focus': {
-          outline: 'none',
-          color: Colors.shark,
-          backgroundColor: Colors.geyserDarker,
-          ' + .icon': {
+          ':focus': {
+            outline: 'none',
             color: Colors.shark,
+            backgroundColor: Colors.geyserDarker,
+            ' + .icon': {
+              color: Colors.shark,
+            },
           },
-        },
-      }))}
-      {IconComponent && (
+        }),
+      )}
+      {IconComponent &&
         <div
           className="icon"
           {...css({
@@ -72,9 +77,8 @@ export function InputBox({
             color: Colors.osloGrey,
           })}
         >
-          <IconComponent/>
-        </div>
-      )}
+          <IconComponent />
+        </div>}
     </div>
   );
 }

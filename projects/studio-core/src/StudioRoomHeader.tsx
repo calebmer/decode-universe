@@ -4,14 +4,12 @@ import { css } from 'glamor';
 
 export function StudioRoomHeader() {
   return (
-    <div {...css(
-      Shadow.createDropShadow(),
-      {
+    <div
+      {...css(Shadow.createDropShadow(), {
         padding: '2em',
         backgroundColor: Colors.white,
         borderBottom: `1px solid ${Colors.geyserDarker}`,
-      },
-    )}>
-    </div>
+      })}
+    />
   );
 }

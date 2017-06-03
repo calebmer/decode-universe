@@ -61,8 +61,8 @@ export class RemoteRecordee implements Disposable {
     channel,
     context,
   }: {
-    channel: RTCDataChannel,
-    context: AudioContext,
+    channel: RTCDataChannel;
+    context: AudioContext;
   }) {
     this.channel = channel;
     // Add all the event listeners.
@@ -219,9 +219,11 @@ function waitUntilOpen(channel: RTCDataChannel): Promise<void> {
       }
       // If the channel is any other state then it is not opening.
       default: {
-        reject(new Error(
-          `Channel will not open if the state is ${channel.readyState}`
-        ));
+        reject(
+          new Error(
+            `Channel will not open if the state is ${channel.readyState}`,
+          ),
+        );
         break;
       }
     }

@@ -10,11 +10,9 @@
  * only have lowercase alphanumeric characters and dashes.
  */
 export function slugify(s: string): string {
-  return (
-    s
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/ig, '-')
-      .replace(/^-/, '')
-      .replace(/-$/, '')
-  );
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gi, '-')
+    .replace(/^-/, '')
+    .replace(/-$/, '');
 }

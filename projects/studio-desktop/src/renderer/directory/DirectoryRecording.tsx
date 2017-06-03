@@ -8,19 +8,16 @@ export const DirectoryRecording = ({
   isExporting,
   onExport,
 }: {
-  id: string,
-  recording: RecordingStorage,
-  isExporting: boolean,
-  onExport: (recording: RecordingStorage) => void,
-}) => (
+  id: string;
+  recording: RecordingStorage;
+  isExporting: boolean;
+  onExport: (recording: RecordingStorage) => void;
+}) =>
   <div>
     <div>
       <span>{id}</span>
       {' '}
-      <button
-        disabled={isExporting}
-        onClick={() => onExport(recording)}
-      >
+      <button disabled={isExporting} onClick={() => onExport(recording)}>
         Export
       </button>
     </div>
@@ -28,15 +25,14 @@ export const DirectoryRecording = ({
       <li>Started: {new Date(recording.startedAt).toString()}</li>
       <li>
         Duration:{' '}
-        {ReactPromise.render(
-          recording.getSecondsLength(),
-          seconds => <span>{Math.round(seconds * 100) / 100}s</span>,
+        {ReactPromise.render(recording.getSecondsLength(), seconds =>
+          <span>{Math.round(seconds * 100) / 100}s</span>,
         )}
       </li>
       <li>
         <span>Recorders:</span>
         <ul>
-          {Array.from(recording.getAllRecorders()).map(([id, recorder]) => (
+          {Array.from(recording.getAllRecorders()).map(([id, recorder]) =>
             <li key={id}>
               <span>{recorder.name}</span>
               <ul>
@@ -46,25 +42,23 @@ export const DirectoryRecording = ({
                   Duration:{' '}
                   {ReactPromise.render(
                     recorder.getSampleLength(),
-                    sampleLength => (
+                    sampleLength =>
                       <span>
-                        {Math.round((sampleLength / recorder.sampleRate) * 100) / 100}s
-                      </span>
-                    ),
+                        {Math.round(sampleLength / recorder.sampleRate * 100) /
+                          100}s
+                      </span>,
                   )}
                 </li>
                 <li>
                   Bytes:{' '}
-                  {ReactPromise.render(
-                    recorder.getByteLength(),
-                    byteLength => <span>{byteLength}</span>,
+                  {ReactPromise.render(recorder.getByteLength(), byteLength =>
+                    <span>{byteLength}</span>,
                   )}
                 </li>
               </ul>
-            </li>
-          ))}
+            </li>,
+          )}
         </ul>
       </li>
     </ul>
-  </div>
-);
+  </div>;

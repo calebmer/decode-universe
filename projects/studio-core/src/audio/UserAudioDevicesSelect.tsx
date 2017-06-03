@@ -2,13 +2,13 @@ import * as React from 'react';
 import { SelectInput } from '../shared/input/SelectInput';
 
 type Props = {
-  kind: 'input' | 'output',
-  deviceID: string | null,
-  onSelect: (deviceID: string) => void,
+  kind: 'input' | 'output';
+  deviceID: string | null;
+  onSelect: (deviceID: string) => void;
 };
 
 type State = {
-  devices: Array<MediaDeviceInfo>,
+  devices: Array<MediaDeviceInfo>;
 };
 
 /**
@@ -77,15 +77,12 @@ export class UserAudioDevicesSelect extends React.Component<Props, State> {
    */
   private scheduleUpdateDevices() {
     // Set the timeout.
-    this.nextUpdateDevicesTimeout = setTimeout(
-      () => {
-        // Remove the timeout.
-        this.nextUpdateDevicesTimeout = null;
-        // Call the function again.
-        this.updateDevices();
-      },
-      devicesPollingMs,
-    );
+    this.nextUpdateDevicesTimeout = setTimeout(() => {
+      // Remove the timeout.
+      this.nextUpdateDevicesTimeout = null;
+      // Call the function again.
+      this.updateDevices();
+    }, devicesPollingMs);
   }
 
   /**
@@ -101,7 +98,7 @@ export class UserAudioDevicesSelect extends React.Component<Props, State> {
    */
   private updateDevices() {
     // Get a zone id.
-    const zoneID = this.currentZoneID += 1;
+    const zoneID = (this.currentZoneID += 1);
     // Cancel any timeouts that may be running.
     this.cancelScheduledUpdateDevices();
     // Try to enumerate the user’s devices.
@@ -155,42 +152,20 @@ export class UserAudioDevicesSelect extends React.Component<Props, State> {
     // which device is selected.
     const actualDeviceID = deviceID !== null
       ? deviceID
-      : getDefaultDeviceID(devices)
+      : getDefaultDeviceID(devices);
     // Render the `<SelectInput>`, but only if we have the appropriate
     // information. Otherwise render null.
-    return !actualDeviceID || devices.length === 0 ? null : (
-      <SelectInput
-        label="Audio Input"
-        value={actualDeviceID}
-        options={devices.map((device, i) => ({
-          value: device.deviceId,
-          label: device.label || `Device ${i + 1}`,
-        }))}
-        onChange={this.handleChange}
-      />
-    );
-    /*return (
-      devices.length === 0 ? (
-        <select/>
-      ) : (
-        <select
-          value={
-            // If we were not given a selected device then we need to guess
-            // which device is selected.
-            deviceID !== null
-              ? deviceID
-              : getDefaultDeviceID(devices)
-          }
+    return !actualDeviceID || devices.length === 0
+      ? null
+      : <SelectInput
+          label="Audio Input"
+          value={actualDeviceID}
+          options={devices.map((device, i) => ({
+            value: device.deviceId,
+            label: device.label || `Device ${i + 1}`,
+          }))}
           onChange={this.handleChange}
-        >
-          {devices.map((device, i) => (
-            <option key={device.deviceId} value={device.deviceId}>
-              {device.label || `Device ${i + 1}`}
-            </option>
-          ))}
-        </select>
-      )
-    );*/
+        />;
   }
 }
 
@@ -217,7 +192,7 @@ function areDevicesEqual(
       return false;
     }
   }
-  return true ;
+  return true;
 }
 
 /**
@@ -227,7 +202,9 @@ function areDevicesEqual(
  * We only use this to find something to display when the selected device id is
  * `null`.
  */
-function getDefaultDeviceID(devices: Array<MediaDeviceInfo>): string | undefined {
+function getDefaultDeviceID(
+  devices: Array<MediaDeviceInfo>,
+): string | undefined {
   // If there are no devices then we need to return undefined.
   if (devices.length === 0) {
     return;

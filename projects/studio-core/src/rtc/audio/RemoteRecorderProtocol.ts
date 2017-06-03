@@ -75,8 +75,8 @@ export namespace RemoteRecorderProtocol {
    * sending over.
    */
   export type RecordeeInfoMessage = {
-    readonly name: string,
-    readonly sampleRate: number,
+    readonly name: string;
+    readonly sampleRate: number;
   };
 
   /**

@@ -6,11 +6,7 @@ import { MaybeHostPeer } from './rtc/MaybeHostPeer';
 import { StudioMustJoinRoom } from './StudioMustJoinRoom';
 
 const StudioRoom = StudioRoomController.createComponent({
-  createPeersMesh: ({
-    roomName,
-    localAudioContext,
-    previousLocalName,
-  }) => (
+  createPeersMesh: ({ roomName, localAudioContext, previousLocalName }) =>
     new PeersMesh({
       signalServerURL: SIGNAL_SERVER_URL,
       roomName,
@@ -26,14 +22,13 @@ const StudioRoom = StudioRoomController.createComponent({
       // peer is a host until either the connection has closed, or the peer lets us
       // know that it is a host.
       createPeerInstance: config => new MaybeHostPeer(config),
-    })
-  ),
+    }),
 });
 
 const query = querystring.parse(location.search.slice(1));
 const roomName = query['room'];
 
 ReactDOM.render(
-  !roomName ? <StudioMustJoinRoom/> : <StudioRoom roomName={roomName}/>,
+  !roomName ? <StudioMustJoinRoom /> : <StudioRoom roomName={roomName} />,
   document.getElementById('root'),
 );

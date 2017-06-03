@@ -7,10 +7,7 @@ import * as fs from 'fs';
 
 function createDirectory(directoryPath: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-    fs.mkdir(
-      directoryPath,
-      error => error ? reject(error) : resolve(),
-    );
+    fs.mkdir(directoryPath, error => (error ? reject(error) : resolve()));
   });
 }
 
@@ -18,27 +15,20 @@ function readDirectory(directoryPath: string): Promise<Array<string>> {
   return new Promise<Array<string>>((resolve, reject) => {
     fs.readdir(
       directoryPath,
-      (error, files) => error ? reject(error) : resolve(files),
+      (error, files) => (error ? reject(error) : resolve(files)),
     );
   });
 }
 
 function directoryExists(filePath: string): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
-    fs.access(
-      filePath,
-      error => resolve(!error),
-    );
+    fs.access(filePath, error => resolve(!error));
   });
 }
 
 function writeFile(filePath: string, data: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-    fs.writeFile(
-      filePath,
-      data,
-      error => error ? reject(error) : resolve(),
-    );
+    fs.writeFile(filePath, data, error => (error ? reject(error) : resolve()));
   });
 }
 
@@ -47,17 +37,14 @@ function readFileAsString(filePath: string): Promise<string> {
     fs.readFile(
       filePath,
       'utf8',
-      (error, file) => error ? reject(error) : resolve(file),
+      (error, file) => (error ? reject(error) : resolve(file)),
     );
-  })
+  });
 }
 
 function fileExists(filePath: string): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
-    fs.access(
-      filePath,
-      error => resolve(!error),
-    );
+    fs.access(filePath, error => resolve(!error));
   });
 }
 
@@ -65,7 +52,7 @@ function fileByteSize(filePath: string): Promise<number> {
   return new Promise<number>((resolve, reject) => {
     fs.stat(
       filePath,
-      (error, stats) => error ? reject(error) : resolve(stats.size),
+      (error, stats) => (error ? reject(error) : resolve(stats.size)),
     );
   });
 }

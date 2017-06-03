@@ -16,23 +16,26 @@ export const ReactPromise = {
 };
 
 type Props<T> = {
-  promise: Promise<T>,
-  render: (value: T) => JSX.Element | null,
+  promise: Promise<T>;
+  render: (value: T) => JSX.Element | null;
 };
 
 type State<T> = {
-  promise: PromiseState<T>,
+  promise: PromiseState<T>;
 };
 
-type PromiseState<T> = {
-  state: 'pending',
-} | {
-  state: 'resolved',
-  value: T,
-} | {
-  state: 'rejected',
-  error: mixed,
-};
+type PromiseState<T> =
+  | {
+      state: 'pending';
+    }
+  | {
+      state: 'resolved';
+      value: T;
+    }
+  | {
+      state: 'rejected';
+      error: mixed;
+    };
 
 class ReactPromiseComponent<T> extends React.PureComponent<Props<T>, State<T>> {
   static displayName = 'ReactPromise';
@@ -82,7 +85,7 @@ class ReactPromiseComponent<T> extends React.PureComponent<Props<T>, State<T>> {
    */
   private waitForResolution() {
     // Create a new zone id cancelling all previous zones.
-    const zoneID = this.currentZoneID += 1;
+    const zoneID = (this.currentZoneID += 1);
     // Wait for our promise to resolve or reject and update our state
     // accordingly.
     this.props.promise.then(

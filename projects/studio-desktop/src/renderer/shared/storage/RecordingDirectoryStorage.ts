@@ -26,18 +26,20 @@ export class RecordingDirectoryStorage {
     // Get all of the directory names at the provided path.
     const recordingNames = await fs.readDirectory(directoryPath);
     // Turn all of those names into `RecordingStorage` objects.
-    const recordings = new Map<string, RecordingStorage>(await Promise.all(
-      recordingNames
-        // If the name starts with a `.` then we want to ignore it. This often
-        // happens with `.DS_Store` files on MacOS.
-        .filter(name => !name.startsWith('.'))
-        // Create the `RecordingStorage` instance and return a promise which
-        // will be awaited in parallel.
-        .map(async (id: string): Promise<[string, RecordingStorage]> => {
-          const recordingDirectory = path.join(directoryPath, id);
-          return [id, await RecordingStorage.open(recordingDirectory)];
-        })
-    ));
+    const recordings = new Map<string, RecordingStorage>(
+      await Promise.all(
+        recordingNames
+          // If the name starts with a `.` then we want to ignore it. This often
+          // happens with `.DS_Store` files on MacOS.
+          .filter(name => !name.startsWith('.'))
+          // Create the `RecordingStorage` instance and return a promise which
+          // will be awaited in parallel.
+          .map(async (id: string): Promise<[string, RecordingStorage]> => {
+            const recordingDirectory = path.join(directoryPath, id);
+            return [id, await RecordingStorage.open(recordingDirectory)];
+          }),
+      ),
+    );
     // Construct an instance using the private constructor.
     return new RecordingDirectoryStorage({
       directoryPath,
@@ -61,8 +63,8 @@ export class RecordingDirectoryStorage {
     directoryPath,
     recordings,
   }: {
-    directoryPath: string,
-    recordings: Map<string, RecordingStorage>,
+    directoryPath: string;
+    recordings: Map<string, RecordingStorage>;
   }) {
     this.directoryPath = directoryPath;
     this.recordings = recordings;
@@ -75,8 +77,9 @@ export class RecordingDirectoryStorage {
     // Generate a new id for this recording.
     const id = uuid();
     // Create the recording storage instance.
-    const recording =
-      await RecordingStorage.create(path.join(this.directoryPath, id));
+    const recording = await RecordingStorage.create(
+      path.join(this.directoryPath, id),
+    );
     // Add the recording to our internal `recordings` map.
     this.recordings.set(id, recording);
     // Return the recording.

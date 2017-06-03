@@ -63,8 +63,8 @@ export class Recording {
     storage,
     mesh,
   }: {
-    storage: RecordingStorage,
-    mesh: PeersMesh,
+    storage: RecordingStorage;
+    mesh: PeersMesh;
   }) {
     this.storage = storage;
     // Setup our local recorder based instance off of the information provided
@@ -105,10 +105,12 @@ export class Recording {
       }
       // Listen to the add peer and delete peer events and update our internal
       // recording state appropriately when these events happen.
-      this.disposables.push(Disposable.concat(
-        mesh.on('addPeer', ({ peer }) => this.addPeer(peer)),
-        mesh.on('deletePeer', ({ peer }) => this.deletePeer(peer)),
-      ));
+      this.disposables.push(
+        Disposable.concat(
+          mesh.on('addPeer', ({ peer }) => this.addPeer(peer)),
+          mesh.on('deletePeer', ({ peer }) => this.deletePeer(peer)),
+        ),
+      );
     }
   }
 
@@ -145,11 +147,10 @@ export class Recording {
    * This method cannot be called if we don’t have a recording.
    */
   private addPeer(peer: Peer): void {
-    this.addPeerAsync(peer)
-      .catch(error => {
-        // TODO: Kick the peer from the room.
-        console.error(error);
-      });
+    this.addPeerAsync(peer).catch(error => {
+      // TODO: Kick the peer from the room.
+      console.error(error);
+    });
   }
 
   /**
@@ -189,10 +190,7 @@ export class Recording {
       return;
     }
     // Start writing the recorder and save the disposable for later.
-    this.peerDisposables.set(
-      peer,
-      this.storage.writeRecorder(recorder),
-    );
+    this.peerDisposables.set(peer, this.storage.writeRecorder(recorder));
   }
 
   /**

@@ -19,9 +19,14 @@
   "editor.tabSize": 2,
   // We put one ruler at 80 characters. Code can go beyond that line, but
   // comments generally should not go beyond 80 characters.
-  "editor.rulers": [
-    80
-  ],
+  "editor.rulers": [80],
+  // Prettier configuration.
+  "prettier.singleQuote": true,
+  "prettier.trailingComma": "all",
+  // Format TypeScript and JavaScript files on save using Prettier.
+  "[typescript]": { "editor.formatOnSave": true },
+  "[typescriptreact]": { "editor.formatOnSave": true },
+  "[javascript]": { "editor.formatOnSave": true },
   // When writing markdown we want our words to wrap at the 80 character limit.
   // This makes raw markdown files much easier to read.
   "[markdown]": {

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+$(npm bin)/prettier \
+  "projects/*/src/**/*.{ts,tsx,js}" \
+  --write \
+  --parser typescript \
+  --single-quote \
+  --trailing-comma all

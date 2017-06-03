@@ -44,12 +44,14 @@ async function doExport(
     .reduce((a, b) => a + b, 0);
   // Merge all of the observables so that whenever we get some new bytes they
   // all show up on the observable.
-  return Observable.merge(...byteProgresses.map(({ bytes }) => bytes))
-    // Scans the observable by summing up all of the bytes as they come in.
-    .scan((currentBytes, bytes) => currentBytes + bytes, 0)
-    // Divide our current bytes count with the total byte size to get the
-    // progress from 0 to 1.
-    .map(currentBytes => currentBytes / totalByteSize);
+  return (
+    Observable.merge(...byteProgresses.map(({ bytes }) => bytes))
+      // Scans the observable by summing up all of the bytes as they come in.
+      .scan((currentBytes, bytes) => currentBytes + bytes, 0)
+      // Divide our current bytes count with the total byte size to get the
+      // progress from 0 to 1.
+      .map(currentBytes => currentBytes / totalByteSize)
+  );
 }
 
 /**
@@ -66,7 +68,9 @@ function getExportFileNames(recording: RecordingStorage): Set<string> {
  * need to do this in a batch so that we can handle duplicate shortened names.
  */
 // TODO: test!!!!!!
-function getRecorderFileNames(recording: RecordingStorage): Map<string, string> {
+function getRecorderFileNames(
+  recording: RecordingStorage,
+): Map<string, string> {
   // The extension we will add to our file names.
   const extension = '.wav';
   // While we want to return a map of `id`s to `fileName`s this map is the
@@ -117,8 +121,7 @@ function getRecorderFileNames(recording: RecordingStorage): Map<string, string> 
 function getFileName(startedAt: number, name: string): string {
   // Format the time into a simple timestamp format that contains the date and
   // the time.
-  const time = moment(startedAt)
-    .format('YYYY-MM-DD');
+  const time = moment(startedAt).format('YYYY-MM-DD');
   // Turn the name into a slug. The process involves lowercasing the string,
   // replacing all series of non alpha-numeric characters with a hyphen (`-`),
   // and finally remove leading and trailing hyphones.
@@ -142,10 +145,12 @@ export const RecordingExporter = {
 async function exportRecorderToWAV(
   recording: RecorderStorage,
   outputFilePath: string,
-): Promise<{
-  byteSize: number,
-  bytes: Observable<number>,
-}> {
+): Promise<
+  {
+    byteSize: number;
+    bytes: Observable<number>;
+  }
+> {
   // Get the byte size of our raw file. We will use this to write our header.
   const byteSize = await recording.getByteLength();
   // Compute the number of silence samples we will need to add to the start of
@@ -153,11 +158,12 @@ async function exportRecorderToWAV(
   // on our recorder. If it is not 0 then the recorder started a little bit
   // after the recording and we should add silence to pad the output so that all
   // our recordings have a consistent length.
-  const silenceSampleSize =
-    Math.floor(recording.sampleRate * (recording.startedAtDelta / 1000));
+  const silenceSampleSize = Math.floor(
+    recording.sampleRate * (recording.startedAtDelta / 1000),
+  );
   // The final sample size of our recording. It will be the size of our raw file
   // divided by 4.
-  const sampleSize = (byteSize / 4) + silenceSampleSize;
+  const sampleSize = byteSize / 4 + silenceSampleSize;
   // Create a write stream which we will use to write out the WAV data as we get
   // it.
   const writable = createWriteStream(outputFilePath);
@@ -389,10 +395,6 @@ function writePCMSamples(
   // For every item in the array we want to add it to our newly constructed
   // array buffer.
   for (let i = 0; i < input.length; i++) {
-    view.setInt16(
-      offset + (i * 2),
-      input[i] * (0x7FFF * volume),
-      true,
-    );
+    view.setInt16(offset + i * 2, input[i] * (0x7fff * volume), true);
   }
 }

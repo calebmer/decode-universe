@@ -70,7 +70,9 @@ export class Peer {
    * will be null while we are loading. The view into this subject for consumers
    * will filter out nulls.
    */
-  private readonly remoteStateSubject = new BehaviorSubject<Peer.State | null>(null);
+  private readonly remoteStateSubject = new BehaviorSubject<Peer.State | null>(
+    null,
+  );
 
   /**
    * The state of our peer. Will emit the most recent state that we know about
@@ -78,8 +80,11 @@ export class Peer {
    * peer. In that case there will be no emissions until the peer sends us their
    * state.
    */
-  public readonly remoteState: Observable<Peer.State> =
-    this.remoteStateSubject.filter(state => state !== null) as Observable<Peer.State>;
+  public readonly remoteState: Observable<
+    Peer.State
+  > = this.remoteStateSubject.filter(state => state !== null) as Observable<
+    Peer.State
+  >;
 
   /**
    * The current remote state for this peer.
@@ -135,8 +140,7 @@ export class Peer {
     this.connection = new RTCPeerConnection(rtcConfig);
     // Create the media stream destination object from the provided audio
     // context.
-    this.localAudioDestination =
-      localAudioContext.createMediaStreamDestination();
+    this.localAudioDestination = localAudioContext.createMediaStreamDestination();
     // Add the stream from the audio destination to our `RTCPeerConnection`
     // instance.
     this.connection.addStream(this.localAudioDestination.stream);
@@ -328,10 +332,10 @@ export namespace Peer {
    * The config used to initialize a `Peer` instance.
    */
   export type Config = {
-    readonly isLocalInitiator: boolean,
-    readonly localAudioContext: AudioContext,
-    readonly localState: Peer.State,
-    readonly localAudio: AudioNode | null,
+    readonly isLocalInitiator: boolean;
+    readonly localAudioContext: AudioContext;
+    readonly localState: Peer.State;
+    readonly localAudio: AudioNode | null;
   };
 
   /**
@@ -344,11 +348,11 @@ export namespace Peer {
     /**
      * The name of the peer.
      */
-    readonly name: string,
+    readonly name: string;
     /**
      * Whether or not the peer has muted their audio.
      */
-    readonly isMuted: boolean,
+    readonly isMuted: boolean;
   };
 
   /**
@@ -408,7 +412,9 @@ function watchConnectionStatus(
  *
  * [1]: https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/iceConnectionState#RTCIceConnectionState_enum
  */
-function getConnectionStatus(iceConnectionState: string): Peer.ConnectionStatus {
+function getConnectionStatus(
+  iceConnectionState: string,
+): Peer.ConnectionStatus {
   switch (iceConnectionState) {
     case 'new':
     case 'checking':

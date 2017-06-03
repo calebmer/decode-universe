@@ -4,9 +4,9 @@ import { InputComponent } from './shared/InputComponent';
 import { InputBox } from './shared/InputBox';
 
 type Props = {
-  label: string,
-  value: string,
-  onChange: (value: string) => void,
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
 };
 
 export class TextInput extends InputComponent<Props, {}> {
@@ -16,10 +16,7 @@ export class TextInput extends InputComponent<Props, {}> {
   render() {
     const { label, value } = this.props;
     return (
-      <InputBox
-        inputID={this.inputID}
-        label={label}
-      >
+      <InputBox inputID={this.inputID} label={label}>
         <input
           id={this.inputID}
           type="text"

@@ -1,9 +1,9 @@
-import * as React from 'react'
+import * as React from 'react';
 
 const animatingComponents: Array<AudioVisualization> = [];
 
 type Props = {
-  node: AudioNode,
+  node: AudioNode;
 };
 
 /**
@@ -77,7 +77,9 @@ export class AudioVisualization extends React.PureComponent<Props, {}> {
 
     // Cut off the last x% of bars as it seems that in practice they rarely
     // have data.
-    this.barsCount = Math.round(analyserData.length - (analyserData.length * 0.7));
+    this.barsCount = Math.round(
+      analyserData.length - analyserData.length * 0.7,
+    );
   }
 
   render() {
@@ -89,12 +91,12 @@ export class AudioVisualization extends React.PureComponent<Props, {}> {
       barJsxNodes.push(
         <rect
           key={i}
-          ref={rect => this.bars[i] = rect}
+          ref={rect => (this.bars[i] = rect)}
           height={0}
-          width={(100 / barsCount) - barMargin}
-          x={(100 / barsCount) * i}
+          width={100 / barsCount - barMargin}
+          x={100 / barsCount * i}
           y={100}
-        />
+        />,
       );
     }
 
@@ -151,7 +153,9 @@ function updateComponentVisualizations() {
     for (let i = 0; i < barsCount; i++) {
       const rect = bars[i];
       const frequency = analyserData[i];
-      const height = Math.round((Math.min(frequency, maxFrequency) / maxFrequency) * 100);
+      const height = Math.round(
+        Math.min(frequency, maxFrequency) / maxFrequency * 100,
+      );
 
       rect.setAttribute('height', `${height}`);
       rect.setAttribute('y', `${100 - height}`);

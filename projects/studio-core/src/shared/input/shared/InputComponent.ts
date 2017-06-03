@@ -2,12 +2,13 @@ import * as React from 'react';
 import { slugify } from '@decode/js-utils';
 
 type Props = {
-  label?: string,
+  label?: string;
 };
 
-export
-abstract class InputComponent<TProps extends Props, TState>
-extends React.PureComponent<TProps, TState> {
+export abstract class InputComponent<
+  TProps extends Props,
+  TState
+> extends React.PureComponent<TProps, TState> {
   /**
    * Whenever we create an input id we track it here. If we ever have duplicate
    * input ids then we use this map to dedupe the names by adding the count.
@@ -44,8 +45,8 @@ extends React.PureComponent<TProps, TState> {
    * A unique identifier for this input that we can use for accessibility
    * purposes.
    */
-  protected readonly inputID = (this.constructor as typeof InputComponent)
-    .createInputID(this.props);
+  protected readonly inputID = (this
+    .constructor as typeof InputComponent).createInputID(this.props);
 
   abstract render(): JSX.Element | null;
 }

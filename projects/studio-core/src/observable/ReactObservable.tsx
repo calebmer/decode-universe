@@ -18,25 +18,29 @@ export const ReactObservable = {
 };
 
 type Props<T> = {
-  observable: Observable<T>,
-  render: (value: T) => JSX.Element | false | null,
+  observable: Observable<T>;
+  render: (value: T) => JSX.Element | false | null;
 };
 
 type State<T> = {
-  observableState: ObservableState<T>,
+  observableState: ObservableState<T>;
 };
 
-type ObservableState<T> = {
-  state: 'waiting',
-} | {
-  state: 'value',
-  value: T,
-} | {
-  state: 'error',
-  error: mixed,
-} | {
-  state: 'complete',
-};
+type ObservableState<T> =
+  | {
+      state: 'waiting';
+    }
+  | {
+      state: 'value';
+      value: T;
+    }
+  | {
+      state: 'error';
+      error: mixed;
+    }
+  | {
+      state: 'complete';
+    };
 
 // Get the display name for `ReactObservableComponent`. We use a function like
 // this so that the name will be mangled when going through an uglification
@@ -47,8 +51,10 @@ let displayName: string;
   displayName = ReactObservable.name;
 })();
 
-class ReactObservableComponent<T>
-extends React.PureComponent<Props<T>, State<T>> {
+class ReactObservableComponent<T> extends React.PureComponent<
+  Props<T>,
+  State<T>
+> {
   static displayName = displayName;
 
   state: State<T> = {

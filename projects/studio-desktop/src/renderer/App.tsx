@@ -25,7 +25,7 @@ async function openStorage(): Promise<Storage> {
     'Decode Storage' + (DEV ? '-dev' : ''),
   );
   // Make sure the directory exists. If it does not the create it.
-  if (!(await fs.directoryExists(storageDirectoryPath))) {
+  if (!await fs.directoryExists(storageDirectoryPath)) {
     await fs.createDirectory(storageDirectoryPath);
   }
   // Open an instance of `Storage`.
@@ -33,8 +33,8 @@ async function openStorage(): Promise<Storage> {
 }
 
 type State = {
-  storage: Storage | null,
-  roomName: string | null,
+  storage: Storage | null;
+  roomName: string | null;
 };
 
 export class App extends React.PureComponent<{}, State> {
@@ -67,17 +67,12 @@ export class App extends React.PureComponent<{}, State> {
     if (storage === null) {
       return null;
     }
-    return roomName === null ? (
-      <Directory
-        storage={storage}
-        onCreateRoom={this.handleCreateRoom}
-      />
-    ) : (
-      <StudioRoom
-        roomName={roomName}
-        storage={storage}
-        onBack={this.handleGoToDirectory}
-      />
-    );
+    return roomName === null
+      ? <Directory storage={storage} onCreateRoom={this.handleCreateRoom} />
+      : <StudioRoom
+          roomName={roomName}
+          storage={storage}
+          onBack={this.handleGoToDirectory}
+        />;
   }
 }

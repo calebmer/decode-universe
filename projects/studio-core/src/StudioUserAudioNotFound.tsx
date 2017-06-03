@@ -11,5 +11,5 @@ export function StudioUserAudioNotFound() {
       {/* TODO: Better copy and links to good microphones on Amazon with Amazon
         * affiliate links. */}
     </p>
-  )
+  );
 }

@@ -22,12 +22,17 @@ export class RecordingStorage {
     // Parse the manifest into a string.
     const manifest: RecordingManifest = JSON.parse(manifestString);
     // Open all of our recorders.
-    const recorders = new Map<string, RecorderStorage>(await Promise.all(
-      Object.keys(manifest.recorders)
-        .map(async (id: string): Promise<[string, RecorderStorage]> => {
+    const recorders = new Map<string, RecorderStorage>(
+      await Promise.all(
+        Object.keys(manifest.recorders).map(async (id: string): Promise<
+          [string, RecorderStorage]
+        > => {
           // Create the file path to our raw recorder file.
-          const recorderFilePath =
-            path.join(directoryPath, rawRecorderDataDirectoryName, id);
+          const recorderFilePath = path.join(
+            directoryPath,
+            rawRecorderDataDirectoryName,
+            id,
+          );
           // Get the manifest for this recorder.
           const recorderManifest = manifest.recorders[id];
           // Return a map entry with the id as the key, and the recorder storage
@@ -36,8 +41,9 @@ export class RecordingStorage {
             id,
             await RecorderStorage.open(recorderFilePath, recorderManifest),
           ];
-        })
-    ));
+        }),
+      ),
+    );
     // Use the private constructor to create a new `RecordingStorage` instance.
     return new RecordingStorage({
       directoryPath,
@@ -56,7 +62,9 @@ export class RecordingStorage {
     const startedAt = Date.now();
     // Create the directories we need at the provided paths.
     await fs.createDirectory(directoryPath);
-    await fs.createDirectory(path.join(directoryPath, rawRecorderDataDirectoryName));
+    await fs.createDirectory(
+      path.join(directoryPath, rawRecorderDataDirectoryName),
+    );
     // Create the storage instance using the private constructor.
     const storage = new RecordingStorage({
       directoryPath,
@@ -91,9 +99,9 @@ export class RecordingStorage {
     startedAt,
     recorders,
   }: {
-    directoryPath: string,
-    startedAt: number,
-    recorders: Map<string, RecorderStorage>,
+    directoryPath: string;
+    startedAt: number;
+    recorders: Map<string, RecorderStorage>;
   }) {
     this.directoryPath = directoryPath;
     this.startedAt = startedAt;
@@ -140,14 +148,16 @@ export class RecordingStorage {
       // Not whether or not it was successful.
       .catch(() => {})
       // Once the promise resolves perform our write.
-      .then(() => fs.writeFile(
-        // We want to write our manifest to the manifest file path.
-        path.join(this.directoryPath, 'manifest.json'),
-        // Stringify the manifest when writing it. If we are in development then
-        // we want to pretty print the JSON with 2 space indentation for easy
-        // debugging.
-        JSON.stringify(manifest, null, DEV ? 2 : undefined),
-      ));
+      .then(() =>
+        fs.writeFile(
+          // We want to write our manifest to the manifest file path.
+          path.join(this.directoryPath, 'manifest.json'),
+          // Stringify the manifest when writing it. If we are in development then
+          // we want to pretty print the JSON with 2 space indentation for easy
+          // debugging.
+          JSON.stringify(manifest, null, DEV ? 2 : undefined),
+        ),
+      );
     // Wait for *our* write to resolve or reject. The promise may change under
     // us, but that’s fine.
     await this.manifestWritePromise;
@@ -194,7 +204,7 @@ export class RecordingStorage {
         // Convert the sample length into seconds by dividing the sample rate.
         const seconds = sampleLength / storage.sampleRate;
         // Add the delta from the time we started.
-        const secondsAfterStart = seconds + (storage.startedAtDelta / 1000);
+        const secondsAfterStart = seconds + storage.startedAtDelta / 1000;
         // Return the final time in seconds.
         return secondsAfterStart;
       }),
@@ -224,14 +234,14 @@ type RecordingManifest = {
    * The time in millseconds since the Unix epoch at which the recording was
    * started.
    */
-  readonly startedAt: number,
+  readonly startedAt: number;
   /**
    * A map of recorder ids to metadata about that recorder. The `id` key will
    * correspond to the file name of the recorder on disk.
    */
   readonly recorders: {
-    readonly [id: string]: RecorderManifest,
-  },
+    readonly [id: string]: RecorderManifest;
+  };
 };
 
 /**
@@ -241,11 +251,11 @@ type RecorderManifest = {
   /**
    * A human readable name for this recorder.
    */
-  readonly name: string,
+  readonly name: string;
   /**
    * The sample rate at which the audio was recorded.
    */
-  readonly sampleRate: number,
+  readonly sampleRate: number;
   /**
    * The time in milliseconds at which the recorder started *after* the
    * recording started. So if the recorder started at the same time as the
@@ -255,5 +265,5 @@ type RecorderManifest = {
    * Add this nomber to `recordedAt` to get the milliseconds since the Unix
    * epoch at which this recorder started.
    */
-  readonly startedAtDelta: number,
+  readonly startedAtDelta: number;
 };

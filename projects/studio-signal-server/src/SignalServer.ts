@@ -19,22 +19,27 @@ function onConnection(socket: SocketIO.Socket): void {
    * This handles the connection of a socket to a room telling the socket who
    * all the other participants are.
    */
-  socket.on('join', (
-    message: JoinRequestMessage,
-    fn: (message: JoinResponseMessage) => void,
-  ) => {
-    // Get the room name from the message.
-    const roomName = message.roomName;
-    // Get all the other socket ids from the room.
-    const { rooms } = socket.nsp.adapter;
-    const otherSocketIDs = rooms[roomName] ? Object.keys(rooms[roomName].sockets) : [];
-    // Join this socket to the room.
-    socket.join(roomName);
-    // Log who joined the room.
-    console.log(`Socket "${socket.id}" joined room "${roomName}".`);
-    // Send the other socket ids back to our socket.
-    fn({ otherSocketIDs });
-  });
+  socket.on(
+    'join',
+    (
+      message: JoinRequestMessage,
+      fn: (message: JoinResponseMessage) => void,
+    ) => {
+      // Get the room name from the message.
+      const roomName = message.roomName;
+      // Get all the other socket ids from the room.
+      const { rooms } = socket.nsp.adapter;
+      const otherSocketIDs = rooms[roomName]
+        ? Object.keys(rooms[roomName].sockets)
+        : [];
+      // Join this socket to the room.
+      socket.join(roomName);
+      // Log who joined the room.
+      console.log(`Socket "${socket.id}" joined room "${roomName}".`);
+      // Send the other socket ids back to our socket.
+      fn({ otherSocketIDs });
+    },
+  );
 
   /**
    * Handles a signal by matching outgoing messages sent by one socket to its
@@ -49,7 +54,7 @@ function onConnection(socket: SocketIO.Socket): void {
     // Log that a signal was sent.
     console.log(
       `Sending ${outMessage.signal.type} signal to socket "${outMessage.to}" ` +
-        `from socket "${inMessage.from}".`
+        `from socket "${inMessage.from}".`,
     );
     // Actually send the message.
     socket.broadcast.to(outMessage.to).emit('signal', inMessage);

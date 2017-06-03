@@ -13,10 +13,8 @@ const bufferSize = 16384;
  * local audio managed by `setAudio()` and `unsetAudio()`. There are no fancy
  * network shenanigans with this class.
  */
-export
-class LocalRecorder
-extends EventEmitter<Recorder.EventMap>
-implements Recorder {
+export class LocalRecorder extends EventEmitter<Recorder.EventMap>
+  implements Recorder {
   private internalStarted = false;
   private internalStopped = false;
 
@@ -72,9 +70,9 @@ implements Recorder {
     context,
     audio,
   }: {
-    name: string,
-    context: AudioContext,
-    audio: AudioNode | null,
+    name: string;
+    context: AudioContext;
+    audio: AudioNode | null;
   }) {
     super();
     this.name = name;

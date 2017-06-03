@@ -5,8 +5,8 @@ export function IconExpand({
   size = '1em',
   color = 'currentColor',
 }: {
-  size?: string,
-  color?: string,
+  size?: string;
+  color?: string;
 }) {
   return (
     <svg
@@ -23,8 +23,8 @@ export function IconExpand({
         transform="translate(84.852814, 8.852814) rotate(-45) translate(-84.852814, -8.852814) translate(24.852814, -51.147186)"
         fill={color}
       >
-          <rect x="12" y="108" width="108" height="12"/>
-          <rect x="0" y="0" width="12" height="120"/>
+        <rect x="12" y="108" width="108" height="12" />
+        <rect x="0" y="0" width="12" height="120" />
       </g>
     </svg>
   );

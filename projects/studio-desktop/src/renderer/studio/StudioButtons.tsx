@@ -4,24 +4,27 @@ import { Storage } from '../shared/storage/Storage';
 import { Recording } from './Recording';
 
 type Props = {
-  storage: Storage,
-  mesh: PeersMesh,
-  onBack: () => void,
+  storage: Storage;
+  mesh: PeersMesh;
+  onBack: () => void;
 };
 
 type State = {
-  recording: RecordingState,
+  recording: RecordingState;
 };
 
-type RecordingState = {
-  readonly state: 'inactive',
-} | {
-  readonly state: 'starting',
-  readonly recording: Recording | null,
-} | {
-  readonly state: 'recording',
-  readonly recording: Recording,
-};
+type RecordingState =
+  | {
+      readonly state: 'inactive';
+    }
+  | {
+      readonly state: 'starting';
+      readonly recording: Recording | null;
+    }
+  | {
+      readonly state: 'recording';
+      readonly recording: Recording;
+    };
 
 export class StudioButtons extends React.PureComponent<Props, State> {
   state: State = {
@@ -61,10 +64,7 @@ export class StudioButtons extends React.PureComponent<Props, State> {
     });
     // Start a new recording in the given storage directory with the provided
     // mesh.
-    Recording.start(
-      storage.directory,
-      mesh,
-    ).then(
+    Recording.start(storage.directory, mesh).then(
       recording => {
         // If the recording start timer is null (the timer finished) then we
         // want to update the state to the recording state with our new
@@ -118,7 +118,9 @@ export class StudioButtons extends React.PureComponent<Props, State> {
     const { recording } = this.state;
     // State check.
     if (recording.state !== 'recording') {
-      console.error(new Error('Can only stop recording if currently recording.'));
+      console.error(
+        new Error('Can only stop recording if currently recording.'),
+      );
       return;
     }
     // If we currently have a recording start timer then we need to clear it.
@@ -136,26 +138,24 @@ export class StudioButtons extends React.PureComponent<Props, State> {
     const { recording } = this.state;
     return (
       <p>
-        {recording.state === 'inactive' ? (
-          <span>
-            <button onClick={this.startRecording}>
-              Start Recording
-            </button>
-            {' '}
-            <button onClick={onBack}>
-              Return to Recording Directory
-            </button>
-          </span>
-        ) :
-        recording.state === 'starting' ? (
-          <span>Starting...</span>
-        ) :
-        recording.state === 'recording' ? (
-          <button onClick={this.stopRecording}>
-            Stop Recording
-          </button>
-        ) : null}
+        {recording.state === 'inactive'
+          ? <span>
+              <button onClick={this.startRecording}>
+                Start Recording
+              </button>
+              {' '}
+              <button onClick={onBack}>
+                Return to Recording Directory
+              </button>
+            </span>
+          : recording.state === 'starting'
+            ? <span>Starting...</span>
+            : recording.state === 'recording'
+              ? <button onClick={this.stopRecording}>
+                  Stop Recording
+                </button>
+              : null}
       </p>
-    )
+    );
   }
 }

@@ -17,7 +17,7 @@ export class RecorderStorage {
    */
   public static open(
     rawFilePath: string,
-    options: { name: string, sampleRate: number, startedAtDelta: number },
+    options: { name: string; sampleRate: number; startedAtDelta: number },
   ): RecorderStorage {
     return new RecorderStorage({ ...options, rawFilePath });
   }
@@ -49,10 +49,10 @@ export class RecorderStorage {
     sampleRate,
     startedAtDelta,
   }: {
-    rawFilePath: string,
-    name: string,
-    sampleRate: number,
-    startedAtDelta: number,
+    rawFilePath: string;
+    name: string;
+    sampleRate: number;
+    startedAtDelta: number;
   }) {
     this.rawFilePath = rawFilePath;
     this.name = name;

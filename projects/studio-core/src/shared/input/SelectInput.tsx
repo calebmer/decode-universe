@@ -5,10 +5,10 @@ import { InputComponent } from './shared/InputComponent';
 import { InputBox } from './shared/InputBox';
 
 type Props = {
-  label: string,
-  value: string,
-  options: Array<{ value: string, label: string }>,
-  onChange: (value: string) => void,
+  label: string;
+  value: string;
+  options: Array<{ value: string; label: string }>;
+  onChange: (value: string) => void;
 };
 
 export class SelectInput extends InputComponent<Props, {}> {
@@ -38,11 +38,11 @@ export class SelectInput extends InputComponent<Props, {}> {
             borderRadius: '0',
           })}
         >
-          {options.map(option => (
+          {options.map(option =>
             <option key={option.value} value={option.value}>
               {option.label}
-            </option>
-          ))}
+            </option>,
+          )}
         </select>
       </InputBox>
     );

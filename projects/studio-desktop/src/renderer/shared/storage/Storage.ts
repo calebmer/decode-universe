@@ -15,7 +15,7 @@ export class Storage {
     // Create the path for the recordings directory.
     const recordingsDirectory = path.join(directoryPath, 'recordings');
     // Create the recordings directory if it does not already exist.
-    if (!(await fs.directoryExists(recordingsDirectory))) {
+    if (!await fs.directoryExists(recordingsDirectory)) {
       await fs.createDirectory(recordingsDirectory);
     }
     // Open the recordings directory.
@@ -34,7 +34,7 @@ export class Storage {
   private constructor({
     directory,
   }: {
-    directory: RecordingDirectoryStorage,
+    directory: RecordingDirectoryStorage;
   }) {
     this.directory = directory;
   }

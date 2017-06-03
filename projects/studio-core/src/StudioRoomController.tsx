@@ -21,67 +21,77 @@ const nameKey = '@decode/studio-core/name';
  * Decode Studio clients. These two clients have different semantics. These
  * options are where the semantics may be injected.
  */
-const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>, TPeer extends Peer = Peer>({
+// prettier-ignore
+// TODO: https://github.com/prettier/prettier/issues/1946
+const createComponent = <
+  TExtraProps extends {} = {},
+  TPeersMesh extends PeersMesh<TPeer> = PeersMesh<TPeer>,
+  TPeer extends Peer = Peer
+>({
   createPeersMesh: userCreatePeersMesh,
   renderButtons,
   webURL = null,
 }: {
-
   // Called when the component wants to create a new `PeersMesh` instance.
-  createPeersMesh: (options: {
-    roomName: string,
-    localAudioContext: AudioContext,
-    previousLocalName: string | null,
-  }) => TPeersMesh,
+  createPeersMesh: (
+    options: {
+      roomName: string;
+      localAudioContext: AudioContext;
+      previousLocalName: string | null;
+    },
+  ) => TPeersMesh;
 
   // Renders some buttons at the top of the studio room UI.
   renderButtons?: (
     props: Readonly<TExtraProps>,
     state: Readonly<{ mesh: TPeersMesh }>,
-  ) => JSX.Element,
+  ) => JSX.Element;
 
-  webURL?: string,
+  webURL?: string;
 }) => {
   type Props = {
-    roomName: string,
+    roomName: string;
   } & TExtraProps;
 
   type State = {
-    audioContext: AudioContext,
-    userAudio: UserAudioState,
-    mesh: TPeersMesh | null,
+    audioContext: AudioContext;
+    userAudio: UserAudioState;
+    mesh: TPeersMesh | null;
   };
 
-  type UserAudioState = {
-    state: 'loading',
-  } | {
-    state: 'error',
-    error: any,
-  } | {
-    state: 'success',
-    // A tuple of the audio nodes we use in the order which they are connected.
-    // We will send the last node to our mesh.
-    nodes: [
-      // The source of our audio from a `MediaStream` received from
-      // `getUserMedia()`.
-      MediaStreamAudioSourceNode,
-      // Highpass filter to remove frequencies below 80hz.
-      BiquadFilterNode,
-      // A dynamics compressor. We use Aaron Dowd’s settings for the compressor.
-      // These settings can be seen in the image attached to issue [#16][1].
-      //
-      // [1]: https://github.com/calebmer/decode-universe/issues/16
-      DynamicsCompressorNode,
-      // A node which will allow us to adjust the volume of the output audio.
-      //
-      // **NOTE:** If the user wants to mute their audio they unset any local
-      // streams instead of setting the volume to 0 on this gain node. This
-      // ensures security as there is no chance any audio will be streamed to
-      // the other peers. It also allows us to render a muted state for our
-      // peers.
-      GainNode
-    ],
-  };
+  type UserAudioState =
+    | {
+        state: 'loading';
+      }
+    | {
+        state: 'error';
+        error: any;
+      }
+    | {
+        state: 'success';
+        // A tuple of the audio nodes we use in the order which they are connected.
+        // We will send the last node to our mesh.
+        nodes: [
+          // The source of our audio from a `MediaStream` received from
+          // `getUserMedia()`.
+          MediaStreamAudioSourceNode,
+          // Highpass filter to remove frequencies below 80hz.
+          BiquadFilterNode,
+          // A dynamics compressor. We use Aaron Dowd’s settings for the compressor.
+          // These settings can be seen in the image attached to issue [#16][1].
+          //
+          // [1]: https://github.com/calebmer/decode-universe/issues/16
+          DynamicsCompressorNode,
+          // A node which will allow us to adjust the volume of the output audio.
+          //
+          // **NOTE:** If the user wants to mute their audio they unset any local
+          // streams instead of setting the volume to 0 on this gain node. This
+          // ensures security as there is no chance any audio will be streamed to
+          // the other peers. It also allows us to render a muted state for our
+          // peers.
+          GainNode
+        ];
+      };
 
   function createPeersMesh(
     { roomName }: Props,
@@ -105,17 +115,18 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
     // these values in observables instead of state means we don’t need to
     // update the entire component tree whenever one value changes. We can
     // pinpoint the update to exactly the places which need it.
-    private readonly deviceID =
-      new BehaviorSubject(localStorage.getItem(deviceIDKey));
+    private readonly deviceID = new BehaviorSubject(
+      localStorage.getItem(deviceIDKey),
+    );
     private readonly disableAudio = new BehaviorSubject(DEV);
     private readonly localVolume = new BehaviorSubject(1);
 
     /**
-     * We want to subscribe to our mesh’s local state so that whenever the name
-     * changes we can store the new name in local storage. This is the
-     * subscription for that operation. `null` if we have no such operation
-     * running.
-     */
+    * We want to subscribe to our mesh’s local state so that whenever the name
+    * changes we can store the new name in local storage. This is the
+    * subscription for that operation. `null` if we have no such operation
+    * running.
+    */
     private nameSubscription: Subscription | null = null;
 
     componentWillReceiveProps(nextProps: Props) {
@@ -169,7 +180,7 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
         // If the mesh from our last state is different from the mesh in our new
         // state, or the user audio state changed.
         (previousState.mesh !== nextState.mesh ||
-        previousState.userAudio !== nextState.userAudio)
+          previousState.userAudio !== nextState.userAudio)
       ) {
         if (nextState.userAudio.state === 'success') {
           // Set the last node in our array of user audio nodes to our mesh.
@@ -190,8 +201,7 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
         // If we have a new peer mesh then we need to connect it.
         if (nextState.mesh !== null) {
           // Connect the next peers mesh.
-          nextState.mesh.connect()
-            .catch(error => console.error(error));
+          nextState.mesh.connect().catch(error => console.error(error));
           // Unsubscribe from the last name subscription if we have one.
           if (this.nameSubscription !== null) {
             this.nameSubscription.unsubscribe();
@@ -298,63 +308,53 @@ const createComponent = <TExtraProps extends {} = {}, TPeersMesh extends PeersMe
       const { audioContext, userAudio, mesh } = this.state;
       return (
         <div {...css({ height: '100%' })}>
-          {ReactObservable.render(
-            this.deviceID,
-            deviceID => (
-              <UserAudioController
-                deviceID={deviceID}
-                errorRetryMS={500}
-                onStream={this.handleUserAudioStream}
-                onError={this.handleUserAudioError}
-              />
-            ),
+          {ReactObservable.render(this.deviceID, deviceID =>
+            <UserAudioController
+              deviceID={deviceID}
+              errorRetryMS={500}
+              onStream={this.handleUserAudioStream}
+              onError={this.handleUserAudioError}
+            />,
           )}
-          {(
-            // Who’s ready for a monster ternary expression?? ;)
-            //
-            // If we are loading then we want the user to know that we are
-            // currently loading.
-            userAudio.state === 'loading' ? (
-              null
-            ) :
-            // If we got an error then we want to give the user some feedback so
-            // that they may know the nature of the error.
-            userAudio.state === 'error' ? (
-              // Render a special error screen for errors created when the user
-              // does not give us access to their audio.
-              userAudio.error.name === 'NotAllowedError' ||
-              // Older implementations may use `SecurityError` instead of the
-              // more recent `NotAllowedError`.
-              userAudio.error.name === 'SecurityError' ? (
-                <StudioUserAudioNotAllowed/>
-              ) : (
-                <StudioUserAudioNotFound/>
-              )
-            ) :
-            // If we have a mesh instance then we want to render our studio
-            // room.
-            mesh !== null ? (
-              <div {...css({ height: '100%' })}>
-                {renderButtons && renderButtons(this.props, { mesh })}
-                <StudioRoom
-                  mesh={mesh}
-                  audioContext={audioContext}
-                  deviceID={this.deviceID}
-                  onSelectDeviceID={this.handleSelectDeviceID}
-                  disableAudio={this.disableAudio}
-                  onDisableAudio={this.handleDisableAudio}
-                  onEnableAudio={this.handleEnableAudio}
-                  localVolume={this.localVolume}
-                  onLocalVolumeChange={this.handleLocalVolumeChange}
-                  webURL={webURL}
-                />
-              </div>
-            ) :
-            // This should really be unreachable because we create a mesh
-            // whenever we set `userAudio` to a success state. However, in the
-            // case that we reach it then just render nothing.
-            null as never
-          )}
+          {// Who’s ready for a monster ternary expression?? ;)
+          //
+          // If we are loading then we want the user to know that we are
+          // currently loading.
+          userAudio.state === 'loading'
+            ? null
+            : // If we got an error then we want to give the user some feedback so
+              // that they may know the nature of the error.
+              userAudio.state === 'error'
+              ? // Render a special error screen for errors created when the user
+                // does not give us access to their audio.
+                userAudio.error.name === 'NotAllowedError' ||
+                  // Older implementations may use `SecurityError` instead of the
+                  // more recent `NotAllowedError`.
+                  userAudio.error.name === 'SecurityError'
+                ? <StudioUserAudioNotAllowed />
+                : <StudioUserAudioNotFound />
+              : // If we have a mesh instance then we want to render our studio
+                // room.
+                mesh !== null
+                ? <div {...css({ height: '100%' })}>
+                    {renderButtons && renderButtons(this.props, { mesh })}
+                    <StudioRoom
+                      mesh={mesh}
+                      audioContext={audioContext}
+                      deviceID={this.deviceID}
+                      onSelectDeviceID={this.handleSelectDeviceID}
+                      disableAudio={this.disableAudio}
+                      onDisableAudio={this.handleDisableAudio}
+                      onEnableAudio={this.handleEnableAudio}
+                      localVolume={this.localVolume}
+                      onLocalVolumeChange={this.handleLocalVolumeChange}
+                      webURL={webURL}
+                    />
+                  </div>
+                : // This should really be unreachable because we create a mesh
+                  // whenever we set `userAudio` to a success state. However, in the
+                  // case that we reach it then just render nothing.
+                  null as never}
         </div>
       );
     }

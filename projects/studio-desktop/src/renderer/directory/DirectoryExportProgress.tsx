@@ -7,22 +7,20 @@ export const DirectoryExportProgress = ({
   recording,
   progress,
 }: {
-  recording: RecordingStorage,
-  progress: Observable<number>,
-}) => (
+  recording: RecordingStorage;
+  progress: Observable<number>;
+}) =>
   <div>
     <p>
       {new Date(recording.startedAt).toDateString()}
     </p>
-    {ReactObservable.render(
-      progress,
-      progress => (
-        <div style={{
+    {ReactObservable.render(progress, progress =>
+      <div
+        style={{
           width: `${progress * 100}%`,
           height: '1em',
           backgroundColor: 'red',
-        }}/>
-      )
+        }}
+      />,
     )}
-  </div>
-);
+  </div>;

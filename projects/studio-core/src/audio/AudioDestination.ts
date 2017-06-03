@@ -1,8 +1,8 @@
 import * as React from 'react';
 
 type Props = {
-  context: AudioContext,
-  node: AudioNode,
+  context: AudioContext;
+  node: AudioNode;
 };
 
 /**
