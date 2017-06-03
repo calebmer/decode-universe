@@ -10,14 +10,14 @@ scripts/check-ts
 echo ""
 
 echo "[2/4] Deploying studio-signal-server"
-cd projects/studio-signal-server
+cd packages/studio-signal-server
 export DECODE_STUDIO_SIGNAL_SERVER_URL=$(scripts/now-deploy)
 cd ../..
 echo "Successfully deployed studio-signal-server to: $DECODE_STUDIO_SIGNAL_SERVER_URL"
 echo ""
 
 echo "[3/4] Deploying studio-web"
-cd projects/studio-web
+cd packages/studio-web
 export DECODE_STUDIO_WEB_URL=$(scripts/now-deploy)
 # There’s a bug right now in now which is why we add the `%%>*` to the end. See:
 # https://github.com/zeit/now-cli/issues/579
@@ -27,10 +27,10 @@ echo "Successfully deployed studio-web to: $DECODE_STUDIO_WEB_URL"
 echo ""
 
 echo "[4/4] Building studio-desktop"
-cd projects/studio-desktop
+cd packages/studio-desktop
 scripts/build
 cd ../..
 echo ""
 
-echo "Done! The app is available at: projects/studio-desktop/build"
+echo "Done! The app is available at: packages/studio-desktop/build"
 echo ""
