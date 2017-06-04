@@ -5,6 +5,9 @@
 # state of universe.
 
 echo ""
+echo "Setting up decode-universe. This may take a while."
+
+echo ""
 echo "[1/3] Cleaning existing node_modules."
 rm -rf node_modules
 rm -rf packages/*/node_modules

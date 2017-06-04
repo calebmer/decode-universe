@@ -10,6 +10,6 @@
     "lerna": "2.0.0-rc.5",
     "prettier": "1.4.2",
     "tslib": "1.7.1",
-    "typescript": "2.3.2"
+    "typescript": "2.3.4"
   }
 }
