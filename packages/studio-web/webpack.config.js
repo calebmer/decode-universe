@@ -45,7 +45,7 @@ module.exports = {
   entry: [
     // Include some extra scripts in development for a better DX.
     DEV && 'react-dev-utils/webpackHotDevClient',
-    // TODO: DEV && 'react-dev-utils/crashOverlay',
+    DEV && 'react-error-overlay',
     // Include the WebRTC adapter because WebRTC implementations vary so wildly
     // that we really need this compatibility layer for consistency.
     'webrtc-adapter',

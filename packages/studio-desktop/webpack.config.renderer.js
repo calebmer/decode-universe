@@ -47,7 +47,7 @@ module.exports = {
   entry: [
     // Include some extra scripts in development for a better DX.
     DEV && 'react-dev-utils/webpackHotDevClient',
-    // TODO: DEV && 'react-dev-utils/crashOverlay',
+    DEV && 'react-error-overlay',
     // Include the main script for our app.
     path.join(__dirname, './src/renderer/index.tsx'),
   ].filter(Boolean),

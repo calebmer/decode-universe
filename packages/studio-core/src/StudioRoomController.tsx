@@ -94,8 +94,8 @@ const createComponent = <
       };
 
   function createPeersMesh(
-    { roomName }: Props,
-    { audioContext }: State,
+    { roomName }: Readonly<Props>,
+    { audioContext }: Readonly<State>,
   ): TPeersMesh {
     return userCreatePeersMesh({
       roomName,
@@ -129,7 +129,7 @@ const createComponent = <
     */
     private nameSubscription: Subscription | null = null;
 
-    componentWillReceiveProps(nextProps: Props) {
+    componentWillReceiveProps(nextProps: Readonly<Props>) {
       const previousProps = this.props;
       // If the room name changed and we have a mesh in state then we need to
       // create a new mesh to replace the old one.
@@ -143,7 +143,7 @@ const createComponent = <
       }
     }
 
-    componentDidUpdate(previousProps: Props, previousState: State) {
+    componentDidUpdate(previousProps: Readonly<Props>, previousState: Readonly<State>) {
       const nextState = this.state;
       // If the user audio changed then we want to disconnect the previous audio
       // nodes and/or connect the new audio nodes.
@@ -234,7 +234,7 @@ const createComponent = <
 
     private handleUserAudioStream = (stream: MediaStream) => {
       // Update the state with the stream that we got.
-      this.setState((state: State, props: Props): Partial<State> => ({
+      this.setState((state: Readonly<State>, props: Readonly<Props>): Partial<State> => ({
         userAudio: {
           state: 'success',
           // Create all of the audio nodes for the user audio state. They will
