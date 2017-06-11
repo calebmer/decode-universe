@@ -15,6 +15,8 @@ const DEV = process.env.NODE_ENV === 'development';
 // variable then we want to use that as our initial room.
 const INITIAL_ROOM = DEV ? process.env.INITIAL_ROOM || null : null;
 
+const bundledModules = ['debug', 'react-error-overlay'];
+const unresolvedUnbundledModules = [...builtinModules, 'electron'];
 const sourceRegex = `${escapeRegExp(path.resolve(__dirname, '..'))}/[^/]+/src`;
 
 module.exports = {
@@ -74,7 +76,7 @@ module.exports = {
         !/^webpack\/hot\/dev-server/.test(request) &&
         // We also want to bundle some packages that have special browser builds
         // that won’t activate if we require them as node modules.
-        !['debug'].includes(request)
+        !bundledModules.includes(request)
       ) {
         // If we are in development then we want to use the absolute path of
         // the module because our bundle is hosted from `webpack-dev-server`.
@@ -82,14 +84,8 @@ module.exports = {
         // Do this for all modules except those modules that are builtin and the
         // `electron` module. They should be required directly instead of
         // required by their absolute path.
-        if (DEV && ![...builtinModules, 'electron'].includes(request)) {
-          const moduleAbsolutePath = path.resolve(
-            __dirname,
-            'node_modules',
-            request,
-          );
-
-          callback(null, `commonjs ${moduleAbsolutePath}`);
+        if (DEV && !unresolvedUnbundledModules.includes(request)) {
+          callback(null, `commonjs ${require.resolve(request)}`);
         } else {
           // In production our bundle is loaded from the file system and so we
           // require the default module name.

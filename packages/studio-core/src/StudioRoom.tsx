@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { css } from 'glamor';
 import { ReactObservable } from './observable/ReactObservable';
 import { AudioVisualization } from './audio/AudioVisualization';
+// import { AudioPeakMeter } from './audio/AudioPeakMeter';
 import { PeersMesh } from './rtc/PeersMesh';
 import { StudioRoomHeader } from './StudioRoomHeader';
 import { StudioRoomOptionsPanel } from './StudioRoomOptionsPanel';
@@ -91,17 +92,31 @@ export function StudioRoom({
             )}
           </p>
           <div
-            style={{
+            {...css({
               width: '500px',
               height: '100px',
               backgroundColor: 'tomato',
-            }}
+            })}
           >
             {ReactObservable.render(
               mesh.localAudio,
               node => node !== null && <AudioVisualization node={node} />,
             )}
           </div>
+          {/*<div
+            {...css({
+              width: '50px',
+              height: '200px',
+              backgroundColor: 'black',
+            })}
+          >
+            {ReactObservable.render(
+              mesh.localAudio,
+              node =>
+                node !== null &&
+                <AudioPeakMeter context={audioContext} node={node} />,
+            )}
+          </div>*/}
           {webURL !== null &&
             <p>
               Invite guests to the recording:{' '}

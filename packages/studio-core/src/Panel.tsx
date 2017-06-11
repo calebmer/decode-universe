@@ -26,7 +26,7 @@ export function Panel({
           {...css(Fonts.title, {
             cursor: 'default',
             padding: '1em',
-            paddingBottom: '2em',
+            paddingBottom: '1.5em',
             backgroundColor: Colors.white,
             borderBottom: `1px solid ${Colors.geyserDarker}`,
           })}
