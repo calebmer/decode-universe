@@ -5,21 +5,13 @@
 # state of universe.
 
 echo ""
-echo "Setting up decode-universe. This may take a while."
-
-echo ""
-echo "[1/3] Cleaning existing node_modules."
+echo "[1/2] Cleaning existing node_modules."
 rm -rf node_modules
 rm -rf packages/*/node_modules
 
 echo ""
-echo "[2/3] Installing root node modules."
+echo "[2/2] Installing node_modules with yarn."
 echo ""
-npm install
-
-echo ""
-echo "[3/3] Bootstrapping with lerna."
-echo ""
-$(npm bin)/lerna bootstrap
+yarn
 
 echo ""
