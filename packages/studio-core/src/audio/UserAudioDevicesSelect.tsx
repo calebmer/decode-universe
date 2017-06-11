@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { SelectInput } from '../shared/input/SelectInput';
+import { SelectInput } from '../input/SelectInput';
 
 type Props = {
   kind: 'input' | 'output';

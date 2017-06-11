@@ -3,8 +3,8 @@ import { Observable } from 'rxjs';
 import { css } from 'glamor';
 import { Fonts } from '@decode/styles';
 import { ReactObservable } from './observable/ReactObservable';
-import { TextInput } from './shared/input/TextInput';
-import { RangeInput } from './shared/input/RangeInput';
+import { TextInput } from './input/TextInput';
+import { RangeInput } from './input/RangeInput';
 import { UserAudioDevicesSelect } from './audio/UserAudioDevicesSelect';
 import { Panel } from './Panel';
 

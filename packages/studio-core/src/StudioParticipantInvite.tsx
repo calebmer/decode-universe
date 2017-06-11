@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { css } from 'glamor';
 import { Colors, Fonts } from '@decode/styles';
-import { ShareTextInput } from './shared/input/ShareTextInput';
+import { ShareTextInput } from './input/ShareTextInput';
 import { StudioParticipant } from './StudioParticipant';
 
 export function StudioParticipantInvite({

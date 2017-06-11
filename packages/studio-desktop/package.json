@@ -19,7 +19,6 @@
   },
   "devDependencies": {
     "@types/debug": "0.0.29",
-    "@types/electron": "1.4.38",
     "@types/node": "7.0.27",
     "@types/react-dom": "0.14.23",
     "@types/uuid": "2.0.30",

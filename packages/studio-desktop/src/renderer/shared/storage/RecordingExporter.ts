@@ -270,7 +270,7 @@ function writeUTFBytes(view: DataView, offset: number, string: string): void {
  * [1]: https://github.com/streamproc/MediaStreamRecorder/blob/bef0b2082853a6a68c45e3a9e0066d6757ca75c7/MediaStreamRecorder.js#L1228-L1235
  */
 class WAVTransform extends stream.Transform {
-  protected _transform(
+  _transform(
     data: Buffer,
     encoding: string,
     callback: (error: Error | null, data: Buffer) => void,
@@ -318,7 +318,7 @@ class ByteReporter extends stream.Transform {
     this.scheduleFlushBytes();
   }
 
-  protected _transform(
+  _transform(
     data: Buffer,
     encoding: string,
     callback: (error: Error | null, data: Buffer) => void,
@@ -329,7 +329,7 @@ class ByteReporter extends stream.Transform {
     callback(null, data);
   }
 
-  protected _flush(callback: () => void) {
+  _flush(callback: () => void) {
     // If there was already a timeout then we need to clear it.
     if (this.flushBytesTimeout !== null) {
       clearTimeout(this.flushBytesTimeout);

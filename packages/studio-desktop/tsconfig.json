@@ -5,6 +5,14 @@
     "target": "es2015",
     "lib": ["dom", "es2015", "es2016", "es2017"],
     "jsx": "react",
+    "types": [
+      "debug",
+      "electron",
+      "node",
+      "react",
+      "react-dom",
+      "uuid"
+    ],
     "baseUrl": ".",
     "paths": {
       "@decode/*": ["../*"],
