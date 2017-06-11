@@ -14,15 +14,21 @@ function createDropShadow(
 
 function createInsetShadow(
   {
-    color = Colors.geyserDarker,
+    color = 'rgba(0, 0, 0, 0.1)',
     top = false,
+    bottom = false,
   }: {
     color?: string;
     top?: boolean;
+    bottom?: boolean;
   } = {},
 ) {
+  const boxShadows = [
+    top && `inset 0 0.5em 0.3em -0.3em ${color}`,
+    bottom && `inset 0 -0.5em 0.3em -0.3em ${color}`,
+  ].filter(Boolean);
   return {
-    boxShadow: top ? `inset 0 0.5em 0.3em -0.3em ${color}` : undefined,
+    boxShadow: boxShadows.length !== 0 ? boxShadows.join(', ') : undefined,
   };
 }
 

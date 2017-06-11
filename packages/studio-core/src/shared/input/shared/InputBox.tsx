@@ -3,17 +3,26 @@ import { css } from 'glamor';
 import { Colors, Fonts } from '@decode/styles';
 import { IconComponentType } from '../../icons/IconComponentType';
 
+const backgroundDarkBorderColor = 'rgba(255, 255, 255, 0.1)';
+
+/**
+ * We have done the math to make sure that each `<InputBox>` has a height of
+ * exactly 4em. Therefore be careful when adjusting numbers. You might break
+ * something.
+ */
 export function InputBox({
   inputID,
   label,
   labelPassthrough = false,
   icon: IconComponent,
+  backgroundDark = false,
   children,
 }: {
   inputID?: string;
   label: string;
   labelPassthrough?: boolean;
   icon?: IconComponentType;
+  backgroundDark?: boolean;
   children?: React.ReactNode;
 }) {
   return (
@@ -22,7 +31,9 @@ export function InputBox({
         display: 'block',
         position: 'relative',
         margin: '-1px',
-        border: `solid 1px ${Colors.geyserDarker}`,
+        border: `solid 1px ${!backgroundDark
+          ? Colors.geyserDarker
+          : backgroundDarkBorderColor}`,
       })}
     >
       <label
@@ -38,7 +49,11 @@ export function InputBox({
         })}
         htmlFor={inputID}
       >
-        <span {...css(Fonts.label)}>
+        <span
+          {...css(Fonts.label, {
+            color: !backgroundDark ? Colors.shark : Colors.geyser,
+          })}
+        >
           {label}
         </span>
       </label>
@@ -48,20 +63,29 @@ export function InputBox({
       {React.cloneElement(
         React.Children.only(children),
         css(Fonts.input, {
-          fontSize: '0.8em',
-
           // Normally our padding is `1em` and `2.2em` respectively, but the
           // `fontSize` is `0.8em` so we need to scale them appropriately.
-          padding: `${1 * (1 / 0.8)}em`,
-          paddingTop: `${2.4 * (1 / 0.8)}em`,
-          paddingRight: IconComponent ? `${3.6 * (1 / 0.8)}em` : null,
+          boxSizing: 'border-box',
+          height: 'calc(4em * (1 / 0.8))',
+          paddingTop: `calc(2.2em * (1 / 0.8))`,
+          paddingBottom: `calc(0.8em * (1 / 0.8))`,
+          paddingLeft: `calc(1em * (1 / 0.8))`,
+          paddingRight: IconComponent
+            ? `calc(3.6em * (1 / 0.8))`
+            : `calc(1em * (1 / 0.8))`,
+
+          backgroundColor: !backgroundDark ? Colors.geyser : null,
+          color: !backgroundDark ? Colors.osloGrey : Colors.geyserDarker,
+          fontSize: '0.8em',
 
           ':focus': {
             outline: 'none',
-            color: Colors.shark,
-            backgroundColor: Colors.geyserDarker,
+            color: !backgroundDark ? Colors.shark : Colors.white,
+            backgroundColor: !backgroundDark
+              ? Colors.geyserDarker
+              : backgroundDarkBorderColor,
             ' + .icon': {
-              color: Colors.shark,
+              color: !backgroundDark ? Colors.shark : Colors.white,
             },
           },
         }),
@@ -74,7 +98,7 @@ export function InputBox({
             position: 'absolute',
             top: '1.8em',
             right: '1.3em',
-            color: Colors.osloGrey,
+            color: !backgroundDark ? Colors.osloGrey : Colors.geyserDarker,
           })}
         >
           <IconComponent />

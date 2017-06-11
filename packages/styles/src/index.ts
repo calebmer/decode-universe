@@ -1,3 +1,3 @@
 export { Colors } from './Colors';
-export { Fonts } from './Fonts';
+export { Fonts, FontWeights } from './Fonts';
 export { Shadow } from './Shadow';

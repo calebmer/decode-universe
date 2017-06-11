@@ -9,13 +9,10 @@
     <style>
 /*
  * The default CSS used in the application. Most styles will be added by the
- * JavaScript code. Even a CSS reset is included in JavaScript. This is the
- * minimal set of styles needed to render the page.
+ * JavaScript code. We have no CSS reset and no global styles. This is so that
+ * our components can be used in any location as they are forced to override the
+ * global styles for that platform.
  */
-
-* {
-  box-sizing: border-box;
-}
 
 html {
   background-color: <%= htmlWebpackPlugin.options.Styles.Colors.background %>;

@@ -23,7 +23,7 @@ export function Panel({
     >
       {hasHeading &&
         <header
-          {...css(Fonts.title, {
+          {...css(Fonts.panelTitle, {
             cursor: 'default',
             padding: '1em',
             paddingBottom: '1.5em',
@@ -34,8 +34,28 @@ export function Panel({
           {title}
         </header>}
       {hasHeading
-        ? <div {...css(Shadow.createInsetShadow({ top: true }))}>
+        ? <div
+            {...css({
+              position: 'relative',
+            })}
+          >
             {children}
+            <div
+              {...css(
+                Shadow.createInsetShadow({
+                  color: Colors.geyserDarker,
+                  top: true,
+                }),
+                {
+                  pointerEvents: 'none',
+                  position: 'absolute',
+                  top: '0',
+                  bottom: '0',
+                  left: '0',
+                  right: '0',
+                },
+              )}
+            />
           </div>
         : children}
     </div>

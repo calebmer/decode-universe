@@ -8,6 +8,7 @@ import { PeersMesh } from './rtc/PeersMesh';
 import { StudioRoomHeader } from './StudioRoomHeader';
 import { StudioRoomOptionsPanel } from './StudioRoomOptionsPanel';
 import { StudioPeer } from './StudioPeer';
+import { StudioRoomParticipants } from './StudioRoomParticipants';
 
 export function StudioRoom({
   mesh,
@@ -55,8 +56,11 @@ export function StudioRoom({
         <aside
           {...css({
             order: '1',
+            flexShrink: '0',
             overflow: 'scroll',
-            padding: '2em',
+            margin: '4em',
+            marginLeft: '0',
+            marginRight: '4em',
           })}
         >
           <StudioRoomOptionsPanel
@@ -77,9 +81,12 @@ export function StudioRoom({
           {...css({
             order: '0',
             flexGrow: '1',
-            padding: '1px',
+            margin: '4em',
+            marginLeft: '4em',
+            marginRight: '4em',
           })}
         >
+          <StudioRoomParticipants inviteURL={webURL} />
           <p>
             {ReactObservable.render(
               mesh.localState
