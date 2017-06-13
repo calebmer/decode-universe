@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Subscription, BehaviorSubject } from 'rxjs';
+import dropRepeats from 'xstream/extra/dropRepeats';
 import { css } from 'glamor';
-import { ReactObservable } from './observable/ReactObservable';
+import { LiveValue } from './stream/LiveValue';
+import { ReactStream } from './stream/ReactStream';
 import { UserAudioController } from './audio/UserAudioController';
 import { PeersMesh } from './rtc/PeersMesh';
 import { Peer } from './rtc/Peer';
@@ -112,22 +113,21 @@ const createComponent = <
     };
 
     // Create some behavior subjects which we will push updates to. Putting
-    // these values in observables instead of state means we don’t need to
+    // these values in live values instead of state means we don’t need to
     // update the entire component tree whenever one value changes. We can
     // pinpoint the update to exactly the places which need it.
-    private readonly deviceID = new BehaviorSubject(
+    private readonly deviceID = new LiveValue(
       localStorage.getItem(deviceIDKey),
     );
-    private readonly disableAudio = new BehaviorSubject(DEV);
-    private readonly localVolume = new BehaviorSubject(1);
+    private readonly disableAudio = new LiveValue(DEV);
+    private readonly localVolume = new LiveValue(1);
 
     /**
-    * We want to subscribe to our mesh’s local state so that whenever the name
+    * We want to listen to our mesh’s local state so that whenever the name
     * changes we can store the new name in local storage. This is the
-    * subscription for that operation. `null` if we have no such operation
-    * running.
+    * listener for that operation.
     */
-    private nameSubscription: Subscription | null = null;
+    private nameUnsubscribe: (() => void) | null = null;
 
     componentWillReceiveProps(nextProps: Readonly<Props>) {
       const previousProps = this.props;
@@ -167,7 +167,7 @@ const createComponent = <
           }
           // Set the volume to whatever value is currently in state.
           const volume: GainNode = nodes[3];
-          volume.gain.value = this.localVolume.value;
+          volume.gain.value = this.localVolume.get();
         }
       }
       // **NOTE:** It is important that this runs before the block that runs
@@ -203,17 +203,21 @@ const createComponent = <
           // Connect the next peers mesh.
           nextState.mesh.connect().catch(error => console.error(error));
           // Unsubscribe from the last name subscription if we have one.
-          if (this.nameSubscription !== null) {
-            this.nameSubscription.unsubscribe();
+          if (this.nameUnsubscribe !== null) {
+            this.nameUnsubscribe();
           }
-          // Create a new subscription from the mesh’s local state. Every time
-          // we get a new name then we want to update the local storage.
-          this.nameSubscription = nextState.mesh.localState
+          // Create a new stream from the mesh’s local state. Every time
+          // we get a new name then we want to update local storage.
+          const stream = nextState.mesh.localState
             .map(({ name }) => name)
-            .distinctUntilChanged()
-            .subscribe({
-              next: name => localStorage.setItem(nameKey, name),
-            });
+            .compose(dropRepeats());
+
+          const listener = {
+            next: (name: string) => localStorage.setItem(nameKey, name),
+          };
+
+          stream.addListener(listener);
+          this.nameUnsubscribe = () => stream.removeListener(listener);
         }
       }
     }
@@ -223,8 +227,8 @@ const createComponent = <
       // Close down the audio context releasing resources back to the system.
       audioContext.close();
       // Unsubscribe from the name subscription if we have one.
-      if (this.nameSubscription !== null) {
-        this.nameSubscription.unsubscribe();
+      if (this.nameUnsubscribe !== null) {
+        this.nameUnsubscribe();
       }
       // Close the mesh if we have one.
       if (mesh !== null) {
@@ -284,13 +288,13 @@ const createComponent = <
 
     private handleSelectDeviceID = (deviceID: string) => {
       // Update the state with the new device id.
-      this.deviceID.next(deviceID);
+      this.deviceID.set(deviceID);
       // Update local storage with the new information.
       localStorage.setItem(deviceIDKey, deviceID);
     };
 
-    private handleDisableAudio = () => this.disableAudio.next(true);
-    private handleEnableAudio = () => this.disableAudio.next(false);
+    private handleDisableAudio = () => this.disableAudio.set(true);
+    private handleEnableAudio = () => this.disableAudio.set(false);
 
     private handleLocalVolumeChange = (localVolume: number) => {
       const { userAudio } = this.state;
@@ -301,14 +305,14 @@ const createComponent = <
         volume.gain.value = localVolume;
       }
       // Update our local volume state.
-      this.localVolume.next(localVolume);
+      this.localVolume.set(localVolume);
     };
 
     render() {
       const { audioContext, userAudio, mesh } = this.state;
       return (
         <div {...css({ height: '100%' })}>
-          {ReactObservable.render(this.deviceID, deviceID =>
+          {ReactStream.render(this.deviceID, deviceID =>
             <UserAudioController
               deviceID={deviceID}
               errorRetryMS={500}

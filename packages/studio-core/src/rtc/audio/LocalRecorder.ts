@@ -43,7 +43,7 @@ export class LocalRecorder extends EventEmitter<Recorder.EventMap>
   private readonly context: AudioContext;
 
   /**
-   * The audio sample rate for the audio data emit from the `stream` observable.
+   * The audio sample rate for the audio data emit.
    */
   public get sampleRate(): number {
     return this.context.sampleRate;
@@ -82,7 +82,7 @@ export class LocalRecorder extends EventEmitter<Recorder.EventMap>
 
   /**
    * Handles any data we get for processing. We basically just forward that
-   * data to our observable.
+   * data to our event listeners.
    */
   private readonly handleAudioProcess = (event: AudioProcessingEvent) => {
     const { inputBuffer } = event;
@@ -93,7 +93,8 @@ export class LocalRecorder extends EventEmitter<Recorder.EventMap>
   };
 
   /**
-   * Starts recording our local audio and sending that audio to `stream`.
+   * Starts recording our local audio and sending that audio to our event
+   * listeners.
    */
   public start(): void {
     // State check.
@@ -124,7 +125,7 @@ export class LocalRecorder extends EventEmitter<Recorder.EventMap>
   }
 
   /**
-   * Stops our recording. The now finished `stream` will emit a `complete`
+   * Stops our recording. The now finished stream will emit a `complete`
    * event.
    *
    * If the recorder has already been stopped this will throw an error.

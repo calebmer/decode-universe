@@ -1,6 +1,6 @@
 import { remote } from 'electron';
 import { OrderedMap } from 'immutable';
-import { Observable } from 'rxjs';
+import { Stream } from 'xstream';
 import * as React from 'react';
 import { Storage } from '../shared/storage/Storage';
 import { RecordingStorage } from '../shared/storage/RecordingStorage';
@@ -15,12 +15,12 @@ type Props = {
 };
 
 type State = {
-  exportProgresses: OrderedMap<RecordingStorage, Observable<number>>;
+  exportProgresses: OrderedMap<RecordingStorage, Stream<number>>;
 };
 
 export class Directory extends React.PureComponent<Props, State> {
   state: State = {
-    exportProgresses: OrderedMap<RecordingStorage, Observable<number>>(),
+    exportProgresses: OrderedMap<RecordingStorage, Stream<number>>(),
   };
 
   private handleExport = (recording: RecordingStorage) => {
@@ -28,10 +28,10 @@ export class Directory extends React.PureComponent<Props, State> {
     if (this.state.exportProgresses.has(recording)) {
       return;
     }
-    // While we do not yet have a progress observable we still want to reserve
+    // While we do not yet have a progress stream we still want to reserve
     // the space so that we can’t start another export for this storage.
     this.setState(({ exportProgresses }: State): Partial<State> => ({
-      exportProgresses: exportProgresses.set(recording, Observable.never()),
+      exportProgresses: exportProgresses.set(recording, Stream.never()),
     }));
     // Start the export process.
     startExport(recording)
@@ -40,12 +40,12 @@ export class Directory extends React.PureComponent<Props, State> {
         if (progress === undefined) {
           return;
         }
-        // Set the actual progress observable in state.
+        // Set the actual progress stream in state.
         this.setState(({ exportProgresses }: State): Partial<State> => ({
           exportProgresses: exportProgresses.set(recording, progress),
         }));
         return new Promise<void>((resolve, reject) => {
-          progress.subscribe({
+          progress.addListener({
             complete: () => resolve(),
             error: error => reject(error),
           });
@@ -57,7 +57,7 @@ export class Directory extends React.PureComponent<Props, State> {
       .catch(error => console.error(error))
       // Finally delete the export progress entry for this storage.
       .then(() => {
-        // Set the actual progress observable in state.
+        // Set the actual progress stream in state.
         this.setState(({ exportProgresses }: State): Partial<State> => ({
           exportProgresses: exportProgresses.delete(recording),
         }));
@@ -109,7 +109,7 @@ export class Directory extends React.PureComponent<Props, State> {
 
 async function startExport(
   recording: RecordingStorage,
-): Promise<Observable<number> | void> {
+): Promise<Stream<number> | void> {
   // Get a directory from the user using a dialog.
   const exportDirectoryPath = await new Promise<string | undefined>(resolve => {
     // Show an open dialog. The user will select a directory and we will then
@@ -172,12 +172,12 @@ async function startExport(
       }
     }
   }
-  // Actually perform the export and get an observable that represents the
+  // Actually perform the export and get an stream that represents the
   // export progress.
   const progress = await RecordingExporter.export(
     recording,
     exportDirectoryPath,
   );
-  // Return the progress observable.
+  // Return the progress stream.
   return progress;
 }

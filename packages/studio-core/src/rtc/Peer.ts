@@ -1,5 +1,7 @@
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Stream } from 'xstream';
 import { Disposable } from '@decode/js-utils';
+import { LiveValue } from '../stream/LiveValue';
+import { FunctionalStream } from '../stream/FunctionalStream';
 
 /**
  * The configuration we use when creating `RTCPeerConnection` instances.
@@ -56,23 +58,21 @@ export class Peer {
 
   /**
    * All of the remote media streams that our peer has given us access to. As
-   * the peer may add and remove streams over time this is an observable.
+   * the peer may add and remove streams over time this is an stream.
    */
-  public readonly remoteStream: Observable<MediaStream | null>;
+  public readonly remoteStream: Stream<MediaStream | null>;
 
   /**
    * Represents the status of the connection that we have with our peer.
    */
-  public readonly connectionStatus: Observable<Peer.ConnectionStatus>;
+  public readonly connectionStatus: Stream<Peer.ConnectionStatus>;
 
   /**
    * The remote state subject is where we will send new state objects. The value
    * will be null while we are loading. The view into this subject for consumers
    * will filter out nulls.
    */
-  private readonly remoteStateSubject = new BehaviorSubject<Peer.State | null>(
-    null,
-  );
+  private readonly _remoteState = new LiveValue<Peer.State | null>(null);
 
   /**
    * The state of our peer. Will emit the most recent state that we know about
@@ -80,17 +80,15 @@ export class Peer {
    * peer. In that case there will be no emissions until the peer sends us their
    * state.
    */
-  public readonly remoteState: Observable<
-    Peer.State
-  > = this.remoteStateSubject.filter(state => state !== null) as Observable<
-    Peer.State
-  >;
+  public readonly remoteState: Stream<Peer.State> = this._remoteState.filter(
+    state => state !== null,
+  ) as Stream<Peer.State>;
 
   /**
    * The current remote state for this peer.
    */
-  public get currentRemoteState(): Peer.State | null {
-    return this.remoteStateSubject.value;
+  public currentRemoteState(): Peer.State | null {
+    return this._remoteState.get();
   }
 
   /**
@@ -153,7 +151,7 @@ export class Peer {
     }
     // Set the current local state to the initial state we were given.
     this.currentLocalState = localState;
-    // Create some observables that watch the connection and emit events.
+    // Create some streams that watch the connection and emit events.
     this.connectionStatus = watchConnectionStatus(this.connection);
     this.remoteStream = watchRemoteStream(this.connection);
     // If we are the initiator then we want to create some data channels. If we
@@ -182,7 +180,7 @@ export class Peer {
 
   /**
    * Initializes a state channel by sending the current local state to that
-   * channel and adding event listeners which will maintain an observable for
+   * channel and adding event listeners which will maintain a stream for
    * that state.
    *
    * This is in its own method because there are two different ways that we may
@@ -208,15 +206,15 @@ export class Peer {
     }
 
     // Handles a message from our data channel by alerting any listeners to the
-    // remote state observable that there is new data.
+    // remote state stream that there is new data.
     const handleMessage = (event: MessageEvent) => {
       const remoteState: Peer.State = JSON.parse(event.data);
-      this.remoteStateSubject.next(remoteState);
+      this._remoteState.set(remoteState);
     };
 
     // Handles an error from our data channel by alerting any listeners.
     const handleError = (event: ErrorEvent) => {
-      this.remoteStateSubject.error(event.error);
+      this._remoteState.shamefullySendError(event.error);
     };
 
     // Add our event listeners to the data channel.
@@ -254,8 +252,8 @@ export class Peer {
     if (this.connection.signalingState !== 'closed') {
       this.connection.close();
     }
-    // Complete our subjects. We are done with them.
-    this.remoteStateSubject.complete();
+    // Complete our streams.
+    this._remoteState.shamefullySendComplete();
   }
 
   /**
@@ -388,14 +386,14 @@ export namespace Peer {
  */
 function watchConnectionStatus(
   connection: RTCPeerConnection,
-): Observable<Peer.ConnectionStatus> {
-  return new Observable<Peer.ConnectionStatus>(observer => {
+): Stream<Peer.ConnectionStatus> {
+  return FunctionalStream.createWithMemory<Peer.ConnectionStatus>(listener => {
     // Immeadiately emit the connection status.
-    observer.next(getConnectionStatus(connection.iceConnectionState));
+    listener.next(getConnectionStatus(connection.iceConnectionState));
     // This function will handle a change in the connection status by computing
     // the new connection status and emitting the new connection status.
     const handleChange = () => {
-      observer.next(getConnectionStatus(connection.iceConnectionState));
+      listener.next(getConnectionStatus(connection.iceConnectionState));
     };
     // Add the event listener.
     connection.addEventListener('iceconnectionstatechange', handleChange);
@@ -432,16 +430,16 @@ function getConnectionStatus(
 }
 
 /**
- * Creates an observable that tracks the array of `MediaStream`s produced by an
+ * Creates a stream that tracks the array of `MediaStream`s produced by an
  * `RTCPeerConnection` instance.
  */
 function watchRemoteStream(
   connection: RTCPeerConnection,
-): Observable<MediaStream | null> {
-  return new Observable<MediaStream | null>(observer => {
-    // Notify observer of the current remote stream, or null if there is no
+): Stream<MediaStream | null> {
+  return FunctionalStream.createWithMemory<MediaStream | null>(listener => {
+    // Notify the listener of the current remote stream, or null if there is no
     // remote stream.
-    observer.next(connection.getRemoteStreams()[0] || null);
+    listener.next(connection.getRemoteStreams()[0] || null);
 
     /**
      * Handles the `addstream` event on `RTCPeerConnection`.
@@ -460,8 +458,8 @@ function watchRemoteStream(
         const node = new Audio();
         node.srcObject = stream;
       }
-      // Update our observer with the first remote stream.
-      observer.next(connection.getRemoteStreams()[0] || null);
+      // Update our listener with the first remote stream.
+      listener.next(connection.getRemoteStreams()[0] || null);
     };
 
     /**
@@ -472,8 +470,8 @@ function watchRemoteStream(
       if (stream === null) {
         return;
       }
-      // Update our observer with the first remote stream.
-      observer.next(connection.getRemoteStreams()[0] || null);
+      // Update our listener with the first remote stream.
+      listener.next(connection.getRemoteStreams()[0] || null);
     };
 
     // Add event listeners.

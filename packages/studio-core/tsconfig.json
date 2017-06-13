@@ -12,8 +12,7 @@
     "baseUrl": ".",
     "paths": {
       "@decode/*": ["../*"],
-      "immutable": ["../typescript/typings/modules/immutable"],
-      "rxjs": ["../typescript/typings/modules/rxjs"]
+      "immutable": ["../typescript/typings/modules/immutable"]
     }
   },
   "include": [

@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Observable } from 'rxjs';
-import { ReactObservable } from './observable/ReactObservable';
+import { Stream } from 'xstream';
+import { ReactStream } from './stream/ReactStream';
 import { AudioVisualization } from './audio/AudioVisualization';
 import { AudioDestination } from './audio/AudioDestination';
 import { Peer } from './rtc/Peer';
@@ -12,23 +12,23 @@ export function StudioPeer({
 }: {
   peer: Peer;
   audioContext: AudioContext;
-  disableAudio: Observable<boolean>;
+  disableAudio: Stream<boolean>;
 }) {
   return (
     <div>
       <p>
-        {ReactObservable.render(peer.remoteState, state =>
+        {ReactStream.render(peer.remoteState, state =>
           <span>
             {state.name}
             {state.isMuted === true && ' (muted)'}
           </span>,
         )}
         {' '}
-        {ReactObservable.render(peer.connectionStatus, connectionStatus =>
+        {ReactStream.render(peer.connectionStatus, connectionStatus =>
           <span>({Peer.ConnectionStatus[connectionStatus]})</span>,
         )}
       </p>
-      {ReactObservable.render(
+      {ReactStream.render(
         peer.remoteStream.map(
           stream =>
             stream !== null
@@ -44,7 +44,7 @@ export function StudioPeer({
             }}
           >
             {source !== null &&
-              ReactObservable.render(
+              ReactStream.render(
                 disableAudio,
                 disableAudio =>
                   disableAudio === false &&

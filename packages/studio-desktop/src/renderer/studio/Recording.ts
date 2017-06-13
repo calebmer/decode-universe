@@ -75,21 +75,24 @@ export class Recording {
       const localRecorder = new LocalRecorder({
         name: mesh.currentLocalState.name,
         context: mesh.localAudioContext,
-        audio: mesh.currentLocalAudio,
+        audio: mesh.currentLocalAudio(),
       });
       // Subscribe to the local audio and whenever it changes we want to update
       // the audio in our `LocalRecorder` with the change.
-      const subscription = mesh.localAudio.subscribe(audio => {
-        if (audio === null) {
-          localRecorder.unsetAudio();
-        } else {
-          localRecorder.setAudio(audio);
-        }
-      });
+      const listener = {
+        next: (audio: AudioNode | null) => {
+          if (audio === null) {
+            localRecorder.unsetAudio();
+          } else {
+            localRecorder.setAudio(audio);
+          }
+        },
+      };
+      mesh.localAudio.addListener(listener);
       // Add a disposable which just unsubscribes from the local audio
       // subscription.
       this.disposables.push({
-        dispose: () => subscription.unsubscribe(),
+        dispose: () => mesh.localAudio.removeListener(listener),
       });
       // Write our recorder to the `RecordingStorage` and store the returned
       // disposable so that it will be disposed when we stop the recording.
@@ -100,7 +103,7 @@ export class Recording {
     // an event listener.
     {
       // Add all of the current peers.
-      for (const peer of mesh.currentPeers.values()) {
+      for (const peer of mesh.currentPeers().values()) {
         this.addPeer(peer);
       }
       // Listen to the add peer and delete peer events and update our internal

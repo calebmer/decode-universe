@@ -1,8 +1,9 @@
 import * as createDebugger from 'debug';
 import { OrderedMap } from 'immutable';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Stream } from 'xstream';
 import { EventEmitter } from '@decode/js-utils';
 import { SignalClient, Signal } from '@decode/studio-signal-client';
+import { LiveValue } from '../stream/LiveValue';
 import { Peer } from './Peer';
 
 const debug = createDebugger('@decode/studio-core:PeersMesh');
@@ -55,41 +56,25 @@ export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
   PeersMesh.EventMap
 > {
   /**
-   * The private subject observable that contains the immutable map of remote
+   * The private subject value that contains the immutable map of remote
    * peers we are connected to.
-   *
-   * We use a `BehaviorSubject` so that we can get the latest value of the
-   * observable at any time (by using `.value`). This is critical to be able to
-   * add or remove peers relative to what is already in the map.
-   *
-   * Whenever we need to add or remove a peer our code will often take the form
-   * `this.peersSubject.next(this.peersSubject.value.add(...))` using
-   * Immutable.js mutations to create a new `OrderedMap`.
-   *
-   * We do not want to expose the ability to call `next()` on the
-   * `BehaviorSubject` to users so this property is private. Users are expected
-   * to use the observable `peers` in order to see our peers. The `peers`
-   * observable is simply a clone of `peersSubject` without the dangerous
-   * mutating `next()`, `error()`, or `complete()` methods.
    *
    * The map is keyed by the address we use to send messages to our peer through
    * the `SignalClient`.
    */
-  private readonly peersSubject = new BehaviorSubject(
-    OrderedMap<string, TPeer>(),
-  );
+  private readonly _peers = new LiveValue(OrderedMap<string, TPeer>());
 
   /**
    * All of the peers that we are currently connected to keyed by their unique
    * identifier given to us by our servers.
    */
-  public readonly peers = this.peersSubject.asObservable();
+  public readonly peers = this._peers.asStream();
 
   /**
    * The current set of peers.
    */
-  public get currentPeers(): OrderedMap<string, TPeer> {
-    return this.peersSubject.value;
+  public currentPeers(): OrderedMap<string, TPeer> {
+    return this._peers.get();
   }
 
   /**
@@ -142,8 +127,8 @@ export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
       this.handleSignal(from, signal).catch(error => console.error(error));
     });
     // Create the local state subject using the initial state provided to us.
-    this.localStateSubject = new BehaviorSubject(localState);
-    this.localState = this.localStateSubject.asObservable();
+    this._localState = new LiveValue(localState);
+    this.localState = this._localState.asStream();
   }
 
   /**
@@ -154,13 +139,13 @@ export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
     // Close our signal client instance.
     this.signals.close();
     // Close every peer that we know of.
-    this.peersSubject.value.forEach((peer, address) => {
+    this._peers.get().forEach((peer, address) => {
       this.deletePeer(address, peer);
     });
     // Complete our subjects. We are done with them.
-    this.peersSubject.complete();
-    this.localStateSubject.complete();
-    this.localAudioSubject.complete();
+    this._peers.shamefullySendComplete();
+    this._localState.shamefullySendComplete();
+    this._localAudio.shamefullySendComplete();
   }
 
   /**
@@ -194,11 +179,11 @@ export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
     const peer = this.createPeerInstance({
       isLocalInitiator,
       localAudioContext: this.localAudioContext,
-      localState: this.localStateSubject.value,
-      localAudio: this.localAudioSubject.value,
+      localState: this._localState.get(),
+      localAudio: this._localAudio.get(),
     });
     // Update our peers map by adding this peer keyed by its address.
-    this.peersSubject.next(this.peersSubject.value.set(address, peer));
+    this._peers.update(_ => _.set(address, peer));
     // Emit the add peer event.
     this.emit('addPeer', { address, peer });
     // Everytime we get an ICE candidate, we want to send a signal to our peer
@@ -257,7 +242,7 @@ export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
     // Close the peer.
     peer._close();
     // Remove the peer from our internal map.
-    this.peersSubject.next(this.peersSubject.value.delete(address));
+    this._peers.update(_ => _.delete(address));
     // Emit the delet peer event.
     this.emit('deletePeer', { address, peer });
   }
@@ -291,7 +276,7 @@ export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
         // Delete the timer from our map now that it has completed.
         this.peerNegotiationTimers.delete(address);
         // Get the peer from our peers map.
-        const peer = this.peersSubject.value.get(address);
+        const peer = this._peers.get().get(address);
         // If the peer no longer exists do not continue. Otherwise we want to
         // start negotiations with that peer.
         if (peer !== undefined) {
@@ -331,7 +316,7 @@ export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
    */
   private async handleSignal(address: string, signal: Signal): Promise<void> {
     // Get the peer using the provided address.
-    let peer: TPeer | undefined = this.peersSubject.value.get(address);
+    let peer: TPeer | undefined = this._peers.get().get(address);
 
     // If we could find no peer and the signal is an offer signal then let us
     // create a new peer. If we could not find a peer and the signal was *not*
@@ -398,19 +383,19 @@ export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
   /**
    * The local state on this peer mesh.
    */
-  private readonly localStateSubject: BehaviorSubject<Peer.State>;
+  private readonly _localState: LiveValue<Peer.State>;
 
   /**
    * The local state for this mesh. Use `setState` to update and the updates
    * from `setState` will be propogated to all of the peers in our mesh.
    */
-  public readonly localState: Observable<Peer.State>;
+  public readonly localState: Stream<Peer.State>;
 
   /**
    * The current local peer state.
    */
-  public get currentLocalState(): Peer.State {
-    return this.localStateSubject.value;
+  public currentLocalState(): Peer.State {
+    return this._localState.get();
   }
 
   /**
@@ -428,18 +413,16 @@ export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
   private updateLocalState(partialState: Partial<Peer.State>): void {
     // Create the next state object.
     const nextState: Peer.State = {
-      ...this.localStateSubject.value,
+      ...this._localState.get(),
       ...partialState,
     };
     // Updates the local state on all of our peers which will send out the
     // message.
-    this.peersSubject.value.forEach(peer => {
-      if (peer !== undefined) {
-        peer._setLocalState(nextState);
-      }
+    this._peers.get().forEach(peer => {
+      peer._setLocalState(nextState);
     });
     // Update our subject so that anyone observing can get the update.
-    this.localStateSubject.next(nextState);
+    this._localState.set(nextState);
   }
 
   /**
@@ -447,23 +430,21 @@ export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
    * `localAudio` without exposing the `Subject` functions to the outside
    * world.
    */
-  private readonly localAudioSubject = new BehaviorSubject<AudioNode | null>(
-    null,
-  );
+  private readonly _localAudio = new LiveValue<AudioNode | null>(null);
 
   /**
-   * An observable of the state of our local audio. `null` if we don’t
+   * A stream of the state of our local audio. `null` if we don’t
    * currently have local audio. This may happen before any audio is
    * loaded, or when the user is muted.
    */
-  public readonly localAudio = this.localAudioSubject.asObservable();
+  public readonly localAudio = this._localAudio.asStream();
 
   /**
    * The current local audio at this point in time. `null` if the local audio
    * is currently unset.
    */
-  public get currentLocalAudio(): AudioNode | null {
-    return this.localAudioSubject.value;
+  public currentLocalAudio(): AudioNode | null {
+    return this._localAudio.get();
   }
 
   /**
@@ -477,19 +458,19 @@ export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
     // If we are not muted then we want to set the streaam. Otherwise we want to
     // store the stream on our instance so that when we are unmuted we can
     // pickup with that stream.
-    if (this.currentLocalState.isMuted === true) {
+    if (this.currentLocalState().isMuted === true) {
       this.mutedLocalAudio = audio;
       return;
     }
     // Add the stream to all of our peers.
-    this.peersSubject.value.forEach((peer, address) => {
-      if (peer !== undefined && address !== undefined) {
+    this._peers.get().forEach((peer, address) => {
+      if (address !== undefined) {
         // Add the audio to the peer.
         peer._setLocalAudio(audio);
       }
     });
     // Send the next local audio stream.
-    this.localAudioSubject.next(audio);
+    this._localAudio.set(audio);
   }
 
   /**
@@ -503,19 +484,19 @@ export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
   public unsetLocalAudio(): void {
     // If we are muted then we just want to unset our local media stream so that
     // we can continue where we left off when the mesh is unmuted.
-    if (this.currentLocalState.isMuted === true) {
+    if (this.currentLocalState().isMuted === true) {
       this.mutedLocalAudio = null;
       return;
     }
     // Add the stream to all of our peers.
-    this.peersSubject.value.forEach((peer, address) => {
-      if (peer !== undefined && address !== undefined) {
+    this._peers.get().forEach((peer, address) => {
+      if (address !== undefined) {
         // Unset the local audio.
         peer._unsetLocalAudio();
       }
     });
     // Send the next local audio stream.
-    this.localAudioSubject.next(null);
+    this._localAudio.set(null);
   }
 
   /**
@@ -532,11 +513,11 @@ export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
    */
   public muteLocalAudio(): void {
     // Make sure that we are not already muted.
-    if (this.currentLocalState.isMuted === true) {
+    if (this.currentLocalState().isMuted === true) {
       throw new Error('Stream is already muted.');
     }
     // Set the muted local stream to whatever is the current local stream.
-    this.mutedLocalAudio = this.currentLocalAudio;
+    this.mutedLocalAudio = this.currentLocalAudio();
     // Unset the local stream before we switch muted to true.
     this.unsetLocalAudio();
     // Update our local state to tell the world we are muted.
@@ -550,7 +531,7 @@ export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
    */
   public unmuteLocalAudio(): void {
     // Make sure that we are are not already unmuted.
-    if (this.currentLocalState.isMuted === false) {
+    if (this.currentLocalState().isMuted === false) {
       throw new Error('Stream is not muted.');
     }
     // Update our local state to tell the world we are not muted.

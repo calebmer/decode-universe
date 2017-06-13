@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Observable } from 'rxjs';
+import { Stream } from 'xstream';
+import dropRepeats from 'xstream/extra/dropRepeats';
 import { css } from 'glamor';
-import { ReactObservable } from './observable/ReactObservable';
+import { ReactStream } from './stream/ReactStream';
 import { AudioVisualization } from './audio/AudioVisualization';
 // import { AudioPeakMeter } from './audio/AudioPeakMeter';
 import { PeersMesh } from './rtc/PeersMesh';
@@ -24,12 +25,12 @@ export function StudioRoom({
 }: {
   mesh: PeersMesh;
   audioContext: AudioContext;
-  deviceID: Observable<string | null>;
+  deviceID: Stream<string | null>;
   onSelectDeviceID: (deviceID: string) => void;
-  disableAudio: Observable<boolean>;
+  disableAudio: Stream<boolean>;
   onDisableAudio: () => void;
   onEnableAudio: () => void;
-  localVolume: Observable<number>;
+  localVolume: Stream<number>;
   onLocalVolumeChange: (localVolume: number) => void;
   webURL: string | null;
 }) {
@@ -66,7 +67,7 @@ export function StudioRoom({
           <StudioRoomOptionsPanel
             name={mesh.localState
               .map(({ name }) => name)
-              .distinctUntilChanged()}
+              .compose(dropRepeats())}
             onChangeName={name => mesh.setLocalName(name)}
             deviceID={deviceID}
             onSelectDeviceID={onSelectDeviceID}
@@ -88,10 +89,10 @@ export function StudioRoom({
         >
           <StudioRoomParticipants inviteURL={webURL} />
           <p>
-            {ReactObservable.render(
+            {ReactStream.render(
               mesh.localState
                 .map(({ isMuted }) => isMuted)
-                .distinctUntilChanged(),
+                .compose(dropRepeats()),
               isMuted =>
                 <button onClick={isMuted ? handleUnmute : handleMute}>
                   {isMuted ? 'Unmute' : 'Mute'}
@@ -105,7 +106,7 @@ export function StudioRoom({
               backgroundColor: 'tomato',
             })}
           >
-            {ReactObservable.render(
+            {ReactStream.render(
               mesh.localAudio,
               node => node !== null && <AudioVisualization node={node} />,
             )}
@@ -117,7 +118,7 @@ export function StudioRoom({
               backgroundColor: 'black',
             })}
           >
-            {ReactObservable.render(
+            {ReactStream.render(
               mesh.localAudio,
               node =>
                 node !== null &&
@@ -129,7 +130,7 @@ export function StudioRoom({
               Invite guests to the recording:{' '}
               <code>{webURL}/?room={encodeURIComponent(mesh.roomName)}</code>
             </p>}
-          {ReactObservable.render(mesh.peers, peers =>
+          {ReactStream.render(mesh.peers, peers =>
             <ul>
               {peers
                 .map((peer, id) =>

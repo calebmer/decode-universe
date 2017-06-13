@@ -1,8 +1,8 @@
 import * as React from 'react';
-import { Observable } from 'rxjs';
+import { Stream } from 'xstream';
 import { css } from 'glamor';
 import { Fonts } from '@decode/styles';
-import { ReactObservable } from './observable/ReactObservable';
+import { ReactStream } from './stream/ReactStream';
 import { TextInput } from './input/TextInput';
 import { RangeInput } from './input/RangeInput';
 import { UserAudioDevicesSelect } from './audio/UserAudioDevicesSelect';
@@ -24,13 +24,13 @@ export function StudioRoomOptionsPanel({
   onDisableAudio,
   onEnableAudio,
 }: {
-  name: Observable<string>;
+  name: Stream<string>;
   onChangeName: (name: string) => void;
-  deviceID: Observable<string | null>;
+  deviceID: Stream<string | null>;
   onSelectDeviceID: (deviceID: string) => void;
-  localVolume: Observable<number>;
+  localVolume: Stream<number>;
   onLocalVolumeChange: (localVolume: number) => void;
-  disableAudio: Observable<boolean>;
+  disableAudio: Stream<boolean>;
   onDisableAudio: () => void;
   onEnableAudio: () => void;
 }) {
@@ -39,10 +39,10 @@ export function StudioRoomOptionsPanel({
 
   return (
     <Panel title="Options" width="16em">
-      {ReactObservable.render(name, name =>
+      {ReactStream.render(name, name =>
         <TextInput label="Name" value={name} onChange={onChangeName} />,
       )}
-      {ReactObservable.render(deviceID, deviceID =>
+      {ReactStream.render(deviceID, deviceID =>
         <UserAudioDevicesSelect
           kind="input"
           deviceID={deviceID}
@@ -50,7 +50,7 @@ export function StudioRoomOptionsPanel({
         />,
       )}
       {enableGainInput &&
-        ReactObservable.render(localVolume, localVolume =>
+        ReactStream.render(localVolume, localVolume =>
           <RangeInput
             label="Gain"
             min={0}
@@ -73,7 +73,7 @@ export function StudioRoomOptionsPanel({
             padding: '1em',
           })}
         >
-          {ReactObservable.render(disableAudio, disableAudio =>
+          {ReactStream.render(disableAudio, disableAudio =>
             <input
               type="checkbox"
               checked={disableAudio}

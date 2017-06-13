@@ -12,7 +12,7 @@
     "glamor": "2.20.25",
     "immutable": "3.8.1",
     "react": "15.5.4",
-    "rxjs": "5.4.0"
+    "xstream": "10.8.0"
   },
   "devDependencies": {
     "@types/debug": "0.0.29",

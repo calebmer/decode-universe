@@ -1,8 +1,8 @@
 import * as path from 'path';
 import { createReadStream, createWriteStream } from 'fs';
 import * as stream from 'stream';
-import { Observable, Subject } from 'rxjs';
 import * as moment from 'moment';
+import { Stream } from 'xstream';
 import { slugify } from '@decode/js-utils';
 import { RecordingStorage } from './RecordingStorage';
 import { RecorderStorage } from './RecorderStorage';
@@ -10,15 +10,15 @@ import { RecorderStorage } from './RecorderStorage';
 /**
  * Export all of a recording’s assets to the provided directory.
  *
- * Returns a hot observable that emits the export progress with numbers in the
- * range of 0 to 1. Unsubscribing from the observable does not cancel the
+ * Returns a stream that emits the export progress with numbers in the
+ * range of 0 to 1. Unsubscribing from the stream does not cancel the
  * export!
  */
 // This needs to be called `doExport` because `export` is a syntax error.
 async function doExport(
   recording: RecordingStorage,
   exportDirectoryPath: string,
-): Promise<Observable<number>> {
+): Promise<Stream<number>> {
   // Get the file names for all our recorders.
   const recorderFileNames = getRecorderFileNames(recording);
   // Wait for all of the recorders to export.
@@ -42,12 +42,12 @@ async function doExport(
   const totalByteSize = byteProgresses
     .map(({ byteSize }) => byteSize)
     .reduce((a, b) => a + b, 0);
-  // Merge all of the observables so that whenever we get some new bytes they
-  // all show up on the observable.
+  // Merge all of the streams so that whenever we get some new bytes they
+  // all show up on the stream.
   return (
-    Observable.merge(...byteProgresses.map(({ bytes }) => bytes))
-      // Scans the observable by summing up all of the bytes as they come in.
-      .scan((currentBytes, bytes) => currentBytes + bytes, 0)
+    Stream.merge(...byteProgresses.map(({ bytes }) => bytes))
+      // Folds the stream by summing up all of the bytes as they come in.
+      .fold((currentBytes, bytes) => currentBytes + bytes, 0)
       // Divide our current bytes count with the total byte size to get the
       // progress from 0 to 1.
       .map(currentBytes => currentBytes / totalByteSize)
@@ -148,7 +148,7 @@ async function exportRecorderToWAV(
 ): Promise<
   {
     byteSize: number;
-    bytes: Observable<number>;
+    bytes: Stream<number>;
   }
 > {
   // Get the byte size of our raw file. We will use this to write our header.
@@ -220,11 +220,11 @@ async function exportRecorderToWAV(
     // Write the header to the write stream.
     writable.write(Buffer.from(header));
   }
-  // Create a subject to push all of the byte counts from our reporter to.
-  const bytesSubject = new Subject<number>();
+  // Create a stream to push all of the byte counts from our reporter to.
+  const bytes = Stream.create<number>();
   // Create a new reporter which will report the bytes passing through to our
   // subject.
-  const reporter = new ByteReporter(bytesSubject);
+  const reporter = new ByteReporter(bytes);
   // Create a stream that will read our raw file.
   createReadStream(recording.rawFilePath)
     // Pipe the stream into a transformer which will immeadiately pass through
@@ -240,12 +240,12 @@ async function exportRecorderToWAV(
     .pipe(writable)
     // When we finish or get an error then complete or error out our bytes
     // subject.
-    .on('finish', () => bytesSubject.complete())
-    .on('error', (error: Error) => bytesSubject.error(error));
-  // Return our full byte size and the bytes observable.
+    .on('finish', () => bytes.shamefullySendComplete())
+    .on('error', (error: Error) => bytes.shamefullySendError(error));
+  // Return our full byte size and the bytes stream.
   return {
     byteSize,
-    bytes: bytesSubject.asObservable(),
+    bytes,
   };
 }
 
@@ -304,16 +304,16 @@ class ByteReporter extends stream.Transform {
    * We will output our bytes here when we have enough that we feel like an emit
    * is a good idea.
    */
-  private readonly bytesSubject: Subject<number>;
+  private readonly bytes: Stream<number>;
 
   /**
    * The buffered byte count which we will periodically flush to `bytesSubject`.
    */
   private bufferedByteCount = 0;
 
-  constructor(bytesSubject: Subject<number>) {
+  constructor(bytes: Stream<number>) {
     super();
-    this.bytesSubject = bytesSubject;
+    this.bytes = bytes;
     // Schedule a byte flush for 100ms from now.
     this.scheduleFlushBytes();
   }
@@ -369,7 +369,7 @@ class ByteReporter extends stream.Transform {
    */
   private flushBytes(): void {
     // Flush our bytes to the subject.
-    this.bytesSubject.next(this.bufferedByteCount);
+    this.bytes.shamefullySendNext(this.bufferedByteCount);
     // Reset the byte count back to 0.
     this.bufferedByteCount = 0;
   }

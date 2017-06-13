@@ -1,6 +1,6 @@
-import { Observable } from 'rxjs';
+import { Stream } from 'xstream';
 import * as React from 'react';
-import { ReactObservable } from '@decode/studio-core';
+import { ReactStream } from '@decode/studio-core';
 import { RecordingStorage } from '../shared/storage/RecordingStorage';
 
 export const DirectoryExportProgress = ({
@@ -8,13 +8,13 @@ export const DirectoryExportProgress = ({
   progress,
 }: {
   recording: RecordingStorage;
-  progress: Observable<number>;
+  progress: Stream<number>;
 }) =>
   <div>
     <p>
       {new Date(recording.startedAt).toDateString()}
     </p>
-    {ReactObservable.render(progress, progress =>
+    {ReactStream.render(progress, progress =>
       <div
         style={{
           width: `${progress * 100}%`,

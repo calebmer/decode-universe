@@ -16,6 +16,6 @@ All of our custom typings are in `./typings`. We have some ambient typings (in t
 
 Ambient typings are those types which exist in the environment. This includes extensions to DOM APIs that are not typed, and some Decode specific utility types like the global `DEV` boolean or the `mixed` type.
 
-Module typings are structured so that they may be imported from. They may either be typings for modules which do not have a `@types` package, or they may replace the native types provided with the package. For example, we have custom typings for `rxjs` and `immutable`. The default types for these two packages happened to be unsatisfactory for our purposes so we wrote our own.
+Module typings are structured so that they may be imported from. They may either be typings for modules which do not have a `@types` package, or they may replace the native types provided with the package. For example, we have custom typings `immutable` and used to have custom typings for `rxjs`. The default types for these two packages happened to be unsatisfactory for our purposes so we wrote our own.
 
 We use these typings as a way to quickly add types for JavaScript APIs without going through the long contribution process of: proposing a change, making the change, bikeshedding with maintainers, merging the change, waiting for the change to be released, and finally updating our code. Periodically we should consider contributing these typings back to open source.

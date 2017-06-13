@@ -95,7 +95,7 @@ export class RemoteRecorder extends EventEmitter<Recorder.EventMap>
   public readonly name: string;
 
   /**
-   * The audio sample rate for the audio data emit from the `stream` observable.
+   * The audio sample rate for the audio data emit.
    */
   public readonly sampleRate: number;
 
