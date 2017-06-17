@@ -1,11 +1,12 @@
 {
-  "private": true,
-  "name": "@decode/studio-signal-server",
-  "version": "0.0.0-versionless",
-  "main": "./src/index.ts",
-  "typings": "./src/index.ts",
+  "decode": {
+    "library": true,
+    "target": "node",
+    "universeDependencies": [
+      "~/studio/signal/shared"
+    ]
+  },
   "dependencies": {
-    "@decode/studio-signal-client": "0.0.0-versionless",
     "socket.io": "1.7.4"
   },
   "devDependencies": {
