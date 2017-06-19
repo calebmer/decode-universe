@@ -1,0 +1,34 @@
+// This is the broadest possible `tsconfig.json`. We only use this configuration
+// for editor integrations. For a strict type check we have other scripts in
+// `workflow` which should be used.
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "jsx": "react",
+    "moduleResolution": "node",
+    "forceConsistentCasingInFileNames": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "experimentalDecorators": true,
+    "target": "esnext",
+    "lib": ["esnext", "dom"],
+    "baseUrl": ".",
+    "paths": {
+      // Absolute imports using the `~` should import from universe root.
+      "~/*": ["./*"],
+      // We provide custom typings for a few modules. First check to see if
+      // those types may be used.
+      "*": ["./workflow/typings/modules/*/index.d.ts"]
+    }
+  },
+  "exclude": [
+    "__build__",
+    "node_modules"
+  ]
+}
