@@ -24,7 +24,7 @@
       "~/*": ["./*"],
       // We provide custom typings for a few modules. First check to see if
       // those types may be used.
-      "*": ["./workflow/typings/modules/*/index.d.ts"]
+      "*": ["./typings/modules/*/index.d.ts"]
     }
   },
   "exclude": [

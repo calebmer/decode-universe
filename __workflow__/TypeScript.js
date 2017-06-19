@@ -239,12 +239,12 @@ async function createCompilerOptions(workspace) {
 /**
  * A path to the directory that contains custom module typings.
  */
-const TYPED_MODULES_PATH = path.resolve(__dirname, './typings/modules');
+const TYPED_MODULES_PATH = path.resolve(__dirname, '../typings/modules');
 
 /**
  * A path to the directory that contains custom ambient typings.
  */
-const TYPINGS_AMBIENT_PATH = path.resolve(__dirname, './typings/ambient');
+const TYPINGS_AMBIENT_PATH = path.resolve(__dirname, '../typings/ambient');
 
 /**
  * Returns a map of module names to paths for all of the custom module typings
