@@ -15,7 +15,7 @@ async function compile(workspace, _compiling = new Map()) {
   // If we were given an array of workspaces instead of a single workspace then
   // we want to compile all of the workspaces sharing the `_compiling` map.
   if (Array.isArray(workspace)) {
-    return await Promise.all(
+    await Promise.all(
       workspace.map(workspace => {
         if (_compiling.has(workspace)) {
           return _compiling.get(workspace);
@@ -26,6 +26,7 @@ async function compile(workspace, _compiling = new Map()) {
         }
       }),
     );
+    return;
   }
   // Compile all of the workspace’s dependencies making sure that each
   // dependency is not compiled twice.
@@ -66,14 +67,6 @@ async function compile(workspace, _compiling = new Map()) {
   );
   // Report the diagnostics to the user.
   reportDiagnostics(workspace, diagnostics);
-  // Return everything we created.
-  return {
-    workspace,
-    compilerOptions,
-    ambientSourcePaths,
-    sourcePaths,
-    diagnostics,
-  };
 }
 
 /**
@@ -105,6 +98,9 @@ function compileProgram(allSourcePaths, compilerOptions) {
   return diagnostics;
 }
 
+/**
+ * Reports TypeScript diagnostics in a stylish format.
+ */
 function reportDiagnostics(workspace, diagnostics) {
   // Log out the workspace path that we are compiling.
   console.log(
@@ -125,78 +121,10 @@ function reportDiagnostics(workspace, diagnostics) {
   process.stdout.write(output);
 }
 
-function watch(workspaces) {
-  if (!Array.isArray(workspaces)) {
-    workspaces = [workspaces];
-  }
-  let compilations = freshCompile();
-
-  for (const workspace of workspaces) {
-    const dependants = workspace.getKnownDependants();
-    const watcher = workspace.watchSourcePaths();
-
-    watcher.on('change', sourcePath => {
-      compilations = compilations
-        .then(compilations => {
-          logWatchStatus('Changes detected, recompiling...');
-
-          const recompiled = new Set();
-
-          {
-            const compilation = compilations.get(workspace);
-            recompile(compilation);
-            recompiled.add(workspace);
-          }
-
-          for (const dependant of dependants) {
-            recompile(compilations.get(dependant));
-            recompiled.add(dependant);
-          }
-
-          for (const [workspace, compilation] of compilations) {
-            if (!recompiled.has(workspace)) {
-              reportDiagnostics(workspace, compilation.diagnostics);
-            }
-          }
-
-          logWatchStatus('Waiting for changes...');
-
-          return compilations;
-        })
-        .catch(error => {
-          logWatchStatus('Recompile failed performing a fresh compile...');
-          console.error(error.stack);
-          return freshCompile();
-        });
-    });
-  }
-
-  function logWatchStatus(text) {
-    console.log(chalk.cyan.italic(text));
-  }
-
-  async function freshCompile() {
-    const compilations = await compile(workspaces);
-    logWatchStatus('Waiting for changes...');
-    return new Map(
-      compilations.map(compilation => [compilation.workspace, compilation]),
-    );
-  }
-
-  function recompile(compilation) {
-    compilation.diagnostics = compileProgram(
-      [...compilation.ambientSourcePaths, ...compilation.sourcePaths],
-      compilation.compilerOptions,
-    );
-    reportDiagnostics(compilation.workspace, compilation.diagnostics);
-  }
-}
-
-Workspace.loadAll().then(watch);
+Workspace.loadAll().then(compile).catch(error => console.error(error.stack));
 
 module.exports = {
   compile,
-  watch,
 };
 
 /**
@@ -211,7 +139,7 @@ async function createCompilerOptions(workspace) {
   return {
     // Configure how the code will be emit.
     rootDir: workspace.absolutePath,
-    outDir: `${workspace.buildPath}/compiled`,
+    outDir: `${workspace.buildPath}/__compiled__`,
     declaration: true,
     sourceMap: true,
     // Some options that affect code transformation.
@@ -280,13 +208,13 @@ async function createCompilerOptions(workspace) {
           `${path.relative(
             workspace.absolutePath,
             dependency.buildPath,
-          )}/compiled/index.d.ts`,
+          )}/__compiled__/index.d.ts`,
         ];
         paths[`${dependency.path}/*`] = [
           `${path.relative(
             workspace.absolutePath,
             dependency.buildPath,
-          )}/compiled/*`,
+          )}/__compiled__/*`,
         ];
         return paths;
       }, {}),
