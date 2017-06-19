@@ -16,7 +16,6 @@
     "fs-promise": "^2.0.2",
     "glamor": "^2.20.25",
     "glob": "^7.1.2",
-    "glob-watcher": "^3.2.0",
     "immutable": "^3.8.1",
     "moment": "^2.18.1",
     "prettier": "^1.4.2",

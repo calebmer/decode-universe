@@ -1,6 +1,5 @@
 const fs = require('fs-promise');
 const glob = require('glob');
-const globWatcher = require('glob-watcher');
 const Universe = require('./Universe');
 const Target = require('./Target');
 
@@ -147,13 +146,6 @@ class Workspace {
         }
       });
     });
-  }
-
-  /**
-   * Return a watcher instance for our source paths.
-   */
-  watchSourcePaths() {
-    return globWatcher(this._sourcePathsGlob);
   }
 }
 
