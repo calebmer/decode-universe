@@ -7,7 +7,7 @@
 echo ""
 echo "[1/2] Cleaning existing node_modules."
 rm -rf node_modules
-rm -rf packages/*/node_modules
+rm -rf workspaces/*/node_modules
 
 echo ""
 echo "[2/2] Installing node_modules with yarn."

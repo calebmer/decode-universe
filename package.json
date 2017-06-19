@@ -3,7 +3,7 @@
   "name": "@decode/universe",
   "version": "0.0.0-versionless",
   "workspaces": [
-    "packages/*"
+    "workspaces/*"
   ],
   "dependencies": {
     "prettier": "1.4.2",
