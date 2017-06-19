@@ -23,7 +23,7 @@ class Workspace {
       return ALL_WORKSPACES.get(path);
     }
     // Otherwise start loading the workspace and add it to our workspaces cache.
-    const workspace = this._load(path);
+    const workspace = Workspace._load(path);
     ALL_WORKSPACES.set(path, workspace);
     return workspace;
   }

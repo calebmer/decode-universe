@@ -7,9 +7,9 @@ const Target = require('./Target');
 const Workspace = require('./Workspace');
 
 /**
- * Compiles a workspace and all of the workspace’s children.
+ * Checks a workspace and all of the workspace’s children.
  */
-async function compile(workspace, _compiling = new Map()) {
+async function check(workspace, _compiling = new Map()) {
   // If we were given an array of workspaces instead of a single workspace then
   // we want to compile all of the workspaces sharing the `_compiling` map.
   if (Array.isArray(workspace)) {
@@ -18,7 +18,7 @@ async function compile(workspace, _compiling = new Map()) {
         if (_compiling.has(workspace)) {
           return _compiling.get(workspace);
         } else {
-          const compiling = compile(workspace, _compiling);
+          const compiling = check(workspace, _compiling);
           _compiling.set(workspace, compiling);
           return compiling;
         }
@@ -36,7 +36,7 @@ async function compile(workspace, _compiling = new Map()) {
       if (_compiling.has(dependency)) {
         return _compiling.get(dependency);
       } else {
-        const compiling = compile(dependency, _compiling);
+        const compiling = check(dependency, _compiling);
         _compiling.set(dependency, compiling);
         return compiling;
       }
@@ -59,7 +59,7 @@ async function compile(workspace, _compiling = new Map()) {
     [],
   );
   // Compile the TypeScript program.
-  const diagnostics = compileProgram(
+  const diagnostics = checkProgram(
     [...sourcePaths, ...ambientSourcePaths],
     compilerOptions,
   );
@@ -71,7 +71,7 @@ async function compile(workspace, _compiling = new Map()) {
  * Compiles a TypeScript program. Also accepts a name to include print when
  * logging the results.
  */
-function compileProgram(allSourcePaths, compilerOptions) {
+function checkProgram(allSourcePaths, compilerOptions) {
   // Create the TypeScript program object.
   const program = ts.createProgram(allSourcePaths, compilerOptions);
   // First get and report any syntactic errors.
@@ -120,10 +120,8 @@ function reportDiagnostics(workspace, diagnostics) {
   process.stdout.write(output);
 }
 
-Workspace.loadAll().then(compile).catch(error => console.error(error.stack));
-
 module.exports = {
-  compile,
+  check,
 };
 
 /**
@@ -138,7 +136,7 @@ async function createCompilerOptions(workspace) {
   return {
     // Configure how the code will be emit.
     rootDir: workspace.absolutePath,
-    outDir: `${workspace.buildPath}/__compiled__`,
+    outDir: `${workspace.buildPath}/__typings__`,
     declaration: true,
     // Some options that affect code transformation.
     newLine: ts.NewLineKind.LineFeed,
@@ -206,13 +204,13 @@ async function createCompilerOptions(workspace) {
           `${path.relative(
             workspace.absolutePath,
             dependency.buildPath,
-          )}/__compiled__/index.d.ts`,
+          )}/__typings__/index.d.ts`,
         ];
         paths[`${dependency.path}/*`] = [
           `${path.relative(
             workspace.absolutePath,
             dependency.buildPath,
-          )}/__compiled__/*`,
+          )}/__typings__/*`,
         ];
         return paths;
       }, {}),
