@@ -1,0 +1,15 @@
+{
+  "target": "web",
+  "library": true,
+  "dependencies": [
+    "~/utils/universal",
+    "~/design/styles",
+    "~/studio/signal/client",
+    "~/studio/signal/shared",
+    "debug",
+    "glamor",
+    "immutable",
+    "react",
+    "xstream"
+  ]
+}

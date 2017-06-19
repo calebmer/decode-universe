@@ -1,0 +1,16 @@
+{
+  "target": "electron",
+  "library": false,
+  "dependencies": [
+    "~/utils/universal",
+    "~/utils/react",
+    "~/studio/core",
+    "debug",
+    "immutable",
+    "moment",
+    "react",
+    "react-dom",
+    "uuid",
+    "xstream"
+  ]
+}

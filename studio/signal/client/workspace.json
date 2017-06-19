@@ -1,0 +1,10 @@
+{
+  "target": "universal",
+  "library": false,
+  "dependencies": [
+    "~/utils/universal",
+    "~/studio/signal/shared",
+    "debug",
+    "socket.io-client"
+  ]
+}

@@ -4,6 +4,7 @@
 # Build Artifacts
 build/
 coverage/
+__build__/
 
 # Node.js
 node_modules/

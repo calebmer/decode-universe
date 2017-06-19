@@ -1,0 +1,5 @@
+{
+  "target": "universal",
+  "library": true,
+  "dependencies": []
+}

@@ -1,4 +1,5 @@
-import { Peer, RemoteRecordee } from '@decode/studio-core';
+import { Peer } from '~/studio/core/rtc/Peer';
+import { RemoteRecordee } from '~/studio/core/rtc/audio/RemoteRecordee';
 
 /**
  * A peer that might be a host, but we don’t actually know. We will only know

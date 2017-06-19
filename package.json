@@ -2,12 +2,33 @@
   "private": true,
   "name": "@decode/universe",
   "version": "0.0.0-versionless",
-  "workspaces": [
-    "*"
-  ],
   "dependencies": {
-    "prettier": "1.4.2",
-    "tslib": "1.7.1",
-    "typescript": "2.3.4"
+    "@types/debug": "^0.0.29",
+    "@types/node": "^7.0.27",
+    "@types/react": "^15.0.29",
+    "@types/react-dom": "^15.5.0",
+    "@types/socket.io": "^1.4.29",
+    "@types/socket.io-client": "^1.4.29",
+    "@types/uuid": "^2.0.30",
+    "chalk": "^1.1.3",
+    "debug": "^2.6.8",
+    "electron-devtools-installer": "^2.2.0",
+    "fs-promise": "^2.0.2",
+    "glamor": "^2.20.25",
+    "glob": "^7.1.2",
+    "glob-watcher": "^3.2.0",
+    "immutable": "^3.8.1",
+    "moment": "^2.18.1",
+    "prettier": "^1.4.2",
+    "querystring": "^0.2.0",
+    "react": "^15.6.1",
+    "react-dom": "^15.6.1",
+    "socket.io": "^2.0.3",
+    "socket.io-client": "^2.0.3",
+    "tslib": "^1.7.1",
+    "typescript": "^2.3.4",
+    "uuid": "^3.0.1",
+    "webrtc-adapter": "^4.0.2",
+    "xstream": "^10.8.0"
   }
 }

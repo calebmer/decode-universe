@@ -1,17 +1,17 @@
 import * as createDebugger from 'debug';
 import * as socketIO from 'socket.io-client';
-import { EventEmitter } from '@decode/js-utils';
+import { EventEmitter } from '~/utils/universal/EventEmitter';
 import {
   JoinRequestMessage,
   JoinResponseMessage,
   SignalOutgoingMessage,
   SignalIncomingMessage,
   Signal,
-} from './MessageTypes';
+} from '~/studio/signal/shared/MessageTypes';
 
 const debug = createDebugger('@decode/studio-signal-client');
 
-export class SignalClient extends EventEmitter<SignalClient.EventMap> {
+class SignalClient extends EventEmitter<SignalClient.EventMap> {
   /**
    * The `socket.io` signal server that we will connect to.
    */
@@ -102,8 +102,10 @@ export class SignalClient extends EventEmitter<SignalClient.EventMap> {
   }
 }
 
-export namespace SignalClient {
+namespace SignalClient {
   export interface EventMap {
     signal: { from: string; signal: Signal };
   }
 }
+
+export default SignalClient;

@@ -1,0 +1,7 @@
+{
+  "target": "web",
+  "library": true,
+  "dependencies": [
+    "react"
+  ]
+}

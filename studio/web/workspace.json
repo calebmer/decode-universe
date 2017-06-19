@@ -1,0 +1,14 @@
+{
+  "target": "web",
+  "library": false,
+  "dependencies": [
+    "~/utils/universal",
+    "~/design/styles",
+    "~/studio/core",
+    "immutable",
+    "querystring",
+    "react",
+    "react-dom",
+    "webrtc-adapter"
+  ]
+}

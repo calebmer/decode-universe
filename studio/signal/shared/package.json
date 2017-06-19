@@ -1,9 +1,0 @@
-{
-  "decode": {
-    "library": true,
-    "target": "universal",
-    "universeDependencies": []
-  },
-  "dependencies": {},
-  "devDependencies": {}
-}

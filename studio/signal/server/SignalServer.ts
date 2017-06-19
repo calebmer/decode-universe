@@ -3,7 +3,7 @@ import {
   JoinResponseMessage,
   SignalOutgoingMessage,
   SignalIncomingMessage,
-} from '@decode/studio-signal-client';
+} from '~/studio/signal/shared/MessageTypes';
 
 /**
  * Sets up a socket with everything it needs to connect and communicate with
@@ -61,6 +61,8 @@ function onConnection(socket: SocketIO.Socket): void {
   });
 }
 
-export const SignalServer = {
+const SignalServer = {
   onConnection,
 };
+
+export default SignalServer;

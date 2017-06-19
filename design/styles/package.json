@@ -1,7 +1,0 @@
-{
-  "private": true,
-  "name": "@decode/styles",
-  "version": "0.0.0-versionless",
-  "main": "./src/index.ts",
-  "typings": "./src/index.ts"
-}
