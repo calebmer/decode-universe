@@ -46,19 +46,12 @@ async function check(workspace, _compiling = new Map()) {
   // Create the compiler options.
   const compilerOptions = await createCompilerOptions(workspace);
   // Get all of the workspace’s source paths.
-  const [sourcePaths, ...nestedAmbientSourcePaths] = await Promise.all([
+  const [sourcePaths, ambientSourcePaths] = await Promise.all([
     // Include all of the workspace source paths.
     workspace.getSourcePaths(),
     // Get all of the custom ambient typings for our workspace.
-    ...Array.from(Target.resolveSupers(workspace.target)).map(
-      getCustomAmbientTypings,
-    ),
+    getCustomAmbientTypings(workspace.target),
   ]);
-  // Flattens the nested ambient sources path array.
-  const ambientSourcePaths = nestedAmbientSourcePaths.reduce(
-    (a, b) => a.concat(b),
-    [],
-  );
   // Compile the TypeScript program.
   const diagnostics = checkProgram(
     [...sourcePaths, ...ambientSourcePaths],
@@ -263,10 +256,16 @@ async function getCustomModuleTypings() {
  * Returns an array of custom ambient typing files for a given source path.
  */
 async function getCustomAmbientTypings(target) {
-  const ambientTypingsPath = `${TYPINGS_AMBIENT_PATH}/${target}`;
-  if (!await fs.exists(ambientTypingsPath)) {
-    return [];
-  }
-  const names = await fs.readdir(ambientTypingsPath);
-  return names.map(name => `${ambientTypingsPath}/${name}`);
+  const targets = Array.from(Target.resolveSupers(target));
+  const nestedPaths = await Promise.all(
+    targets.map(async target => {
+      const ambientTypingsPath = `${TYPINGS_AMBIENT_PATH}/${target}`;
+      if (!await fs.exists(ambientTypingsPath)) {
+        return [];
+      }
+      const names = await fs.readdir(ambientTypingsPath);
+      return names.map(name => `${ambientTypingsPath}/${name}`);
+    }),
+  );
+  return nestedPaths.reduce((a, b) => a.concat(b), []);
 }
