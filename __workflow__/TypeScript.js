@@ -13,22 +13,23 @@ async function check(workspace, _compiling = new Map()) {
   // If we were given an array of workspaces instead of a single workspace then
   // we want to compile all of the workspaces sharing the `_compiling` map.
   if (Array.isArray(workspace)) {
-    await Promise.all(
-      workspace.map(workspace => {
-        if (_compiling.has(workspace)) {
-          return _compiling.get(workspace);
-        } else {
-          const compiling = check(workspace, _compiling);
-          _compiling.set(workspace, compiling);
-          return compiling;
-        }
-      }),
+    return new Set(
+      (await Promise.all(
+        workspace.map(workspace => {
+          if (_compiling.has(workspace)) {
+            return _compiling.get(workspace);
+          } else {
+            const compiling = check(workspace, _compiling);
+            _compiling.set(workspace, compiling);
+            return compiling;
+          }
+        }),
+      )).reduce((a, b) => [...a, ...b], []),
     );
-    return;
   }
   // Compile all of the workspace’s dependencies making sure that each
   // dependency is not compiled twice.
-  await Promise.all(
+  const dependencyResults = (await Promise.all(
     workspace.dependencies.map(dependency => {
       // If we have already started compiling this dependency then we want to
       // return that promise. Otherwise we should start compiling and add it to
@@ -41,7 +42,7 @@ async function check(workspace, _compiling = new Map()) {
         return compiling;
       }
     }),
-  );
+  )).reduce((a, b) => [...a, ...b], []);
   // Create the compiler options.
   const compilerOptions = await createCompilerOptions(workspace);
   // Get all of the workspace’s source paths.
@@ -65,6 +66,9 @@ async function check(workspace, _compiling = new Map()) {
   );
   // Report the diagnostics to the user.
   reportDiagnostics(workspace, diagnostics);
+  // Return the diagnostics that we got combined with the diagnostics of our
+  // dependencies.
+  return new Set([...dependencyResults, { diagnostics }]);
 }
 
 /**
