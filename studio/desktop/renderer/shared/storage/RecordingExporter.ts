@@ -145,12 +145,10 @@ export const RecordingExporter = {
 async function exportRecorderToWAV(
   recording: RecorderStorage,
   outputFilePath: string,
-): Promise<
-  {
-    byteSize: number;
-    bytes: Stream<number>;
-  }
-> {
+): Promise<{
+  byteSize: number;
+  bytes: Stream<number>;
+}> {
   // Get the byte size of our raw file. We will use this to write our header.
   const byteSize = await recording.getByteLength();
   // Compute the number of silence samples we will need to add to the start of

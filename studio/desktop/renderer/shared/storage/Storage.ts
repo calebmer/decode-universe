@@ -31,11 +31,7 @@ export class Storage {
    */
   public readonly directory: RecordingDirectoryStorage;
 
-  private constructor({
-    directory,
-  }: {
-    directory: RecordingDirectoryStorage;
-  }) {
+  private constructor({ directory }: { directory: RecordingDirectoryStorage }) {
     this.directory = directory;
   }
 }

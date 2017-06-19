@@ -20,10 +20,10 @@ declare class MediaRecorder extends EventTarget {
   constructor(
     stream: MediaStream,
     options?: {
-      mimeType?: string,
-      audioBitsPerSecond?: number,
-      videoBitsPerSecond?: number,
-      bitsPerSecond?: number,
+      mimeType?: string;
+      audioBitsPerSecond?: number;
+      videoBitsPerSecond?: number;
+      bitsPerSecond?: number;
     },
   );
 
@@ -48,5 +48,9 @@ declare class MediaRecorder extends EventTarget {
   onstart: (this: MediaRecorder, ev: Event) => any;
   onstop: (this: MediaRecorder, ev: Event) => any;
 
-  addEventListener<K extends keyof MediaRecorderEventMap>(type: K, listener: (this: MediaRecorder, ev: MediaRecorderEventMap[K]) => any, useCapture?: boolean): void;
+  addEventListener<K extends keyof MediaRecorderEventMap>(
+    type: K,
+    listener: (this: MediaRecorder, ev: MediaRecorderEventMap[K]) => any,
+    useCapture?: boolean,
+  ): void;
 }

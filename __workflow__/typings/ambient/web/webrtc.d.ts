@@ -1,5 +1,5 @@
 // Extend the `MediaDevices` interface provided by the TypeScript lib.
-declare interface MediaDevices {
+interface MediaDevices {
   /**
    * https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/enumerateDevices
    */
@@ -7,12 +7,15 @@ declare interface MediaDevices {
 }
 
 // Extend the `RTCPeerConnection` interface provided by the TypeScript lib.
-declare interface RTCPeerConnection {
+interface RTCPeerConnection {
   ondatachannel: (this: RTCPeerConnection, ev: RTCDataChannelEvent) => any;
   /**
    * https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/createDataChannel
    */
-  createDataChannel(label: string, options?: RTCDataChannelInit): RTCDataChannel;
+  createDataChannel(
+    label: string,
+    options?: RTCDataChannelInit,
+  ): RTCDataChannel;
 }
 
 // Extend the `RTCPeerConnectionEventMap` interface provided by the TypeScript lib.
@@ -24,12 +27,12 @@ interface RTCPeerConnectionEventMap {
  * https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/createDataChannel#RTCDataChannelInit_dictionary
  */
 declare type RTCDataChannelInit = {
-  ordered?: boolean,
-  maxPacketLifeTime?: number,
-  maxRetransmits?: number,
-  protocol?: string,
-  negotiated?: boolean,
-  id?: number,
+  ordered?: boolean;
+  maxPacketLifeTime?: number;
+  maxRetransmits?: number;
+  protocol?: string;
+  negotiated?: boolean;
+  id?: number;
 };
 
 interface RTCDataChannelEventMap {
@@ -43,7 +46,7 @@ interface RTCDataChannelEventMap {
 /**
  * https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel
  */
-declare interface RTCDataChannel extends EventTarget {
+interface RTCDataChannel extends EventTarget {
   binaryType: string;
   readonly bufferedAmount: number;
   readonly bufferedAmountLowThreshold: number;
@@ -65,12 +68,16 @@ declare interface RTCDataChannel extends EventTarget {
   onmessage: (this: RTCDataChannel, ev: MessageEvent) => any;
   onopen: (this: RTCDataChannel, ev: Event) => any;
 
-  addEventListener<K extends keyof RTCDataChannelEventMap>(type: K, listener: (this: RTCDataChannel, ev: RTCDataChannelEventMap[K]) => any, useCapture?: boolean): void;
+  addEventListener<K extends keyof RTCDataChannelEventMap>(
+    type: K,
+    listener: (this: RTCDataChannel, ev: RTCDataChannelEventMap[K]) => any,
+    useCapture?: boolean,
+  ): void;
 }
 
 /**
  * https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannelEvent
  */
-declare interface RTCDataChannelEvent extends Event {
+interface RTCDataChannelEvent extends Event {
   readonly channel: RTCDataChannel;
 }
