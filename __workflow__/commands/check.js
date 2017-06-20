@@ -6,7 +6,6 @@ const TypeScript = require('../TypeScript');
 const universePaths = process.argv.slice(2);
 
 let workspaces;
-
 if (universePaths.length > 0) {
   workspaces = Promise.all(universePaths.map(Workspace.load));
 } else {

@@ -57,8 +57,8 @@ function createWebConfig(workspace, development = false) {
       // Electron apps will have two entry points so we look in the `renderer`
       // directory for the main file.
       Target.matches(workspace.target, 'electron')
-        ? `${workspace.absolutePath}/renderer/main.ts`
-        : `${workspace.absolutePath}/main.ts`,
+        ? `${workspace.absolutePath}/renderer/main`
+        : `${workspace.absolutePath}/main`,
     ],
     output: {
       // Put the final output in our workspace’s build directory. If this is
@@ -118,9 +118,10 @@ function createWebConfig(workspace, development = false) {
           test: /\.(ts|tsx)$/,
           loader: require.resolve('ts-loader'),
           options: {
-            // We do not want to load a config file. We only want to transpile
-            // in this loader. Type checking is done elsewhere.
-            configFileName: null,
+            // Don’t log. Since we are just transpiling TypeScript here we don’t
+            // need to see any output. It also messes with our progress bar.
+            silent: true,
+            configFilePath: null,
             // Here is where we get to say that we only want to transpile.
             transpileOnly: true,
             // Provide some minimal compiler options to aid in the transpilation
@@ -131,16 +132,18 @@ function createWebConfig(workspace, development = false) {
               // Create source maps, but only in production.
               sourceMap: !development,
               // Transpile JSX into the React syntax.
-              jsx: ts.JsxEmit.React,
+              jsx: 'react',
               // Import all helpers from `tslib`.
               importHelpers: true,
+              // Always use ES2015 modules even in an ES5 environment.
+              module: 'es2015',
               // Build for ES5 unless we are in Electron or development. Then we
               // are most likely using the latest version web browser version
               // and have access to all of the nice ES2015 features.
               target: development ||
                 Target.matches(workspace.target, 'electron')
-                ? ts.ScriptTarget.ES2015
-                : ts.ScriptTarget.ES5,
+                ? 'es2015'
+                : 'es5',
             },
           },
         },
@@ -202,17 +205,21 @@ function createWebConfig(workspace, development = false) {
             new webpack.optimize.ModuleConcatenationPlugin(),
             // Minify the code with Babili which understands ES2015+ syntax
             // unlike UglifyJS.
-            new BabiliPlugin(),
+            new BabiliPlugin({ comments: false }),
           ]),
     ],
     // Turn off performance hints during development because we don't do any
     // splitting or minification in interest of speed. These warnings become
     // cumbersome.
     performance: {
-      hints: !development,
+      hints: !development ? 'warning' : false,
     },
   };
 }
+
+module.exports = {
+  createWebConfig,
+};
 
 /**
  * Creates a function which may be used as a Webpack externals function that
@@ -250,8 +257,3 @@ function createExternalizer(_workspace, development = false) {
     }
   };
 }
-
-Workspace.load('~/studio/web')
-  .then(createWebConfig)
-  .then(console.log)
-  .catch(error => console.error(error.stack));
