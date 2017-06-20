@@ -137,11 +137,8 @@ async function createCompilerOptions(workspace) {
     declaration: true,
     // Some options that affect code transformation.
     newLine: ts.NewLineKind.LineFeed,
-    importHelpers: true,
-    // Enable JSX for certain targets.
-    jsx: Target.matches(workspace.target, 'web')
-      ? ts.JsxEmit.React
-      : ts.JsxEmit.None,
+    // Enable JSX.
+    jsx: ts.JsxEmit.Preserve,
     // When we are not using the absolute import syntax (`~/...`), we want to
     // use the Node.js relative import style.
     moduleResolution: ts.ModuleResolutionKind.NodeJs,

@@ -1,9 +1,6 @@
 import { resolve as resolvePath } from 'path';
 import { app, Menu, BrowserWindow } from 'electron';
 
-// Set our global `DEV` environment variable.
-(global as any).DEV = process.env.NODE_ENV === 'development';
-
 // Keep a reference to the window so that it is not garbage collected.
 let window: Electron.BrowserWindow | null = null;
 
@@ -23,7 +20,7 @@ app.on('ready', () => {
   );
 
   // Open the DevTools in development.
-  if (DEV) {
+  if (__DEV__) {
     window.webContents.openDevTools();
   }
 

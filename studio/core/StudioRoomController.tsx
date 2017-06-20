@@ -119,7 +119,7 @@ const createComponent = <
     private readonly deviceID = new LiveValue(
       localStorage.getItem(deviceIDKey),
     );
-    private readonly disableAudio = new LiveValue(DEV);
+    private readonly disableAudio = new LiveValue(__DEV__);
     private readonly localVolume = new LiveValue(1);
 
     /**

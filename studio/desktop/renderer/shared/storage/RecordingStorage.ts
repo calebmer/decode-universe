@@ -155,7 +155,7 @@ export class RecordingStorage {
           // Stringify the manifest when writing it. If we are in development then
           // we want to pretty print the JSON with 2 space indentation for easy
           // debugging.
-          JSON.stringify(manifest, null, DEV ? 2 : undefined),
+          JSON.stringify(manifest, null, __DEV__ ? 2 : undefined),
         ),
       );
     // Wait for *our* write to resolve or reject. The promise may change under

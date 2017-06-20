@@ -65,7 +65,7 @@ export function StudioRoomOptionsPanel({
         * option is super useful! If developing using two open browser windows
         * on the same machine then the feedback from the two windows is killer.
         * Disabling audio output by default means that does not happen. */}
-      {DEV &&
+      {__DEV__ &&
         <label
           {...css(Fonts.input, {
             cursor: 'pointer',

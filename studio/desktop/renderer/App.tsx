@@ -23,7 +23,7 @@ async function openStorage(): Promise<Storage> {
   // record in development don’t mix with production files.
   const storageDirectoryPath = path.join(
     remote.app.getPath('userData'),
-    'Decode Storage' + (DEV ? '-dev' : ''),
+    'Decode Storage' + (__DEV__ ? '-dev' : ''),
   );
   // Make sure the directory exists. If it does not the create it.
   if (!await fs.directoryExists(storageDirectoryPath)) {
