@@ -100,8 +100,8 @@ function checkProgram(allSourcePaths, compilerOptions) {
 function reportDiagnostics(workspace, diagnostics) {
   // Log out the workspace path that we are compiling.
   console.log(
-    `${chalk.bold(
-      `Compiling ${chalk.magenta.underline(workspace.path)}`,
+    `Compiling ${chalk.magenta.bold.underline(
+      workspace.path,
     )} ${diagnostics.length === 0
       ? chalk.green('✔︎ 0 errors')
       : chalk.red(
