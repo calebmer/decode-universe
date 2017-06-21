@@ -1,6 +1,6 @@
 import { createWriteStream } from 'fs';
-import { Disposable } from '@decode/js-utils';
-import { Recorder } from '@decode/studio-core';
+import { Disposable } from '~/utils/universal/Disposable';
+import { Recorder } from '~/studio/core/rtc/audio/Recorder';
 import { FileSystemUtils as fs } from './FileSystemUtils';
 
 /**

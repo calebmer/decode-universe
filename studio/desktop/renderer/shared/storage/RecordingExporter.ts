@@ -3,7 +3,7 @@ import { createReadStream, createWriteStream } from 'fs';
 import * as stream from 'stream';
 import * as moment from 'moment';
 import { Stream } from 'xstream';
-import { slugify } from '@decode/js-utils';
+import { slugify } from '~/utils/universal/slugify';
 import { RecordingStorage } from './RecordingStorage';
 import { RecorderStorage } from './RecorderStorage';
 

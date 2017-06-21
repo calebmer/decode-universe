@@ -1,5 +1,7 @@
 import * as React from 'react';
-import { StudioRoomController, PeersMesh, Peer } from '@decode/studio-core';
+import { StudioRoomController } from '~/studio/core/StudioRoomController';
+import { PeersMesh } from '~/studio/core/rtc/PeersMesh';
+import { Peer } from '~/studio/core/rtc/Peer';
 import { BuildConstants } from '../shared/BuildConstants';
 import { Storage } from '../shared/storage/Storage';
 import { StudioButtons } from './StudioButtons';

@@ -1,6 +1,6 @@
 import { Stream } from 'xstream';
 import * as React from 'react';
-import { ReactStream } from '@decode/studio-core';
+import { ReactStream } from '~/studio/core/stream/ReactStream';
 import { RecordingStorage } from '../shared/storage/RecordingStorage';
 
 export const DirectoryExportProgress = ({

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-const webpack = require('webpack');
 const Workspace = require('../Workspace');
 const Webpack = require('../Webpack');
 
@@ -14,24 +13,21 @@ if (universePaths.length > 0) {
 }
 
 workspaces
-  .then(
-    workspaces =>
-      new Promise((resolve, reject) => {
-        webpack(
-          workspaces.map(workspace =>
-            Webpack.createWebConfig(workspace, false),
-          ),
-          (error, stats) => {
+  .then(workspaces => {
+    return Promise.all(
+      workspaces.map(workspace => {
+        return new Promise((resolve, reject) => {
+          const compiler = Webpack.createCompiler(workspace, false);
+          compiler.run((error, stats) => {
             if (error) {
               reject(error);
             } else {
-              resolve(stats);
+              console.log(stats.toString({ colors: true }));
+              resolve();
             }
-          },
-        );
+          });
+        });
       }),
-  )
-  .then(stats => {
-    console.log(stats.toString({ colors: true }));
+    );
   })
   .catch(error => console.error(error.stack));

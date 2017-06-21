@@ -1,11 +1,9 @@
 import { v4 as uuid } from 'uuid';
-import { Disposable } from '@decode/js-utils';
-import {
-  PeersMesh,
-  Peer,
-  LocalRecorder,
-  RemoteRecorder,
-} from '@decode/studio-core';
+import { Disposable } from '~/utils/universal/Disposable';
+import { PeersMesh } from '~/studio/core/rtc/PeersMesh';
+import { Peer } from '~/studio/core/rtc/Peer';
+import { LocalRecorder } from '~/studio/core/rtc/audio/LocalRecorder';
+import { RemoteRecorder } from '~/studio/core/rtc/audio/RemoteRecorder';
 import { RecordingDirectoryStorage } from '../shared/storage/RecordingDirectoryStorage';
 import { RecordingStorage } from '../shared/storage/RecordingStorage';
 
