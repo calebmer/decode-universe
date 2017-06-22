@@ -43,7 +43,13 @@ function resolveUniverseBuildPath(universePath) {
  * Turns an absolute path into a universe path starting with `~`.
  */
 function intoUniversePath(absolutePath) {
-  return absolutePath.replace(ROOT_PATH, '~');
+  if (!absolutePath.startsWith(ROOT_PATH)) {
+    throw new Error(
+      `Absolute path '${absolutePath}' is not in universe ` +
+        `at '${ROOT_PATH}'`,
+    );
+  }
+  return `~${absolutePath.slice(ROOT_PATH.length)}`;
 }
 
 /**

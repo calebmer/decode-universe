@@ -1,0 +1,30 @@
+#!/usr/bin/env node
+
+/**
+ * This is the tool we use to control our workflow in universe. Add this to your
+ * path for easy use anywhere in universe. Alternatively we have an alias at the
+ * root of universe which is also executable which you may use.
+ */
+
+const yargs = require('yargs')
+  .command(
+    'dev',
+    'Runs non-library workspaces in development mode',
+    yargs => {},
+    argv => {
+      // TODO
+    },
+  )
+  .command(require('../commands/build.js'))
+  .command(require('../commands/check.js'))
+  .command(
+    'format',
+    'Formats all code with Prettier',
+    yargs => {},
+    argv => {
+      // TODO
+    },
+  )
+  .demandCommand()
+  .help()
+  .alias('help', 'h').argv;

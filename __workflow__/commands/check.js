@@ -1,24 +1,24 @@
-#!/usr/bin/env node
-
+const Universe = require('../Universe');
 const Workspace = require('../Workspace');
 const TypeScript = require('../TypeScript');
 
-const universePaths = process.argv.slice(2);
+exports.command = 'check [workspaces...]';
 
-let workspaces;
-if (universePaths.length > 0) {
-  workspaces = Promise.all(universePaths.map(Workspace.load));
-} else {
-  workspaces = Workspace.loadAll();
-}
+exports.describe =
+  'Type checks workspaces with TypeScript. Checks all workspaces by default.';
 
-workspaces
-  .then(async workspaces => {
-    const results = Array.from(await TypeScript.check(workspaces));
-    const n = results.reduce((n, { diagnostics }) => n + diagnostics.length, 0);
-    process.exit(n);
-  })
-  .catch(error => {
-    console.error(error.stack);
-    process.exit(1);
-  });
+exports.handler = ({ workspaces: workspacePaths }) => {
+  Workspace.loadFromUserPaths(workspacePaths)
+    .then(async workspaces => {
+      const results = Array.from(await TypeScript.check(workspaces));
+      const n = results.reduce(
+        (n, { diagnostics }) => n + diagnostics.length,
+        0,
+      );
+      process.exit(n);
+    })
+    .catch(error => {
+      console.error(error.stack);
+      process.exit(1);
+    });
+};

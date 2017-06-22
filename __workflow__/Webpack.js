@@ -127,7 +127,9 @@ function createWebConfig({
     resolve: {
       // The extensions the module resolution algorithm will use. We need to
       // include TypeScript extensions as they will not be detected by default.
-      extensions: ['.ts', '.tsx', '.js', '.json'],
+      // Note that JS goes first. This is so that we don’t accidently resolve
+      // `.d.ts` files from dependencies.
+      extensions: ['.js', '.ts', '.tsx', '.json'],
 
       alias: {
         // Alias the tilda as the universe root path as this is the style we
@@ -311,7 +313,9 @@ function createNodeConfig({
     resolve: {
       // The extensions the module resolution algorithm will use. We need to
       // include TypeScript extensions as they will not be detected by default.
-      extensions: ['.ts', '.tsx', '.js', '.json'],
+      // Note that JS goes first. This is so that we don’t accidently resolve
+      // `.d.ts` files from dependencies.
+      extensions: ['.js', '.ts', '.tsx', '.json'],
 
       alias: {
         // Alias the tilda as the universe root path as this is the style we

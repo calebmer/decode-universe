@@ -36,6 +36,7 @@
     "uuid": "^3.0.1",
     "webpack": "^3.0.0",
     "webrtc-adapter": "^4.0.2",
-    "xstream": "^10.8.0"
+    "xstream": "^10.8.0",
+    "yargs": "^8.0.2"
   }
 }

@@ -1,6 +1,6 @@
 {
   "target": "universal",
-  "library": false,
+  "library": true,
   "dependencies": [
     "~/utils/universal",
     "~/studio/signal/shared",
