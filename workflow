@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/bin/bash
 
-// A simple alias to the actual workflow tool.
-require('./__workflow__/bin/workflow');
+# A simple alias to the actual workflow tool.
+$(dirname $0)/__workflow__/bin/workflow $@
