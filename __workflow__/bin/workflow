@@ -15,16 +15,9 @@ const yargs = require('yargs')
       // TODO
     },
   )
-  .command(require('../commands/build.js'))
-  .command(require('../commands/check.js'))
-  .command(
-    'format',
-    'Formats all code with Prettier',
-    yargs => {},
-    argv => {
-      // TODO
-    },
-  )
+  .command(require('../commands/build'))
+  .command(require('../commands/check'))
+  .command(require('../commands/format'))
   .demandCommand()
   .help()
   .alias('help', 'h').argv;

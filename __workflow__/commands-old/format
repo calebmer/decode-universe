@@ -1,8 +1,0 @@
-#!/bin/bash
-
-$(npm bin)/prettier \
-  "!(node_modules|__build__)/**/*.{ts,tsx,js}" \
-  --write \
-  --parser typescript \
-  --single-quote \
-  --trailing-comma all

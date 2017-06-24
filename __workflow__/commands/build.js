@@ -1,6 +1,6 @@
-const chalk = require('chalk');
-const Workspace = require('../Workspace');
-const Webpack = require('../Webpack');
+// NOTE: `require()` all modules in the handler. All `require()`s in the script
+// root slows down the time it takes to initialize the CLI and therefore our
+// entire workflow.
 
 exports.command = 'build [workspaces...]';
 
@@ -8,6 +8,10 @@ exports.describe =
   'Builds non-library workspaces for production. Builds all workspaces by default.';
 
 exports.handler = ({ workspaces: workspacePaths }) => {
+  const chalk = require('chalk');
+  const Workspace = require('../Workspace');
+  const Webpack = require('../Webpack');
+
   Workspace.loadFromUserPaths(workspacePaths)
     .then(async workspaces => {
       if (workspacePaths.length === 0) {
