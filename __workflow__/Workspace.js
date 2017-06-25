@@ -8,10 +8,17 @@ const ALL_WORKSPACES = new Map();
 
 class Workspace {
   /**
-   * Loads all of the workspaces in universe.
+   * Loads a single workspace from a user provided path.
    */
-  static loadAll() {
-    return loadAllWorkspaces(Universe.ROOT_PATH);
+  static loadFromUserPath(workspacePath) {
+    // If the path is not already a universe path we should resolve it relative
+    // to our current working directory then turn it into a universe path.
+    if (!workspacePath.startsWith('~/')) {
+      workspacePath = path.resolve(process.cwd(), workspacePath);
+      workspacePath = Universe.intoUniversePath(workspacePath);
+    }
+    // Load the workspace from the given path.
+    return Workspace.load(workspacePath);
   }
 
   /**
@@ -25,19 +32,14 @@ class Workspace {
         Workspace.loadAll()
       : // If the user did provide some paths we should load those paths in
         // parallel.
-        Promise.all(
-          workspacePaths.map(workspacePath => {
-            // If the path is not already a universe path we should resolve it
-            // relative to our current working directory then turn it into a
-            // universe path.
-            if (!workspacePath.startsWith('~/')) {
-              workspacePath = path.resolve(process.cwd(), workspacePath);
-              workspacePath = Universe.intoUniversePath(workspacePath);
-            }
-            // Load the workspace from the given path.
-            return Workspace.load(workspacePath);
-          }),
-        );
+        Promise.all(workspacePaths.map(Workspace.loadFromUserPath));
+  }
+
+  /**
+   * Loads all of the workspaces in universe.
+   */
+  static loadAll() {
+    return loadAllWorkspaces(Universe.ROOT_PATH);
   }
 
   /**

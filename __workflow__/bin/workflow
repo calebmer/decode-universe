@@ -7,14 +7,7 @@
  */
 
 const yargs = require('yargs')
-  .command(
-    'dev',
-    'Runs non-library workspaces in development mode',
-    yargs => {},
-    argv => {
-      // TODO
-    },
-  )
+  .command(require('../commands/dev'))
   .command(require('../commands/build'))
   .command(require('../commands/check'))
   .command(require('../commands/format'))

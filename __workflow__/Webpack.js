@@ -200,7 +200,7 @@ function createWebConfig({
       new HtmlWebpackPlugin({
         inject: true,
         template: `${workspace.absolutePath}${inputDir}/main.html`,
-        filename: 'main.html',
+        filename: 'index.html',
         // Minify the HTML in production, but not in development.
         minify: isDev
           ? undefined
