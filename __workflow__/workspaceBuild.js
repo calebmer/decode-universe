@@ -12,7 +12,7 @@ const Webpack = require('./Webpack');
 /**
  * Builds a non-library workspace for production.
  */
-async function buildWorkspace(workspace) {
+async function workspaceBuild(workspace) {
   // If the workspace is a library then we cannot build it.
   if (workspace.isLibrary) {
     throw new Error(`Cannot build library workspace '${workspace.path}'`);
@@ -78,4 +78,4 @@ async function buildWorkspace(workspace) {
   }
 }
 
-module.exports = buildWorkspace;
+module.exports = workspaceBuild;

@@ -10,7 +10,7 @@ exports.describe =
 exports.handler = ({ workspaces: workspacePaths }) => {
   const chalk = require('chalk');
   const Workspace = require('../Workspace');
-  const buildWorkspace = require('../buildWorkspace');
+  const workspaceBuild = require('../workspaceBuild');
 
   Workspace.loadFromUserPaths(workspacePaths)
     .then(async workspaces => {
@@ -31,7 +31,7 @@ exports.handler = ({ workspaces: workspacePaths }) => {
           })
           .join(''),
       );
-      await Promise.all(workspaces.map(buildWorkspace));
+      await Promise.all(workspaces.map(workspaceBuild));
       process.exit(0);
     })
     .catch(error => {
