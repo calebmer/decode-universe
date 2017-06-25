@@ -1,9 +1,4 @@
 const path = require('path');
-const ts = require('typescript');
-const BabiliPlugin = require('babili-webpack-plugin');
-const builtinModules = require('builtin-modules');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const WatchMissingNodeModulesPlugin = require('react-dev-utils/WatchMissingNodeModulesPlugin');
 const webpack = require('webpack');
 const Universe = require('./Universe');
 const Target = require('./Target');
@@ -13,7 +8,7 @@ const Workspace = require('./Workspace');
  * Creates a webpack config based on the workspace that can either be in
  * development or production mode.
  */
-function createCompiler(workspace, isDevelopment = false) {
+function createCompiler(workspace, isDev = false) {
   // If the workspace is a library then we want to throw an error since
   // libraries can not be built with Webpack.
   if (workspace.isLibrary) {
@@ -25,20 +20,21 @@ function createCompiler(workspace, isDevelopment = false) {
     // *two* configs. One for the renderer, and one for the main process.
     return webpack([
       createNodeConfig({
-        isDevelopment,
+        isDev,
         workspace,
-        nestedDirectory: 'main',
+        inputDir: 'main',
       }),
       createWebConfig({
-        isDevelopment,
+        isDev,
         workspace,
-        nestedDirectory: 'renderer',
+        inputDir: 'renderer',
+        outputDir: 'renderer',
       }),
     ]);
   } else if (Target.matches(workspace.target, 'node')) {
-    return webpack(createNodeConfig({ isDevelopment, workspace }));
+    return webpack(createNodeConfig({ isDev, workspace }));
   } else if (Target.matches(workspace.target, 'web')) {
-    return webpack(createWebConfig({ isDevelopment, workspace }));
+    return webpack(createWebConfig({ isDev, workspace }));
   } else {
     throw new Error(
       `Could not create a webpack compiler for workspace ` +
@@ -58,18 +54,26 @@ function createCompiler(workspace, isDevelopment = false) {
  * developer experience.
  */
 function createWebConfig({
-  isDevelopment = false,
+  isDev = false,
   workspace,
-  nestedDirectory = '',
+  inputDir = '',
+  outputDir = '',
 }) {
-  // Add a leading slash if a nested directory value was provided.
-  if (nestedDirectory !== '') {
-    nestedDirectory = `/${nestedDirectory}`;
+  let BabiliPlugin;
+  const HtmlWebpackPlugin = require('html-webpack-plugin');
+  const WatchMissingNodeModulesPlugin = require('react-dev-utils/WatchMissingNodeModulesPlugin');
+
+  if (!isDev) {
+    BabiliPlugin = require('babili-webpack-plugin');
   }
+
+  // Add a leading slash if a nested directory value was provided.
+  inputDir = inputDir !== '' ? `/${inputDir}` : inputDir;
+  outputDir = outputDir !== '' ? `/${outputDir}` : outputDir;
   return {
     // If there is an error when building for production it’s not worth trying
     // to salvage the build.
-    bail: !isDevelopment,
+    bail: !isDev,
     // In most cases we are targeting the web, but if our target is Electron
     // then we are actually targeting an Electron renderer.
     target: Target.matches(workspace.target, 'electron')
@@ -81,12 +85,12 @@ function createWebConfig({
     // `create-react-app` chose to use `cheap-module-source-map` as the
     // development default, but we may also consider `eval` which will show the
     // compiled source.
-    devtool: isDevelopment ? 'cheap-module-source-map' : 'source-map',
+    devtool: isDev ? 'cheap-module-source-map' : 'source-map',
 
     entry: [
       // In development we want to include some extra scripts to assist in hot
       // reloading and other aspects of developer experience.
-      ...(isDevelopment
+      ...(isDev
         ? [
             // We use this as an alternative client to the one provided by
             // `webpack-dev-server` as it is optimized for the single-page-app
@@ -101,25 +105,24 @@ function createWebConfig({
         : []),
       // App code must always go last so that if there is an error it doesn’t
       // break the development tools we have configured.
-      `${workspace.absolutePath}${nestedDirectory}/main`,
+      `${workspace.absolutePath}${inputDir}/main`,
     ],
     output: {
       // Put the final output in our workspace’s build directory.
-      path: `${workspace.buildPath}/__dist__${nestedDirectory}`,
+      path: `${workspace.buildPath}/__dist__${outputDir}`,
       // Add /* filename */ comments to generated require()s in the output.
       pathinfo: true,
       // The filename at which our JavaScript code will be output.
-      filename: isDevelopment
-        ? 'static/js/bundle.js'
-        : 'static/js/bundle.[chunkhash:8].js',
+      filename: isDev || Target.matches(workspace.target, 'electron')
+        ? 'static/js/main.js'
+        : 'static/js/main.[chunkhash:8].js',
       // We also want to name our chunks in production, but in development we
       // don’t care about the name.
-      chunkFilename: isDevelopment
-        ? undefined
-        : 'static/js/chunk.[chunkhash:8].js',
+      chunkFilename: isDev ? undefined : 'static/js/chunk.[chunkhash:8].js',
       // The path that the application will be served under. For now we assume
-      // that path is `/` everywhere.
-      publicPath: '/',
+      // that path is `/` everywhere. Unless we are in Electron where we want
+      // relative paths.
+      publicPath: Target.matches(workspace.target, 'electron') ? '' : '/',
       // Point sourcemap entries to original disk location.
       devtoolModuleFilenameTemplate: info =>
         path.resolve(info.absoluteResourcePath),
@@ -146,7 +149,7 @@ function createWebConfig({
       // For Node.js based workspaces we want to externalize our dependencies in
       // `node_modules` instead of bundling them.
       ...(Target.matches(workspace.target, 'node')
-        ? [createExternalizer({ isDevelopment })]
+        ? [createExternalizer({ isDev })]
         : []),
     ],
     module: {
@@ -170,7 +173,7 @@ function createWebConfig({
               // Supposedly this helps when we are only transpiling.
               isolatedModules: true,
               // Create source maps, but only in production.
-              sourceMap: !isDevelopment,
+              sourceMap: !isDev,
               // Transpile JSX into the React syntax.
               jsx: 'react',
               // Import all helpers from `tslib`.
@@ -181,8 +184,7 @@ function createWebConfig({
               // are most likely using the latest version web browser version
               // and have access to all of the nice ES2017 features including
               // native async functions!
-              target: isDevelopment ||
-                Target.matches(workspace.target, 'electron')
+              target: isDev || Target.matches(workspace.target, 'electron')
                 ? 'es2017'
                 : 'es5',
             },
@@ -194,9 +196,10 @@ function createWebConfig({
       // Generates an `index.html` file with the <script> injected.
       new HtmlWebpackPlugin({
         inject: true,
-        template: `${workspace.absolutePath}${nestedDirectory}/main.html`,
+        template: `${workspace.absolutePath}${inputDir}/main.html`,
+        filename: 'main.html',
         // Minify the HTML in production, but not in development.
-        minify: isDevelopment
+        minify: isDev
           ? undefined
           : {
               removeComments: true,
@@ -218,14 +221,12 @@ function createWebConfig({
       new webpack.DefinePlugin({
         // Throughout our repo we expect a global `__DEV__` boolean to
         // enable/disable features in development.
-        __DEV__: isDevelopment ? 'true' : 'false',
+        __DEV__: isDev ? 'true' : 'false',
         // Many libraries, including React, use `NODE_ENV` so we need to
         // define it.
-        'process.env.NODE_ENV': isDevelopment
-          ? "'development'"
-          : "'production'",
+        'process.env.NODE_ENV': isDev ? "'development'" : "'production'",
       }),
-      ...(isDevelopment
+      ...(isDev
         ? // Enable some extra plugins in development.
           [
             // This is necessary to emit hot updates (currently CSS only).
@@ -253,7 +254,7 @@ function createWebConfig({
     // splitting or minification in interest of speed. These warnings become
     // cumbersome.
     performance: {
-      hints: !isDevelopment ? 'warning' : false,
+      hints: !isDev ? 'warning' : false,
     },
   };
 }
@@ -263,18 +264,18 @@ function createWebConfig({
  * the Electron main process.
  */
 function createNodeConfig({
-  isDevelopment = false,
+  isDev = false,
   workspace,
-  nestedDirectory = '',
+  inputDir = '',
+  outputDir = '',
 }) {
   // Add a leading slash if a nested directory value was provided.
-  if (nestedDirectory !== '') {
-    nestedDirectory = `/${nestedDirectory}`;
-  }
+  inputDir = inputDir !== '' ? `/${inputDir}` : inputDir;
+  outputDir = outputDir !== '' ? `/${outputDir}` : outputDir;
   return {
     // If there is an error when building for production it’s not worth trying
     // to salvage the build.
-    bail: !isDevelopment,
+    bail: !isDev,
     // We are targeting Node.js in all cases, but the electron case. In which we
     // are targeting the Electron main process which has some slight
     // differences from the Node.js target.
@@ -284,28 +285,23 @@ function createNodeConfig({
     // We only care about line numbers for the Node.js source tool, so pick the
     // fastest devtool that will retain line numbers. In production we want
     // complete source maps of course.
-    devtool: isDevelopment ? 'cheap-eval-source-map' : 'source-map',
+    devtool: isDev ? 'cheap-eval-source-map' : 'source-map',
 
     entry: [
       // Use the root main file unless we are building for Electron. Then we
       // will want to get the file nested in one level.
-      `${workspace.absolutePath}${nestedDirectory}/main.ts`,
+      `${workspace.absolutePath}${inputDir}/main.ts`,
     ],
     output: {
       // Put the final output in our workspace’s build directory.
-      path: `${workspace.buildPath}/__dist__${nestedDirectory}`,
+      path: `${workspace.buildPath}/__dist__${outputDir}`,
       // Add /* filename */ comments to generated require()s in the output.
       pathinfo: true,
       // The filename at which our JavaScript code will be output.
-      filename: isDevelopment ? 'bundle.js' : 'bundle.[chunkhash:8].js',
+      filename: 'main.js',
       // We also want to name our chunks in production, but in development we
       // don’t care about the name.
-      chunkFilename: isDevelopment
-        ? undefined
-        : 'static/js/chunk.[chunkhash:8].js',
-      // The path that the application will be served under. For now we assume
-      // that path is `/` everywhere.
-      publicPath: '/',
+      chunkFilename: isDev ? undefined : 'static/js/chunk.[chunkhash:8].js',
       // Point sourcemap entries to original disk location.
       devtoolModuleFilenameTemplate: info =>
         path.resolve(info.absoluteResourcePath),
@@ -326,7 +322,7 @@ function createNodeConfig({
     externals: [
       // For Node.js based workspaces we want to externalize our dependencies in
       // `node_modules` instead of bundling them.
-      createExternalizer({ isDevelopment }),
+      createExternalizer({ isDev }),
     ],
     module: {
       rules: [
@@ -349,7 +345,7 @@ function createNodeConfig({
               // Supposedly this helps when we are only transpiling.
               isolatedModules: true,
               // Create source maps, but only in production.
-              sourceMap: !isDevelopment,
+              sourceMap: !isDev,
               // Don’t transpile any JSX.
               jsx: 'react',
               // Import all helpers from `tslib`.
@@ -366,25 +362,39 @@ function createNodeConfig({
       // profiler.
       new webpack.NamedModulesPlugin(),
       // Define our environment so that React will be built appropriately.
-      new webpack.DefinePlugin({
-        // Throughout our repo we expect a global `__DEV__` boolean to
-        // enable/disable features in development.
-        __DEV__: isDevelopment ? 'true' : 'false',
-        // Many libraries, including React, use `NODE_ENV` so we need to
-        // define it.
-        //
-        // Even though we are in Node.js we still define this. It is used enough
-        // that its worth putting here. This also means we will never forget to
-        // set it.
-        'process.env.NODE_ENV': isDevelopment
-          ? "'development'"
-          : "'production'",
-      }),
-      ...(isDevelopment
+      new webpack.DefinePlugin(
+        Object.assign(
+          {
+            // Throughout our repo we expect a global `__DEV__` boolean to
+            // enable/disable features in development.
+            __DEV__: isDev ? 'true' : 'false',
+            // Many libraries, including React, use `NODE_ENV` so we need to
+            // define it.
+            //
+            // Even though we are in Node.js we still define this. It is used enough
+            // that its worth putting here. This also means we will never forget to
+            // set it.
+            'process.env.NODE_ENV': isDev ? "'development'" : "'production'",
+          },
+          // If the target is Electron then we want to provide information about
+          // renderer files.
+          Target.matches(workspace.target, 'electron')
+            ? {
+                // Compute an absolute path in the Electron runtime by requiring
+                // 'path' inline.
+                'BuildConstants.ELECTRON_RENDERER_HTML_PATH': `require('path').resolve(__dirname, './renderer/main.html')`,
+              }
+            : {},
+        ),
+      ),
+      ...(isDev
         ? // Enable some extra plugins in development.
           []
         : // Enable some extra plugins in production.
           [
+            // Make our distributable a Node.js package by creating a
+            // `package.json` file.
+            new NodePackagePlugin(workspace),
             // Scope hoist all of the modules that we can in production. Make
             // sure this runs before the minification plugin as a scope hoisted
             // module is more easily minified.
@@ -409,6 +419,8 @@ module.exports = {
  */
 function createExternalizer({ isDevelopment = false }) {
   return (context, request, callback) => {
+    const builtinModules = require('builtin-modules');
+
     if (
       // If the file starts with a letter then it is not a relative import and
       // we should externalize the module instead of bundling it.
@@ -438,4 +450,83 @@ function createExternalizer({ isDevelopment = false }) {
       callback();
     }
   };
+}
+
+/**
+ * A plugin that generates a `package.json` from a workspace.
+ */
+class NodePackagePlugin {
+  constructor(workspace) {
+    this._workspace = workspace;
+  }
+
+  /**
+   * Applies the plugin to the compiler.
+   */
+  apply(compiler) {
+    // Add a plugin that will run when the compiler emits files.
+    compiler.plugin('emit', (compilation, callback) => {
+      this._emit(compilation)
+        .then(() => callback())
+        .catch(error => callback(error));
+    });
+  }
+
+  /**
+   * When the compiler emits files we want to add a `package.json`.
+   */
+  async _emit(compilation) {
+    const fs = require('fs-promise');
+
+    const { _workspace: workspace } = this;
+    // Find the main JavaScript asset.
+    const mainAsset = Object.keys(compilation.assets).find(name =>
+      name.endsWith('.js'),
+    );
+    // Throw an error if there was no such asset.
+    if (!mainAsset) {
+      throw new Error('Could not find a main JavaScript asset.');
+    }
+    // Read the root `package.json` from the file system.
+    const rootPackageString = await fs.readFile(
+      `${Universe.ROOT_PATH}/package.json`,
+      'utf8',
+    );
+    // Parse out the `package.json` file.
+    const rootPackageManifest = JSON.parse(rootPackageString);
+    // Get the output directory for the workspace where will put the
+    // `package.json` and where we expect the main asset files to be.
+    const packageDirectory = `${workspace.buildPath}/__dist__`;
+    // Create a new package name from the workspace path.
+    const packageManifest = {
+      private: true,
+      name: '@decode/' + workspace.path.slice('~/'.length).replace(/\//g, '-'),
+      version: rootPackageManifest.version,
+      main: mainAsset,
+      dependencies: workspace
+        .getAllExternalDependencyNames()
+        .sort()
+        .reduce((dependencies, externalDependencyName) => {
+          // If 'electron' is an external dependency we want to skip adding it.
+          // The electron dependency will be handled by the runtime. Not our
+          // package installation process.
+          if (externalDependencyName === 'electron') {
+            return dependencies;
+          }
+          // Add the dependency with its version specified in the root package
+          // manifest to dependencies.
+          dependencies[externalDependencyName] =
+            rootPackageManifest.dependencies[externalDependencyName];
+          // Return the dependencies object we are building.
+          return dependencies;
+        }, {}),
+    };
+    // Stringify our package manifest.
+    const packageString = JSON.stringify(packageManifest, null, 2) + '\n';
+    // Add the package manifest as an output to our compilation.
+    compilation.assets['package.json'] = {
+      source: () => packageString,
+      size: () => Buffer.byteLength(packageString),
+    };
+  }
 }

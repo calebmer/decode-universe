@@ -2,7 +2,6 @@ import * as path from 'path';
 import { remote } from 'electron';
 import { v4 as uuid } from 'uuid';
 import * as React from 'react';
-import { BuildConstants } from './shared/BuildConstants';
 import { FileSystemUtils as fs } from './shared/storage/FileSystemUtils';
 import { Storage } from './shared/storage/Storage';
 import { Directory } from './directory/Directory';

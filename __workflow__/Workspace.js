@@ -161,6 +161,19 @@ class Workspace {
   }
 
   /**
+   * Gets all external dependency names including the external dependency names
+   * from our dependencies and their dependencies recursively.
+   */
+  getAllExternalDependencyNames() {
+    return [
+      ...this.externalDependencyNames,
+      ...this.dependencies
+        .map(dependency => dependency.getAllExternalDependencyNames())
+        .reduce((a, b) => [...a, ...b], []),
+    ];
+  }
+
+  /**
    * Gets all of the source files in the workspace.
    */
   getSourcePaths() {

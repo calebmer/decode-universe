@@ -10,7 +10,7 @@ exports.describe =
 exports.handler = ({ workspaces: workspacePaths }) => {
   const chalk = require('chalk');
   const Workspace = require('../Workspace');
-  const Webpack = require('../Webpack');
+  const buildWorkspace = require('../buildWorkspace');
 
   Workspace.loadFromUserPaths(workspacePaths)
     .then(async workspaces => {
@@ -26,35 +26,13 @@ exports.handler = ({ workspaces: workspacePaths }) => {
       console.log();
       console.log(
         workspaces
-          .map(
-            workspace => `▸ ${chalk.magenta.bold.underline(workspace.path)}\n`,
-          )
+          .map(workspace => {
+            return `▸ ${chalk.magenta.bold.underline(workspace.path)}\n`;
+          })
           .join(''),
       );
-      const allStats = await Promise.all(
-        workspaces.map(workspace => {
-          return new Promise((resolve, reject) => {
-            const compiler = Webpack.createCompiler(workspace, false);
-            compiler.run((error, stats) => {
-              if (error) {
-                reject(error);
-              } else {
-                console.log();
-                console.log(
-                  `Finished building ${chalk.magenta.bold.underline(
-                    workspace.path,
-                  )}:`,
-                );
-                console.log();
-                console.log(stats.toString({ colors: true }));
-                console.log();
-                resolve(stats);
-              }
-            });
-          });
-        }),
-      );
-      process.exit(allStats.find(stats => stats.hasErrors()) ? 1 : 0);
+      await Promise.all(workspaces.map(buildWorkspace));
+      process.exit(0);
     })
     .catch(error => {
       console.error(error.stack);

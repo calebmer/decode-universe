@@ -28,6 +28,7 @@
     "react-dev-utils": "^3.0.0",
     "react-dom": "^15.6.1",
     "react-error-overlay": "^1.0.7",
+    "rimraf": "^2.6.1",
     "socket.io": "^2.0.3",
     "socket.io-client": "^2.0.3",
     "ts-loader": "^2.1.0",

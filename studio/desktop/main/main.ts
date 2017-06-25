@@ -1,4 +1,3 @@
-import { resolve as resolvePath } from 'path';
 import { app, Menu, BrowserWindow } from 'electron';
 
 // Keep a reference to the window so that it is not garbage collected.
@@ -14,10 +13,7 @@ app.on('ready', () => {
   });
 
   // Load the `index.html` of the page.
-  window.loadURL(
-    process.env.DECODE_STUDIO_DESKTOP_RENDERER_URL ||
-      `file://${resolvePath(__dirname, '../renderer/index.html')}`,
-  );
+  window.loadURL(`file://${BuildConstants.ELECTRON_RENDERER_HTML_PATH}`);
 
   // Open the DevTools in development.
   if (__DEV__) {
