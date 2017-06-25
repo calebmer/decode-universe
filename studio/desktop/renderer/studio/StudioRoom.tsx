@@ -15,11 +15,11 @@ export const StudioRoom = StudioRoomController.createComponent<
   PeersMesh
 >({
   // We want the host to invite users to the room using the web url.
-  webURL: BuildConstants.WEB_URL,
+  webURL: BuildConstants.STUDIO_WEB_URL,
 
   createPeersMesh: ({ roomName, localAudioContext, previousLocalName }) =>
     new PeersMesh({
-      signalServerURL: BuildConstants.SIGNAL_SERVER_URL,
+      signalServerURL: BuildConstants.STUDIO_SIGNAL_SERVER_URL,
       roomName,
       localAudioContext,
       localState: {

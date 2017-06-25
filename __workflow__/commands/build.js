@@ -35,7 +35,9 @@ exports.handler = ({ workspaces: workspacePaths }) => {
       process.exit(0);
     })
     .catch(error => {
+      console.log();
       console.error(error.stack);
+      console.log();
       process.exit(1);
     });
 };

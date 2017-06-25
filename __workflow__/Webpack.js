@@ -8,7 +8,7 @@ const Workspace = require('./Workspace');
  * Creates a webpack config based on the workspace that can either be in
  * development or production mode.
  */
-function createCompiler(workspace, isDev = false) {
+function createCompiler({ isDev = false, workspace, constants = new Map() }) {
   // If the workspace is a library then we want to throw an error since
   // libraries can not be built with Webpack.
   if (workspace.isLibrary) {
@@ -22,19 +22,21 @@ function createCompiler(workspace, isDev = false) {
       createNodeConfig({
         isDev,
         workspace,
+        constants,
         inputDir: 'main',
       }),
       createWebConfig({
         isDev,
         workspace,
+        constants,
         inputDir: 'renderer',
         outputDir: 'renderer',
       }),
     ]);
   } else if (Target.matches(workspace.target, 'node')) {
-    return webpack(createNodeConfig({ isDev, workspace }));
+    return webpack(createNodeConfig({ isDev, workspace, constants }));
   } else if (Target.matches(workspace.target, 'web')) {
-    return webpack(createWebConfig({ isDev, workspace }));
+    return webpack(createWebConfig({ isDev, workspace, constants }));
   } else {
     throw new Error(
       `Could not create a webpack compiler for workspace ` +
@@ -56,6 +58,7 @@ function createCompiler(workspace, isDev = false) {
 function createWebConfig({
   isDev = false,
   workspace,
+  constants = new Map(),
   inputDir = '',
   outputDir = '',
 }) {
@@ -218,14 +221,20 @@ function createWebConfig({
       // profiler.
       new webpack.NamedModulesPlugin(),
       // Define our environment so that React will be built appropriately.
-      new webpack.DefinePlugin({
-        // Throughout our repo we expect a global `__DEV__` boolean to
-        // enable/disable features in development.
-        __DEV__: isDev ? 'true' : 'false',
-        // Many libraries, including React, use `NODE_ENV` so we need to
-        // define it.
-        'process.env.NODE_ENV': isDev ? "'development'" : "'production'",
-      }),
+      new webpack.DefinePlugin(
+        Object.assign(
+          {
+            // Throughout our repo we expect a global `__DEV__` boolean to
+            // enable/disable features in development.
+            __DEV__: isDev ? 'true' : 'false',
+            // Many libraries, including React, use `NODE_ENV` so we need to
+            // define it.
+            'process.env.NODE_ENV': isDev ? "'development'" : "'production'",
+          },
+          // Create an object of defiens from our loaded constants object.
+          createConstantDefines(constants),
+        ),
+      ),
       ...(isDev
         ? // Enable some extra plugins in development.
           [
@@ -266,6 +275,7 @@ function createWebConfig({
 function createNodeConfig({
   isDev = false,
   workspace,
+  constants = new Map(),
   inputDir = '',
   outputDir = '',
 }) {
@@ -385,6 +395,8 @@ function createNodeConfig({
                 'BuildConstants.ELECTRON_RENDERER_HTML_PATH': `require('path').resolve(__dirname, './renderer/main.html')`,
               }
             : {},
+          // Create an object of defiens from our loaded constants object.
+          createConstantDefines(constants),
         ),
       ),
       ...(isDev
@@ -412,6 +424,18 @@ function createNodeConfig({
 module.exports = {
   createCompiler,
 };
+
+/**
+ * Creates an object map to be used with `webpack.DefinePlugin` from a constants
+ * map.
+ */
+function createConstantDefines(constants) {
+  const defines = {};
+  for (const [name, value] of constants) {
+    defines[`BuildConstants.${name}`] = JSON.stringify(value);
+  }
+  return defines;
+}
 
 /**
  * Creates a function which may be used as a Webpack externals function that

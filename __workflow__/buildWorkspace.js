@@ -6,6 +6,7 @@ const rimraf = require('rimraf');
 const Universe = require('./Universe');
 const Target = require('./Target');
 const Workspace = require('./Workspace');
+const BuildConstants = require('./BuildConstants');
 const Webpack = require('./Webpack');
 
 /**
@@ -25,8 +26,14 @@ async function buildWorkspace(workspace) {
   await new Promise((resolve, reject) =>
     rimraf(buildDir, error => (error ? reject(error) : resolve())),
   );
+  // Load our constants from the process’s environment.
+  const constants = await BuildConstants.load(workspace);
   // Create a webpack compiler instance for the workspace.
-  const compiler = Webpack.createCompiler(workspace, false);
+  const compiler = Webpack.createCompiler({
+    workspace,
+    constants,
+    isDev: false,
+  });
   // Run the compiler and log the results.
   console.log(`Running webpack compiler for ${styledPath}`);
   const stats = await new Promise((resolve, reject) => {
