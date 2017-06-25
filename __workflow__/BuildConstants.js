@@ -6,7 +6,12 @@ const optionalTypeStringRe = /\s*\|\s*null$/;
 /**
  * Loads a map of build constants from the environment.
  */
-async function load(workspace) {
+async function load(
+  workspace,
+  // We allow users to pass in a default map of constants. We will override the
+  // constants if we have a match in our environment.
+  defaultConstants = new Map(),
+) {
   const constantsTypePath = `${workspace.absolutePath}/BuildConstants.d.ts`;
   // If there are no constants types then we should return an empty array.
   if (!await fs.exists(constantsTypePath)) {
@@ -59,8 +64,11 @@ async function load(workspace) {
     }
     // Get the name of the member.
     const memberName = member.name.text;
-    // Get the value from the environment using the member name.
-    const envValue = process.env[memberName];
+    // Get the value from the environment using the member name. If there is
+    // nothing in the environment see if there is a value in our default
+    // constants.
+    const envValue =
+      process.env[memberName] || defaultConstants.get(memberName);
     // Get the string for the property type.
     let typeString = checker.typeToString(
       checker.getTypeOfSymbolAtLocation(

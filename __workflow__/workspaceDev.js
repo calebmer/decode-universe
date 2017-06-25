@@ -2,7 +2,21 @@ const chalk = require('chalk');
 const errorOverlayMiddleware = require('react-error-overlay/middleware');
 const WebpackDevServer = require('webpack-dev-server');
 const Target = require('./Target');
+const BuildConstants = require('./BuildConstants');
 const Webpack = require('./Webpack');
+
+/**
+ * The default `BuildConstants` values for development. We provide defaults for
+ * common, required, build constants. We don’t want users to think about
+ * defining these things in development.
+ */
+const defaultConstants = new Map([
+  [
+    'STUDIO_SIGNAL_SERVER_URL',
+    `http://localhost:${getPort({ path: '~/studio/signal/server' })}`,
+  ],
+  ['STUDIO_WEB_URL', `http://localhost:${getPort({ path: '~/studio/web' })}`],
+]);
 
 /**
  * Starts the long-living watch mode development process for the provided
@@ -21,10 +35,13 @@ module.exports = workspaceDev;
  * Launches a development server for a web workspace.
  */
 async function devWeb(workspace) {
+  // Load our build constants.
+  const constants = await BuildConstants.load(workspace, defaultConstants);
   // Create the webpack compiler.
   const compiler = Webpack.createCompiler({
     isDev: true,
     workspace,
+    constants,
   });
   // Create a webpack development server instance.
   const server = new WebpackDevServer(compiler, {

@@ -6,13 +6,12 @@ import * as querystring from 'querystring';
 import { StudioRoomController } from '~/studio/core/StudioRoomController';
 import { PeersMesh } from '~/studio/core/rtc/PeersMesh';
 import { MaybeHostPeer } from './rtc/MaybeHostPeer';
-import { BuildConstants } from './BuildConstants';
 import { StudioMustJoinRoom } from './StudioMustJoinRoom';
 
 const StudioRoom = StudioRoomController.createComponent({
   createPeersMesh: ({ roomName, localAudioContext, previousLocalName }) =>
     new PeersMesh({
-      signalServerURL: BuildConstants.SIGNAL_SERVER_URL,
+      signalServerURL: BuildConstants.STUDIO_SIGNAL_SERVER_URL,
       roomName,
       localAudioContext,
       localState: {
