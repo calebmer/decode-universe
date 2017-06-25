@@ -8,17 +8,15 @@ exports.describe = 'Runs non-library workspaces in development mode.';
 
 exports.handler = ({ workspace: workspacePath }) => {
   const Workspace = require('../Workspace');
-  const workspaceDev = require('../workspaceDev');
+  const workspaceDevelop = require('../workspaceDevelop');
 
   Workspace.loadFromUserPath(workspacePath)
-    .then(workspaceDev)
+    .then(workspaceDevelop)
     .then(() => {
       process.exit(0);
     })
     .catch(error => {
-      console.log();
       console.error(error.stack);
-      console.log();
       process.exit(1);
     });
 };

@@ -298,6 +298,16 @@ function createNodeConfig({
     devtool: isDev ? 'cheap-eval-source-map' : 'source-map',
 
     entry: [
+      // If we are developing Electron then we want to including the DevTools
+      // installer as an entry.
+      ...(isDev && Target.matches(workspace.target, 'electron')
+        ? [
+            path.resolve(
+              __dirname,
+              './resources/electron-devtools-installer.js',
+            ),
+          ]
+        : []),
       // Use the root main file unless we are building for Electron. Then we
       // will want to get the file nested in one level.
       `${workspace.absolutePath}${inputDir}/main.ts`,
@@ -386,13 +396,13 @@ function createNodeConfig({
             // set it.
             'process.env.NODE_ENV': isDev ? "'development'" : "'production'",
           },
-          // If the target is Electron then we want to provide information about
-          // renderer files.
-          Target.matches(workspace.target, 'electron')
+          // If the target is Electron and we are building for production then
+          // we want to provide information about the renderer bootstrap file.
+          Target.matches(workspace.target, 'electron') && !isDev
             ? {
                 // Compute an absolute path in the Electron runtime by requiring
                 // 'path' inline.
-                'BuildConstants.ELECTRON_RENDERER_HTML_PATH': `require('path').resolve(__dirname, './renderer/main.html')`,
+                'BuildConstants.ELECTRON_RENDERER_HTML_PATH': `'file://' + require('path').resolve(__dirname, './renderer/index.html')`,
               }
             : {},
           // Create an object of defiens from our loaded constants object.

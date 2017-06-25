@@ -13,7 +13,7 @@ app.on('ready', () => {
   });
 
   // Load the `index.html` of the page.
-  window.loadURL(`file://${BuildConstants.ELECTRON_RENDERER_HTML_PATH}`);
+  window.loadURL(BuildConstants.ELECTRON_RENDERER_HTML_PATH);
 
   // Open the DevTools in development.
   if (__DEV__) {
