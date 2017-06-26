@@ -88,7 +88,7 @@ async function load(
     // If the type is a union and null is the last member then we want to mark
     // this member as optional and replace that last member.
     const isOptional = optionalTypeStringRe.test(typeString);
-    typeString.replace(optionalTypeStringRe, '');
+    typeString = typeString.replace(optionalTypeStringRe, '');
     // If there is no environment variable then either throw an error or set
     // undefined depending on the values optionality.
     if (!envValue) {
