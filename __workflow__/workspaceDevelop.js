@@ -2,6 +2,7 @@ const path = require('path');
 const cp = require('child_process');
 const chalk = require('chalk');
 const errorOverlayMiddleware = require('react-error-overlay/middleware');
+const openBrowser = require('react-dev-utils/openBrowser');
 const WebpackDevServer = require('webpack-dev-server');
 const Universe = require('./Universe');
 const Target = require('./Target');
@@ -138,12 +139,15 @@ async function developWeb(workspace, onServerReady) {
       if (Target.matches(workspace.target, 'electron')) {
         return;
       }
+      const url = `http://localhost:${port}`;
       console.log(
         `Workspace ${chalk.magenta.bold.underline(workspace.path)} ` +
           `launched in development mode at ` +
-          `${chalk.blue(`http://localhost:${port}`)}`,
+          `${chalk.blue(url)}`,
       );
       console.log();
+      // Open a browser with the url we are developing.
+      openBrowser(url);
     });
   });
 }
