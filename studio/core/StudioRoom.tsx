@@ -2,16 +2,16 @@ import * as React from 'react';
 import { Stream } from 'xstream';
 import dropRepeats from 'xstream/extra/dropRepeats';
 import { css } from 'glamor';
-import { ReactStream } from './stream/ReactStream';
-import { AudioVisualization } from './audio/AudioVisualization';
-// import { AudioPeakMeter } from './audio/AudioPeakMeter';
-import { PeersMesh } from './rtc/PeersMesh';
-import { StudioRoomHeader } from './StudioRoomHeader';
-import { StudioRoomOptionsPanel } from './StudioRoomOptionsPanel';
-import { StudioPeer } from './StudioPeer';
-import { StudioRoomParticipants } from './StudioRoomParticipants';
+import ReactStream from './stream/ReactStream';
+import AudioVisualization from './audio/AudioVisualization';
+// import AudioPeakMeter from './audio/AudioPeakMeter';
+import PeersMesh from './rtc/PeersMesh';
+import StudioRoomHeader from './StudioRoomHeader';
+import StudioRoomOptionsPanel from './StudioRoomOptionsPanel';
+import StudioPeer from './StudioPeer';
+import StudioRoomParticipants from './StudioRoomParticipants';
 
-export function StudioRoom({
+export default function StudioRoom({
   mesh,
   audioContext,
   deviceID,

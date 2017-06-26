@@ -7,7 +7,7 @@ import { Stream, InternalListener } from 'xstream';
  * listener is added the current value will immeadiately be sent similar to how
  * a `MemoryStream` works.
  */
-export class LiveValue<T> extends Stream<T> {
+export default class LiveValue<T> extends Stream<T> {
   /**
    * The internal value. We call it `_v` to match the code style of `xstream`.
    */

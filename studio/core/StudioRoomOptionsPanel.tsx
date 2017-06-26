@@ -2,18 +2,18 @@ import * as React from 'react';
 import { Stream } from 'xstream';
 import { css } from 'glamor';
 import { Fonts } from '~/design/styles';
-import { ReactStream } from './stream/ReactStream';
-import { TextInput } from './input/TextInput';
-import { RangeInput } from './input/RangeInput';
-import { UserAudioDevicesSelect } from './audio/UserAudioDevicesSelect';
-import { Panel } from './Panel';
+import ReactStream from './stream/ReactStream';
+import TextInput from './input/TextInput';
+import RangeInput from './input/RangeInput';
+import UserAudioDevicesSelect from './audio/UserAudioDevicesSelect';
+import Panel from './Panel';
 
 // Users should really be adjusting the gain on their mic and not in the
 // software. We should walk them through this instead of providing a slider in
 // the software.
 const enableGainInput = false;
 
-export function StudioRoomOptionsPanel({
+export default function StudioRoomOptionsPanel({
   name,
   onChangeName,
   deviceID,

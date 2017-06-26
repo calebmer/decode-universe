@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { SelectInput } from '../input/SelectInput';
+import SelectInput from '../input/SelectInput';
 
 export type Props = {
   kind: 'input' | 'output';
@@ -18,7 +18,10 @@ export type State = {
  */
 const devicesPollingMs = 1000;
 
-export class UserAudioDevicesSelect extends React.Component<Props, State> {
+export default class UserAudioDevicesSelect extends React.Component<
+  Props,
+  State
+> {
   state: State = {
     devices: [],
   };

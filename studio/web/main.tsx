@@ -3,10 +3,10 @@ import 'webrtc-adapter';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import * as querystring from 'querystring';
-import { StudioRoomController } from '~/studio/core/StudioRoomController';
-import { PeersMesh } from '~/studio/core/rtc/PeersMesh';
-import { MaybeHostPeer } from './rtc/MaybeHostPeer';
-import { StudioMustJoinRoom } from './StudioMustJoinRoom';
+import StudioRoomController from '~/studio/core/StudioRoomController';
+import PeersMesh from '~/studio/core/rtc/PeersMesh';
+import MaybeHostPeer from './rtc/MaybeHostPeer';
+import StudioMustJoinRoom from './StudioMustJoinRoom';
 
 const StudioRoom = StudioRoomController.createComponent({
   createPeersMesh: ({ roomName, localAudioContext, previousLocalName }) =>

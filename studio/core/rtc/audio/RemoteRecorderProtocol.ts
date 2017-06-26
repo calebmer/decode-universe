@@ -64,24 +64,23 @@
  * If the recorder disconnects then the recordee will simply stop sending
  * messages.
  */
-export namespace RemoteRecorderProtocol {
-  /**
-   * The recordee gives its recording information to the recorder. This is step
-   * 1 in the protocol.
-   *
-   * The `name` is a human readable name for identifying the recorder.
-   *
-   * The `sampleRate` is the sample rate of the audio that the recordee will be
-   * sending over.
-   */
-  export type RecordeeInfoMessage = {
-    readonly name: string;
-    readonly sampleRate: number;
-  };
 
-  /**
-   * The recorder tells the recordee to start recording. This is step 2 in the
-   * protocol.
-   */
-  export type RecorderStartMessage = 'start';
-}
+/**
+ * The recordee gives its recording information to the recorder. This is step
+ * 1 in the protocol.
+ *
+ * The `name` is a human readable name for identifying the recorder.
+ *
+ * The `sampleRate` is the sample rate of the audio that the recordee will be
+ * sending over.
+ */
+export type RecordeeInfoMessage = {
+  readonly name: string;
+  readonly sampleRate: number;
+};
+
+/**
+ * The recorder tells the recordee to start recording. This is step 2 in the
+ * protocol.
+ */
+export type RecorderStartMessage = 'start';

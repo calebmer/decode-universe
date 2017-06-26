@@ -9,7 +9,7 @@
  * After running this function you are guaranteed that the resulting slug will
  * only have lowercase alphanumeric characters and dashes.
  */
-export function slugify(s: string): string {
+export default function slugify(s: string): string {
   return s
     .toLowerCase()
     .replace(/[^a-z0-9]+/gi, '-')

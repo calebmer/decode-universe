@@ -4,7 +4,7 @@
  *
  * This interface helps abstract over many types of endable processes.
  */
-export interface Disposable {
+interface Disposable {
   dispose(): void;
 }
 
@@ -27,6 +27,8 @@ function concat(
   };
 }
 
-export const Disposable = {
+const Disposable = {
   concat,
 };
+
+export default Disposable;

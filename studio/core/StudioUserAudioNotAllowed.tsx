@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-export function StudioUserAudioNotAllowed() {
+export default function StudioUserAudioNotAllowed() {
   return (
     <p>
       Decode Studio could not get audio from any of your computer’s input

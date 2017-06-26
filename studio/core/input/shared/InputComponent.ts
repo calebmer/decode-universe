@@ -1,11 +1,11 @@
 import * as React from 'react';
-import { slugify } from '~/utils/universal/slugify';
+import slugify from '~/utils/universal/slugify';
 
 export type Props = {
   label?: string;
 };
 
-export abstract class InputComponent<
+export default abstract class InputComponent<
   TProps extends Props,
   TState
 > extends React.PureComponent<TProps, TState> {

@@ -1,11 +1,11 @@
 import * as React from 'react';
 import { Stream } from 'xstream';
-import { ReactStream } from './stream/ReactStream';
-import { AudioVisualization } from './audio/AudioVisualization';
-import { AudioDestination } from './audio/AudioDestination';
-import { Peer } from './rtc/Peer';
+import ReactStream from './stream/ReactStream';
+import AudioVisualization from './audio/AudioVisualization';
+import AudioDestination from './audio/AudioDestination';
+import Peer from './rtc/Peer';
 
-export function StudioPeer({
+export default function StudioPeer({
   peer,
   audioContext,
   disableAudio,

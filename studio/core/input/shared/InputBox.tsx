@@ -10,7 +10,7 @@ const backgroundDarkBorderColor = 'rgba(255, 255, 255, 0.1)';
  * exactly 4em. Therefore be careful when adjusting numbers. You might break
  * something.
  */
-export function InputBox({
+export default function InputBox({
   inputID,
   label,
   labelPassthrough = false,

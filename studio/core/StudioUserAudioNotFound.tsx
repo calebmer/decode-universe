@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-export function StudioUserAudioNotFound() {
+export default function StudioUserAudioNotFound() {
   return (
     <p>
       Decode Studio could not find any audio input devices. This is most likely

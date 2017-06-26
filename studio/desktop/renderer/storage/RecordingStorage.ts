@@ -1,16 +1,16 @@
 import * as path from 'path';
 import { v4 as uuid } from 'uuid';
-import { Disposable } from '~/utils/universal/Disposable';
-import { Recorder } from '~/studio/core/rtc/audio/Recorder';
-import { FileSystemUtils as fs } from './FileSystemUtils';
-import { RecorderStorage } from './RecorderStorage';
+import Disposable from '~/utils/universal/Disposable';
+import Recorder from '~/studio/core/rtc/audio/Recorder';
+import * as fs from './FileSystemUtils';
+import RecorderStorage from './RecorderStorage';
 
 const rawRecorderDataDirectoryName = 'raw';
 
 /**
  * The storage interface for a single recording.
  */
-export class RecordingStorage {
+export default class RecordingStorage {
   /**
    * Opens up a recording storage instance allowing users to read from it.
    */

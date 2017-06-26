@@ -1,5 +1,5 @@
-import { Peer } from '~/studio/core/rtc/Peer';
-import { RemoteRecordee } from '~/studio/core/rtc/audio/RemoteRecordee';
+import Peer from '~/studio/core/rtc/Peer';
+import RemoteRecordee from '~/studio/core/rtc/audio/RemoteRecordee';
 
 /**
  * A peer that might be a host, but we don’t actually know. We will only know
@@ -10,7 +10,7 @@ import { RemoteRecordee } from '~/studio/core/rtc/audio/RemoteRecordee';
  * peers in the web client use this class. This is so that we aren’t required to
  * negotiate whether or not this peer is a host in the signaling phase.
  */
-export class MaybeHostPeer extends Peer {
+export default class MaybeHostPeer extends Peer {
   /**
    * The recordees for this peer connection. This will be an empty array if the
    * peer is not a host and has no interest in recording. There will be as many

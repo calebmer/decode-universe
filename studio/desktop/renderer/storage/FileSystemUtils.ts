@@ -5,13 +5,13 @@
 
 import * as fs from 'fs';
 
-function createDirectory(directoryPath: string): Promise<void> {
+export function createDirectory(directoryPath: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     fs.mkdir(directoryPath, error => (error ? reject(error) : resolve()));
   });
 }
 
-function readDirectory(directoryPath: string): Promise<Array<string>> {
+export function readDirectory(directoryPath: string): Promise<Array<string>> {
   return new Promise<Array<string>>((resolve, reject) => {
     fs.readdir(
       directoryPath,
@@ -20,19 +20,19 @@ function readDirectory(directoryPath: string): Promise<Array<string>> {
   });
 }
 
-function directoryExists(filePath: string): Promise<boolean> {
+export function directoryExists(filePath: string): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
     fs.access(filePath, error => resolve(!error));
   });
 }
 
-function writeFile(filePath: string, data: string): Promise<void> {
+export function writeFile(filePath: string, data: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     fs.writeFile(filePath, data, error => (error ? reject(error) : resolve()));
   });
 }
 
-function readFileAsString(filePath: string): Promise<string> {
+export function readFileAsString(filePath: string): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     fs.readFile(
       filePath,
@@ -42,13 +42,13 @@ function readFileAsString(filePath: string): Promise<string> {
   });
 }
 
-function fileExists(filePath: string): Promise<boolean> {
+export function fileExists(filePath: string): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
     fs.access(filePath, error => resolve(!error));
   });
 }
 
-function fileByteSize(filePath: string): Promise<number> {
+export function fileByteSize(filePath: string): Promise<number> {
   return new Promise<number>((resolve, reject) => {
     fs.stat(
       filePath,
@@ -56,13 +56,3 @@ function fileByteSize(filePath: string): Promise<number> {
     );
   });
 }
-
-export const FileSystemUtils = {
-  createDirectory,
-  readDirectory,
-  directoryExists,
-  writeFile,
-  readFileAsString,
-  fileExists,
-  fileByteSize,
-};

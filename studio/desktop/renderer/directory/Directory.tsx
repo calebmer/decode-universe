@@ -2,12 +2,12 @@ import { remote } from 'electron';
 import { OrderedMap } from 'immutable';
 import { Stream } from 'xstream';
 import * as React from 'react';
-import { Storage } from '../shared/storage/Storage';
-import { RecordingStorage } from '../shared/storage/RecordingStorage';
-import { FileSystemUtils as fs } from '../shared/storage/FileSystemUtils';
-import { RecordingExporter } from '../shared/storage/RecordingExporter';
-import { DirectoryRecording } from './DirectoryRecording';
-import { DirectoryExportProgress } from './DirectoryExportProgress';
+import Storage from '../storage/Storage';
+import RecordingStorage from '../storage/RecordingStorage';
+import * as fs from '../storage/FileSystemUtils';
+import RecordingExporter from '../storage/RecordingExporter';
+import DirectoryRecording from './DirectoryRecording';
+import DirectoryExportProgress from './DirectoryExportProgress';
 
 export type Props = {
   storage: Storage;
@@ -18,7 +18,7 @@ export type State = {
   exportProgresses: OrderedMap<RecordingStorage, Stream<number>>;
 };
 
-export class Directory extends React.PureComponent<Props, State> {
+export default class Directory extends React.PureComponent<Props, State> {
   state: State = {
     exportProgresses: OrderedMap<RecordingStorage, Stream<number>>(),
   };

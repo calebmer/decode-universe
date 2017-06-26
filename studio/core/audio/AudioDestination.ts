@@ -9,7 +9,7 @@ export type Props = {
  * Plays the audio output from the `node` prop by connecting it to the
  * destination node of the `context` prop.
  */
-export class AudioDestination extends React.PureComponent<Props, {}> {
+export default class AudioDestination extends React.PureComponent<Props, {}> {
   componentDidMount() {
     // Connect the node to the context.
     const { context, node } = this.props;

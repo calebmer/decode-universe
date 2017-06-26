@@ -8,9 +8,11 @@ function render<T>(
   return <ReactStreamComponent stream={stream as any} render={render as any} />;
 }
 
-export const ReactStream = {
+const ReactStream = {
   render,
 };
+
+export default ReactStream;
 
 type Props<T> = {
   stream: Stream<T>;

@@ -2,10 +2,10 @@ import * as path from 'path';
 import { remote } from 'electron';
 import { v4 as uuid } from 'uuid';
 import * as React from 'react';
-import { FileSystemUtils as fs } from './shared/storage/FileSystemUtils';
-import { Storage } from './shared/storage/Storage';
-import { Directory } from './directory/Directory';
-import { StudioRoom } from './studio/StudioRoom';
+import * as fs from './storage/FileSystemUtils';
+import Storage from './storage/Storage';
+import Directory from './directory/Directory';
+import StudioRoom from './studio/StudioRoom';
 
 /**
  * Opens a `Storage` instance at a root directory that is selected exclusively
@@ -37,7 +37,7 @@ export type State = {
   roomName: string | null;
 };
 
-export class App extends React.PureComponent<{}, State> {
+export default class App extends React.PureComponent<{}, State> {
   state: State = {
     storage: null,
     roomName: BuildConstants.INITIAL_ROOM,

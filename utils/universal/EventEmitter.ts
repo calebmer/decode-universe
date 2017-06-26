@@ -1,6 +1,6 @@
-import { Disposable } from './Disposable';
+import Disposable from './Disposable';
 
-export namespace EventEmitter {
+namespace EventEmitter {
   /**
    * The default event map represents some default transactional events that are
    * sent by the `EventEmitter`. These take precedence over whatever events are
@@ -18,7 +18,7 @@ declare const console: any;
  * An event emitter is any object which has a set of live events from some
  * source which the object wants to expose to API consumers.
  */
-export class EventEmitter<TEventMap> {
+class EventEmitter<TEventMap> {
   /**
    * A map of all the listeners for a given event name.
    *
@@ -118,3 +118,5 @@ export class EventEmitter<TEventMap> {
     this.listeners.clear();
   }
 }
+
+export default EventEmitter;

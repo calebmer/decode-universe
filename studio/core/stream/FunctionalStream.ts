@@ -1,21 +1,16 @@
 import { Listener, Producer, Stream } from 'xstream';
 
-function create<T>(
+export function create<T>(
   subscribe: (listener: Listener<T>) => (() => void),
 ): Stream<T> {
   return Stream.create(new FunctionalProducer(subscribe));
 }
 
-function createWithMemory<T>(
+export function createWithMemory<T>(
   subscribe: (listener: Listener<T>) => (() => void),
 ): Stream<T> {
   return Stream.createWithMemory(new FunctionalProducer(subscribe));
 }
-
-export const FunctionalStream = {
-  create,
-  createWithMemory,
-};
 
 class FunctionalProducer<T> implements Producer<T> {
   private subscribe: (listener: Listener<T>) => (() => void);

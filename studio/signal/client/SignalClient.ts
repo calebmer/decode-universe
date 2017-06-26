@@ -1,6 +1,6 @@
 import * as createDebugger from 'debug';
 import * as socketIO from 'socket.io-client';
-import { EventEmitter } from '~/utils/universal/EventEmitter';
+import EventEmitter from '~/utils/universal/EventEmitter';
 import {
   JoinRequestMessage,
   JoinResponseMessage,

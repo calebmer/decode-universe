@@ -1,17 +1,17 @@
 import { v4 as uuid } from 'uuid';
-import { Disposable } from '~/utils/universal/Disposable';
-import { PeersMesh } from '~/studio/core/rtc/PeersMesh';
-import { Peer } from '~/studio/core/rtc/Peer';
-import { LocalRecorder } from '~/studio/core/rtc/audio/LocalRecorder';
-import { RemoteRecorder } from '~/studio/core/rtc/audio/RemoteRecorder';
-import { RecordingDirectoryStorage } from '../shared/storage/RecordingDirectoryStorage';
-import { RecordingStorage } from '../shared/storage/RecordingStorage';
+import Disposable from '~/utils/universal/Disposable';
+import PeersMesh from '~/studio/core/rtc/PeersMesh';
+import Peer from '~/studio/core/rtc/Peer';
+import LocalRecorder from '~/studio/core/rtc/audio/LocalRecorder';
+import RemoteRecorder from '~/studio/core/rtc/audio/RemoteRecorder';
+import RecordingDirectoryStorage from '../storage/RecordingDirectoryStorage';
+import RecordingStorage from '../storage/RecordingStorage';
 
 /**
  * Represents a recording while it happens. Responsible for watching a
  * `PeersMesh` and persisting any local or remote audio to our storage.
  */
-export class Recording {
+export default class Recording {
   /**
    * Starts a recording and returns the instance for the recording that was
    * started. A new recording with a random id will be created in the provided

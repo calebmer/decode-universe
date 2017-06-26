@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { css } from 'glamor';
-import { InputComponent } from './shared/InputComponent';
-import { InputBox } from './shared/InputBox';
+import InputComponent from './shared/InputComponent';
+import InputBox from './shared/InputBox';
 
 export type Props = {
   label: string;
@@ -9,7 +9,7 @@ export type Props = {
   onChange: (value: string) => void;
 };
 
-export class TextInput extends InputComponent<Props, {}> {
+export default class TextInput extends InputComponent<Props, {}> {
   private handleChange = (event: React.ChangeEvent<HTMLInputElement>) =>
     this.props.onChange(event.target.value);
 

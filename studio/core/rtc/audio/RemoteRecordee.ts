@@ -1,6 +1,6 @@
-import { Disposable } from '~/utils/universal/Disposable';
-import { RemoteRecorderProtocol } from './RemoteRecorderProtocol';
-import { LocalRecorder } from './LocalRecorder';
+import Disposable from '~/utils/universal/Disposable';
+import * as RemoteRecorderProtocol from './RemoteRecorderProtocol';
+import LocalRecorder from './LocalRecorder';
 
 /**
  * The recordee class for the recording protocol. This class actually records
@@ -9,7 +9,7 @@ import { LocalRecorder } from './LocalRecorder';
  * Internally we use a `LocalRecorder` instance to record the audio and then
  * send that audio data to our channel.
  */
-export class RemoteRecordee implements Disposable {
+export default class RemoteRecordee implements Disposable {
   /**
    * Creates a recordee and then sends the initial info message (step 1 of the
    * protocol) across the channel when it opens. The promise resolves when the

@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { PeersMesh } from '~/studio/core/rtc/PeersMesh';
-import { Storage } from '../shared/storage/Storage';
-import { Recording } from './Recording';
+import PeersMesh from '~/studio/core/rtc/PeersMesh';
+import Storage from '../storage/Storage';
+import Recording from './Recording';
 
 export type Props = {
   storage: Storage;
@@ -26,7 +26,7 @@ export type RecordingState =
       readonly recording: Recording;
     };
 
-export class StudioButtons extends React.PureComponent<Props, State> {
+export default class StudioButtons extends React.PureComponent<Props, State> {
   state: State = {
     recording: { state: 'inactive' },
   };

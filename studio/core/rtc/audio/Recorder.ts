@@ -1,6 +1,6 @@
-import { EventEmitter } from '~/utils/universal/EventEmitter';
+import EventEmitter from '~/utils/universal/EventEmitter';
 
-export namespace Recorder {
+namespace Recorder {
   export interface EventMap {
     data: ArrayBuffer;
   }
@@ -17,7 +17,7 @@ export namespace Recorder {
  * the audio of a peer through an `RTCDataChannel` and a `LocalRecorder` which
  * records the local computer’s audio.
  */
-export interface Recorder extends EventEmitter<Recorder.EventMap> {
+interface Recorder extends EventEmitter<Recorder.EventMap> {
   /**
    * False until `start()` is called. It will still be true after `stop()` is
    * called.
@@ -54,3 +54,5 @@ export interface Recorder extends EventEmitter<Recorder.EventMap> {
    */
   stop(): void;
 }
+
+export default Recorder;

@@ -1,13 +1,13 @@
 import * as path from 'path';
-import { FileSystemUtils as fs } from './FileSystemUtils';
-import { RecordingDirectoryStorage } from './RecordingDirectoryStorage';
+import * as fs from './FileSystemUtils';
+import RecordingDirectoryStorage from './RecordingDirectoryStorage';
 
 /**
  * Represents all of the persistent file system storage for the Decode Studio
  * Desktop client. This is the entry point of storage interfaces which support
  * both read and write operations.
  */
-export class Storage {
+export default class Storage {
   /**
    * Opens up a storage instance for the provided directory.
    */

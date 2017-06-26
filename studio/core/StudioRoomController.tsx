@@ -1,14 +1,14 @@
 import * as React from 'react';
 import dropRepeats from 'xstream/extra/dropRepeats';
 import { css } from 'glamor';
-import { LiveValue } from './stream/LiveValue';
-import { ReactStream } from './stream/ReactStream';
-import { UserAudioController } from './audio/UserAudioController';
-import { PeersMesh } from './rtc/PeersMesh';
-import { Peer } from './rtc/Peer';
-import { StudioRoom } from './StudioRoom';
-import { StudioUserAudioNotAllowed } from './StudioUserAudioNotAllowed';
-import { StudioUserAudioNotFound } from './StudioUserAudioNotFound';
+import LiveValue from './stream/LiveValue';
+import ReactStream from './stream/ReactStream';
+import UserAudioController from './audio/UserAudioController';
+import PeersMesh from './rtc/PeersMesh';
+import Peer from './rtc/Peer';
+import StudioRoom from './StudioRoom';
+import StudioUserAudioNotAllowed from './StudioUserAudioNotAllowed';
+import StudioUserAudioNotFound from './StudioUserAudioNotFound';
 
 const deviceIDKey = '@decode/studio-core/deviceID';
 const nameKey = '@decode/studio-core/name';
@@ -365,6 +365,8 @@ const createComponent = <
   }
 };
 
-export const StudioRoomController = {
+const StudioRoomController = {
   createComponent,
 };
+
+export default StudioRoomController;

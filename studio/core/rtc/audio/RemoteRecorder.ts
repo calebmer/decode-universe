@@ -1,11 +1,11 @@
-import { EventEmitter } from '~/utils/universal/EventEmitter';
-import { Recorder } from './Recorder';
-import { RemoteRecorderProtocol } from './RemoteRecorderProtocol';
+import EventEmitter from '~/utils/universal/EventEmitter';
+import Recorder from './Recorder';
+import * as RemoteRecorderProtocol from './RemoteRecorderProtocol';
 
 /**
  * The recorder class for the recording protocol.
  */
-export class RemoteRecorder extends EventEmitter<Recorder.EventMap>
+export default class RemoteRecorder extends EventEmitter<Recorder.EventMap>
   implements Recorder {
   /**
    * Creates a new recorder instance using the provided `RTCDataChannel`.

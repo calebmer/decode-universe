@@ -7,7 +7,10 @@ export type Props = {
   onError: (error: mixed, previousStream: MediaStream | null) => void;
 };
 
-export class UserAudioController extends React.PureComponent<Props, {}> {
+export default class UserAudioController extends React.PureComponent<
+  Props,
+  {}
+> {
   componentDidMount() {
     this.tryToGetUserAudio();
   }

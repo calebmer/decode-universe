@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { css } from 'glamor';
 import { IconExpand } from '../icons/IconExpand';
-import { InputComponent } from './shared/InputComponent';
-import { InputBox } from './shared/InputBox';
+import InputComponent from './shared/InputComponent';
+import InputBox from './shared/InputBox';
 
 export type Props = {
   label: string;
@@ -11,7 +11,7 @@ export type Props = {
   onChange: (value: string) => void;
 };
 
-export class SelectInput extends InputComponent<Props, {}> {
+export default class SelectInput extends InputComponent<Props, {}> {
   private handleChange = (event: React.ChangeEvent<HTMLSelectElement>) =>
     this.props.onChange(event.target.value);
 

@@ -11,9 +11,11 @@ function render<T>(
   return React.createElement(ReactPromiseComponent, { promise, render });
 }
 
-export const ReactPromise = {
+const ReactPromise = {
   render,
 };
+
+export default ReactPromise;
 
 type Props<T> = {
   promise: Promise<T>;

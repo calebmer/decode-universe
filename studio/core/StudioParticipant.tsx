@@ -3,7 +3,7 @@ import { css } from 'glamor';
 import { Colors, Shadow } from '~/design/styles';
 
 // TODO: It may make sense to use a `<Panel>` component in the future.
-export function StudioParticipant({
+export default function StudioParticipant({
   backgroundColor = Colors.geyser,
   children,
 }: {

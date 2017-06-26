@@ -1,7 +1,7 @@
 import { Stream } from 'xstream';
-import { Disposable } from '~/utils/universal/Disposable';
-import { LiveValue } from '../stream/LiveValue';
-import { FunctionalStream } from '../stream/FunctionalStream';
+import Disposable from '~/utils/universal/Disposable';
+import LiveValue from '../stream/LiveValue';
+import * as FunctionalStream from '../stream/FunctionalStream';
 
 /**
  * The configuration we use when creating `RTCPeerConnection` instances.
@@ -38,7 +38,7 @@ const rtcConfig = {
  * instance of `Peer` that models the same connection. What is “local” and what
  * is “remote” is swapped in these two instances on different computers.
  */
-export class Peer {
+class Peer {
   /**
    * The internal, writable, representation of `isClosed`.
    */
@@ -325,7 +325,7 @@ export class Peer {
   }
 }
 
-export namespace Peer {
+namespace Peer {
   /**
    * The config used to initialize a `Peer` instance.
    */
@@ -380,6 +380,8 @@ export namespace Peer {
     disconnected,
   }
 }
+
+export default Peer;
 
 /**
  * Watches the connection status for changes.

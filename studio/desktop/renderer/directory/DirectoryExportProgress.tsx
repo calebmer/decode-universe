@@ -1,26 +1,29 @@
 import { Stream } from 'xstream';
 import * as React from 'react';
-import { ReactStream } from '~/studio/core/stream/ReactStream';
-import { RecordingStorage } from '../shared/storage/RecordingStorage';
+import ReactStream from '~/studio/core/stream/ReactStream';
+import RecordingStorage from '../storage/RecordingStorage';
 
-export const DirectoryExportProgress = ({
+export default function DirectoryExportProgress({
   recording,
   progress,
 }: {
   recording: RecordingStorage;
   progress: Stream<number>;
-}) =>
-  <div>
-    <p>
-      {new Date(recording.startedAt).toDateString()}
-    </p>
-    {ReactStream.render(progress, progress =>
-      <div
-        style={{
-          width: `${progress * 100}%`,
-          height: '1em',
-          backgroundColor: 'red',
-        }}
-      />,
-    )}
-  </div>;
+}) {
+  return (
+    <div>
+      <p>
+        {new Date(recording.startedAt).toDateString()}
+      </p>
+      {ReactStream.render(progress, progress =>
+        <div
+          style={{
+            width: `${progress * 100}%`,
+            height: '1em',
+            backgroundColor: 'red',
+          }}
+        />,
+      )}
+    </div>
+  );
+}

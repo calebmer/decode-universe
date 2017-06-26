@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-export function IconClipboard({
+export default function IconClipboard({
   size = '1em',
   color = 'currentColor',
 }: {

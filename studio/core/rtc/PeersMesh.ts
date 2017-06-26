@@ -1,11 +1,11 @@
 import * as createDebugger from 'debug';
 import { OrderedMap } from 'immutable';
 import { Stream } from 'xstream';
-import { EventEmitter } from '~/utils/universal/EventEmitter';
+import EventEmitter from '~/utils/universal/EventEmitter';
 import SignalClient from '~/studio/signal/client/SignalClient';
 import { Signal } from '~/studio/signal/shared/MessageTypes';
-import { LiveValue } from '../stream/LiveValue';
-import { Peer } from './Peer';
+import LiveValue from '../stream/LiveValue';
+import Peer from './Peer';
 
 const debug = createDebugger('@decode/studio-core:PeersMesh');
 
@@ -53,7 +53,7 @@ const debounceNegotiationNeededMs = 200;
  * and we only connect to the mesh after `connect()` is called. To disconnect
  * from the mesh one needs to call `close()`.
  */
-export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
+class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
   PeersMesh.EventMap
 > {
   /**
@@ -549,7 +549,7 @@ export class PeersMesh<TPeer extends Peer = Peer> extends EventEmitter<
   }
 }
 
-export namespace PeersMesh {
+namespace PeersMesh {
   /**
    * The map of events that the peer mesh will emit from time to time.
    */
@@ -558,3 +558,5 @@ export namespace PeersMesh {
     deletePeer: { address: string; peer: Peer };
   }
 }
+
+export default PeersMesh;

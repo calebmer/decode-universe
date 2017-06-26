@@ -1,12 +1,12 @@
 import { createWriteStream } from 'fs';
-import { Disposable } from '~/utils/universal/Disposable';
-import { Recorder } from '~/studio/core/rtc/audio/Recorder';
-import { FileSystemUtils as fs } from './FileSystemUtils';
+import Disposable from '~/utils/universal/Disposable';
+import Recorder from '~/studio/core/rtc/audio/Recorder';
+import * as fs from './FileSystemUtils';
 
 /**
  * Stores the data from a single `Recorder`.
  */
-export class RecorderStorage {
+export default class RecorderStorage {
   /**
    * Open an instance of `RecorderRawStorage`. Unlike many other storages the
    * storage for a recorder does not have to be created first. Calling `write()`

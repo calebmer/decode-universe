@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { css } from 'glamor';
-import { StudioParticipantInvite } from './StudioParticipantInvite';
+import StudioParticipantInvite from './StudioParticipantInvite';
 
-export function StudioRoomParticipants({
+export default function StudioRoomParticipants({
   inviteURL,
 }: {
   inviteURL: string | null;

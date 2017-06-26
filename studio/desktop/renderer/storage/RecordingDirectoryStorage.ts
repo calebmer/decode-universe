@@ -1,7 +1,7 @@
 import * as path from 'path';
 import { v4 as uuid } from 'uuid';
-import { FileSystemUtils as fs } from './FileSystemUtils';
-import { RecordingStorage } from './RecordingStorage';
+import * as fs from './FileSystemUtils';
+import RecordingStorage from './RecordingStorage';
 
 /**
  * A directory of recordings which the user has made.
@@ -13,7 +13,7 @@ import { RecordingStorage } from './RecordingStorage';
  * smarter to, in the future, use pagination so that we only load the visible
  * recordings at once.
  */
-export class RecordingDirectoryStorage {
+export default class RecordingDirectoryStorage {
   /**
    * Opens the directory in which all the recordings are supposed to be stored.
    * Opens all of the recordings at once. There may be a better strategy in the

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { css } from 'glamor';
 import { Colors, Shadow } from '~/design/styles';
 
-export function StudioRoomHeader() {
+export default function StudioRoomHeader() {
   return (
     <div
       {...css(Shadow.createDropShadow(), {

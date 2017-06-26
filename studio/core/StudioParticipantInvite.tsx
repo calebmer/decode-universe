@@ -1,10 +1,14 @@
 import * as React from 'react';
 import { css } from 'glamor';
 import { Colors, Fonts } from '~/design/styles';
-import { ShareTextInput } from './input/ShareTextInput';
-import { StudioParticipant } from './StudioParticipant';
+import ShareTextInput from './input/ShareTextInput';
+import StudioParticipant from './StudioParticipant';
 
-export function StudioParticipantInvite({ inviteURL }: { inviteURL: string }) {
+export default function StudioParticipantInvite({
+  inviteURL,
+}: {
+  inviteURL: string;
+}) {
   return (
     <StudioParticipant backgroundColor={Colors.osloGrey}>
       <section

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { css } from 'glamor';
 import { Colors, Fonts, Shadow } from '~/design/styles';
 
-export function Panel({
+export default function Panel({
   width,
   title,
   children,

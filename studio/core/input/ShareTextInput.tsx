@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { css } from 'glamor';
-import { IconClipboard } from '../icons/IconClipboard';
-import { InputComponent } from './shared/InputComponent';
-import { InputBox } from './shared/InputBox';
+import IconClipboard from '../icons/IconClipboard';
+import InputComponent from './shared/InputComponent';
+import InputBox from './shared/InputBox';
 
 export type Props = {
   label: string;
@@ -10,7 +10,7 @@ export type Props = {
   backgroundDark?: boolean;
 };
 
-export class ShareTextInput extends InputComponent<Props, {}> {
+export default class ShareTextInput extends InputComponent<Props, {}> {
   handleInviteInputClick = (event: React.MouseEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
     input.select();

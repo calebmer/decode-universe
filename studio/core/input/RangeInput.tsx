@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { css } from 'glamor';
-import { InputComponent } from './shared/InputComponent';
-import { InputBox } from './shared/InputBox';
+import InputComponent from './shared/InputComponent';
+import InputBox from './shared/InputBox';
 
 export type Props = {
   label: string;
@@ -12,7 +12,7 @@ export type Props = {
   onChange: (value: number) => void;
 };
 
-export class RangeInput extends InputComponent<Props, {}> {
+export default class RangeInput extends InputComponent<Props, {}> {
   private handleChange = (event: React.ChangeEvent<HTMLInputElement>) =>
     this.props.onChange(parseInt(event.target.value, 10) || 0);
 
