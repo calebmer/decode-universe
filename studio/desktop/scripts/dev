@@ -1,8 +1,0 @@
-#!/bin/bash
-
-export NODE_ENV=development
-export DECODE_STUDIO_DESKTOP_RENDERER_URL=http://localhost:1998/index.html
-
-$(npm bin)/concurrently \
-  '$(npm bin)/webpack-dev-server --config ./webpack.config.renderer.js --port 1998' \
-  'sleep 1 && rm -rf build/main && $(cd ../.. && npm bin)/tsc --project ./tsconfig.main.json && $(npm bin)/electron .'
